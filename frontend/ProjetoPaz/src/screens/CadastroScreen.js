@@ -2,11 +2,13 @@ import React from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Image, Text, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const LoginScreen = ({ navigation }) => { // Adicionei "navigation" para redirecionar
+const CadastroScreen = ({ navigation }) => { // Adicionei "navigation" para voltar ao login
+  const [nome, setNome] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [senha, setSenha] = React.useState('');
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
 
+  // Animação do botão (igual ao login)
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
       toValue: 0.95,
@@ -22,20 +24,32 @@ const LoginScreen = ({ navigation }) => { // Adicionei "navigation" para redirec
     }).start();
   };
 
-  const handleLogin = () => {
-    console.log('Dados de login:', { email, senha });
+  const handleCadastro = () => {
+    console.log('Dados de cadastro:', { nome, email, senha });
+    // Aqui você pode adicionar a lógica para salvar no Firebase/API
   };
 
-  const handleCadastro = () => {
-    navigation.navigate('Cadastro'); // Redireciona para a tela de cadastro
+  const handleVoltarLogin = () => {
+    navigation.navigate('Login'); // Volta para a tela de login
   };
 
   return (
     <LinearGradient colors={['#FFFFFF', '#F5F5F5', '#E0E0E0']} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
-          {/* Logo */}
-          <Image source={require('../../assets/images/logopaz.jpeg')} style={styles.logo} />
+          {/* Logo - Atualize o caminho conforme sua estrutura */}
+          <Image 
+            source={require('../../assets/images/logopaz.jpeg')}
+            style={styles.logo} 
+          />
+          
+          <TextInput
+            style={styles.input}
+            placeholder="Nome completo"
+            placeholderTextColor="rgba(0, 0, 0, 0.6)"
+            value={nome}
+            onChangeText={setNome}
+          />
           
           <TextInput
             style={styles.input}
@@ -55,23 +69,24 @@ const LoginScreen = ({ navigation }) => { // Adicionei "navigation" para redirec
             onChangeText={setSenha}
           />
           
+          {/* Botão de Cadastro */}
           <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
             <TouchableOpacity
               style={styles.botao}
-              onPress={handleLogin}
+              onPress={handleCadastro}
               onPressIn={handlePressIn}
               onPressOut={handlePressOut}
             >
-              <Text style={styles.textoBotao}>Entrar</Text>
+              <Text style={styles.textoBotao}>Cadastrar</Text>
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Botão de Cadastro */}
+          {/* Link para voltar ao login */}
           <TouchableOpacity 
-            style={styles.botaoCadastro} 
-            onPress={handleCadastro}
+            style={styles.botaoVoltar} 
+            onPress={handleVoltarLogin}
           >
-            <Text style={styles.textoCadastro}>Criar uma conta</Text>
+            <Text style={styles.textoVoltar}>Já tem uma conta? Faça login</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -79,6 +94,7 @@ const LoginScreen = ({ navigation }) => { // Adicionei "navigation" para redirec
   );
 };
 
+// Estilos (mantive o mesmo padrão do LoginScreen)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -120,14 +136,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  botaoCadastro: {
+  botaoVoltar: {
     marginTop: 20,
   },
-  textoCadastro: {
+  textoVoltar: {
     color: '#000',
     fontSize: 16,
     textDecorationLine: 'underline',
   },
 });
 
-export default LoginScreen;
+export default CadastroScreen;
