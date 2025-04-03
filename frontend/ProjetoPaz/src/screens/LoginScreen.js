@@ -24,6 +24,8 @@ const LoginScreen = ({ navigation }) => { // Adicionei "navigation" para redirec
 
   const handleLogin = () => {
     console.log('Dados de login:', { email, senha });
+      // Adicione aqui sua validação de login (ex: Firebase, API)
+    navigation.navigate('Welcome'); // Redireciona para a tela de boas-vindas
   };
 
   const handleCadastro = () => {
