@@ -30,7 +30,7 @@ CREATE TABLE `product` (
   `description` text,
   `is_favorite` tinyint(1) DEFAULT 0,
   `category` varchar(50) DEFAULT NULL,
-  `donation_amount` decimal(10,2) DEFAULT 0,
+  `donation` tinyint(1) DEFAULT 0,
   `supplier_id` int DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
