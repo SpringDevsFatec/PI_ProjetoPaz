@@ -12,5 +12,8 @@
             "email": "murilovnasc.prog@gmail.com"
         }
     ],
-    "require": {}
+    "require": {
+        "firebase/php-jwt": "^5.4",
+        "vlucas/phpdotenv": "^5.3"
+    }
 }
