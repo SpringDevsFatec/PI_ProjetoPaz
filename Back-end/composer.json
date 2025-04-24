@@ -1,0 +1,16 @@
+{
+    "name": "app/backend",
+    "description": "Back-end Projeto_Paz PI 5º sem",
+    "autoload": {
+        "psr-4": {
+            "App\\Backend\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "nasc2005",
+            "email": "murilovnasc.prog@gmail.com"
+        }
+    ],
+    "require": {}
+}

@@ -8,6 +8,7 @@ CREATE TABLE user_log (
   action ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
   name VARCHAR(100),
   email VARCHAR(100),
+  password VARCHAR(100),
   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 );
