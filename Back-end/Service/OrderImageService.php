@@ -37,7 +37,7 @@ class OrderImageService {
 
     public function read($id = null) {
         if ($id) {
-            $result = $this->repository->getOrderImageById($id);
+            $result = $this->repository->getById($id);
             $status = $result ? 200 : 404;
         } else {
             $result = $this->repository->getAllOrderImages();

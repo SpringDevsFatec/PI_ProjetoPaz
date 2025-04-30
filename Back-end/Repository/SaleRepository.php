@@ -15,7 +15,7 @@ class SaleRepository {
     }
 
     // usar View
-    public function getOrderByDate($dateCreate) {
+    public function getByDate($dateCreate) {
         $query = "SELECT * FROM " . $this->table . " WHERE date_create = :date_create";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':date_create', $dateCreate, PDO::PARAM_STR);
@@ -30,7 +30,7 @@ class SaleRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getSaleById($id) {
+    public function getById($id) {
         $query = "SELECT * FROM " . $this->table . " WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id);

@@ -45,7 +45,7 @@ class ProductService {
 
     public function read($id = null) {
         if ($id) {
-            $result = $this->repository->getProductById($id);
+            $result = $this->repository->getById($id);
             $status = $result ? 200 : 404;
         } else {
             $result = $this->repository->getAllProducts();
@@ -81,16 +81,6 @@ class ProductService {
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Erro ao atualizar produto."]);
-        }
-    }
-
-    public function delete($id) {
-        if ($this->repository->deleteProduct($id)) {
-            http_response_code(200);
-            echo json_encode(["message" => "Produto excluído com sucesso."]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Erro ao excluir produto."]);
         }
     }
 }

@@ -15,7 +15,7 @@ class OrderRepository {
         $this->conn = Database::getInstance();
     }
 
-    public function getOrdersByPaymentMethod($paymentMethod) {
+    public function getByPaymentMethod($paymentMethod) {
         $query = "SELECT * FROM " . $this->table . " WHERE payment_method= :payment_method";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':payment_method', $paymentMethod);
@@ -23,7 +23,7 @@ class OrderRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getOrderById($id) {
+    public function getById($id) {
         $query = "SELECT * FROM " . $this->table . " WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id);
@@ -31,7 +31,7 @@ class OrderRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getOrdersBySaleId($saleId) {
+    public function getBySaleId($saleId) {
         $query = "SELECT * FROM " . $this->table . " WHERE sale_id = :sale_id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':sale_id', $saleId);

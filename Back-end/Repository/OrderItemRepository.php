@@ -15,13 +15,6 @@ class OrderItemRepository {
         $this->conn = Database::getInstance();
     }
 
-    public function getOrderItemsByOrderId($orderId) {
-        $query = "SELECT * FROM " . $this->table . " WHERE order_id = :order_id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':order_id', $orderId);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
     public function getAllOrderItems() {
         $query = "SELECT * FROM " . $this->table;
         $stmt = $this->conn->prepare($query);

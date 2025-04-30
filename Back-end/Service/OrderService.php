@@ -39,7 +39,7 @@ class OrderService {
 
     public function read($id = null) {
         if ($id) {
-            $result = $this->repository->getOrderById($id);
+            $result = $this->repository->getById($id);
             $status = $result ? 200 : 404;
         } else {
             $result = $this->repository->getAllOrders();

@@ -22,14 +22,14 @@ class OrderImageRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getOrderImagesByOrderId($orderId) {
+    public function getByOrderId($orderId) {
         $query = "SELECT * FROM " . $this->table . " WHERE order_id = :order_id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':order_id', $orderId);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-    public function getOrderImageById($id) {
+    public function getById($id) {
         $query = "SELECT * FROM " . $this->table . " WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id);

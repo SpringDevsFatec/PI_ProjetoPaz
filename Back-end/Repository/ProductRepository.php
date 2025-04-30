@@ -19,7 +19,7 @@ class ProductRepository {
     /* usar view */
     // view para pesquisa por nome dinamicamente
 
-    public function getProductByCategory($category){
+    public function getByCategory($category){
         $query = "SELECT * FROM $this->table WHERE category = :category";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":category", $category, PDO::PARAM_STR);
@@ -28,21 +28,21 @@ class ProductRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getAllProductsFavorite() {
+    public function getByFavorite() {
         $query = "SELECT * FROM " . $this->table . " WHERE is_favorite = 1";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getAllProductsDonation() {
+    public function getByDonation() {
         $query = "SELECT * FROM " . $this->table . " WHERE is_donation = 1";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getProdutcBySale($salePrice) {
+    public function getBySale($salePrice) {
         $query = "SELECT * FROM " . $this->table . " WHERE sale_price = :sale_price";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":sale_price", $salePrice, PDO::PARAM_STR);
@@ -50,7 +50,7 @@ class ProductRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getProdutcByCost($costPrice) {
+    public function getByCost($costPrice) {
         $query = "SELECT * FROM " . $this->table . " WHERE cost_price = :cost_price";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":cost_price", $costPrice, PDO::PARAM_STR);
@@ -60,7 +60,7 @@ class ProductRepository {
 
     /* ------------------------------------------- */
 
-    public function getProductById($id) {
+    public function getById($id) {
         $query = "SELECT * FROM " . $this->table . " WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id);
@@ -129,16 +129,6 @@ class ProductRepository {
         $stmt->bindParam(':is_favorite', $isFavorite);
         $stmt->bindParam(':category', $category);
         $stmt->bindParam(':is_donation', $isDonation);
-        if ($stmt->execute()) {
-            return true;
-        }
-        return false;
-    }
-
-    public function deleteProduct($id) {
-        $query = "DELETE FROM " . $this->table . " WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id);
         if ($stmt->execute()) {
             return true;
         }
