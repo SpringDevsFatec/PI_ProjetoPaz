@@ -1,6 +1,7 @@
 <?php
 namespace App\Backend\Routers;
 
+use App\Backend\Controller\ProductController;
 use App\Backend\Controller\UserController;
 
 class Rotas {
@@ -9,11 +10,17 @@ class Rotas {
             'GET' => [
                 // user
                 '/user' => [UserController::class, 'readAll'],
-                '/user' => [UserController::class, 'readById'],
+                '/user/{id}' => [UserController::class, 'readById'],
                 '/user/login' => [UserController::class, 'login'],
                 
                 // product
-
+                '/product' => [ProductController::class, 'readAll'],
+                '/product/{id}' => [ProductController::class, 'readById'],
+                '/product/search' => [ProductController::class, 'searchProducts'],
+                '/product/search' => [ProductController::class, 'searchByCategory'],
+                '/product/search' => [ProductController::class, 'searchByCost'],
+                '/product/search' => [ProductController::class, 'searchByFavorite'],
+                '/product/search' => [ProductController::class, 'searchByDonation'],
 
                 // order
 
@@ -26,7 +33,7 @@ class Rotas {
                 '/user' => [UserController::class, 'create'],
 
                 // product
-
+                '/product' => [ProductController::class, 'create'],
 
                 // order
 
@@ -36,10 +43,10 @@ class Rotas {
             ],
             'PUT' => [
                 // user
-                '/user' => [UserController::class, 'update'],
+                '/user' => [UserController::class, 'put'],
 
                 // product
-
+                '/product' => [ProductController::class, 'put'],
 
                 // order
 
