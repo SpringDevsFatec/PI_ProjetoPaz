@@ -1,5 +1,7 @@
 <?php
 namespace App\Backend\Controller;
+
+use App\Backend\Libs\AuthMiddleware;
 use App\Backend\Service\UserService;
 
 use Exception;
@@ -32,8 +34,10 @@ class UserController {
     }
 
     public function readById($id) {
-        $result = $this->service->readAll($id);
-        unset($user['password']);
+        $result = $this->service->readById($id);
+        if ($result) {
+            unset($result['password']);
+        }
         $this->handleResponse($result, "Nenhum usuário encontrado.");
     }
 
@@ -69,7 +73,7 @@ class UserController {
         if (!isset(
             $data->name,
             $data->email,
-            $data->password,
+            $data->password
                )) {
             http_response_code(400);
             echo json_encode(["error" => "Dados incompletos para criação de usuário."]);
@@ -89,7 +93,7 @@ class UserController {
 
         if (!isset(
             $data->name,
-            $data->email,
+            $data->email
                )) {
             http_response_code(400);
             echo json_encode(["error" => "Dados incompletos para atualização de usuário."]);
