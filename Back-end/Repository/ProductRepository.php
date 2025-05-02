@@ -16,15 +16,22 @@ class ProductRepository {
         $this->conn = Database::getInstance();
     }
 
-    /* usar view */
-    // view para pesquisa por nome dinamicamente
+    /* Getters */
+    public function getByName($searchTerm) {
+        $query = "SELECT * FROM ". $this->table . " WHERE name LIKE :searchTerm LIMIT 10";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindValue(':searchTerm', '%' . $searchTerm . '%');
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 
     public function getByCategory($category){
-        $query = "SELECT * FROM $this->table WHERE category = :category";
+        $query = "SELECT * FROM " . $this->table . " WHERE category = :category";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":category", $category, PDO::PARAM_STR);
         $stmt->execute();
-
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -99,6 +106,7 @@ class ProductRepository {
         $stmt->bindParam(':category', $category);
         $stmt->bindParam(':is_donation', $isDonation);
         $stmt->bindParam(':date_create', $dateCreate);
+
         if ($stmt->execute()) {
             return true;
         }
@@ -129,6 +137,7 @@ class ProductRepository {
         $stmt->bindParam(':is_favorite', $isFavorite);
         $stmt->bindParam(':category', $category);
         $stmt->bindParam(':is_donation', $isDonation);
+
         if ($stmt->execute()) {
             return true;
         }
