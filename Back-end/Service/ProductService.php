@@ -11,76 +11,74 @@ class ProductService {
     
     private $repository;
 
-    public function __construct(ProductRepository $repository)
+    public function __construct()
     {
-        $this->repository = $repository;
+        $this->repository = new ProductRepository();
+    }
+
+    public function searchProducts($searchTerm) {
+        return $this->repository->getByName($searchTerm);
+    }
+
+    public function searchByCategory($category) {
+        return $this->repository->getByCategory($category);
+    }
+
+    public function searchByCost($cost) {
+        return $this->repository->getByCost($cost);
+    }
+
+    public function searchByFavorite() {
+        return $this->repository->getByFavorite();
+    }
+
+    public function searchByDonation() {
+        return $this->repository->getByDonation();
+    }
+    
+    public function readById($id) {
+        return $this->repository->getById($id);
+    }
+
+    public function readAll() {
+        return $this->repository->getAllProducts();
     }
 
     public function create($data) {
-        if (!isset($data->supplier_id, $data->name, $data->cost_price, $data->sale_price, $data->description, $data->is_favorite, $data->category, $data->is_donation)) {
-            http_response_code(400);
-            echo json_encode(["error" => "Dados incompletos"]);
-            return;
-        }
-
         $product = new Product();
         $product->setSupplierId($data->supplier_id);
         $product->setName($data->name);
         $product->setCostPrice($data->cost_price);
         $product->setSalePrice($data->sale_price);
-        $product->setDescription($data->Description);
+        $product->setDescription($data->description);
         $product->setIsFavorite($data->is_favorite);
         $product->setCategory($data->category);
         $product->setIsDonation($data->is_donation);
         $product->setDateCreate(new DateTime());
 
         if ($this->repository->insertProduct($product)) {
-            http_response_code(201);
-            echo json_encode(["message" => "Produto criado com sucesso."]);
+            return true;
         } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Erro ao criar produto."]);
+            return false;
         }
     }
 
-    public function read($id = null) {
-        if ($id) {
-            $result = $this->repository->getById($id);
-            $status = $result ? 200 : 404;
-        } else {
-            $result = $this->repository->getAllProducts();
-            unset($product);
-            $status = !empty($result) ? 200 : 404;
-        }
-
-        http_response_code($status);
-        echo json_encode($result ?: ["message" => "Nenhum produto encontrado."]);
-    }
-
-    public function update($data) {
-        if (!isset($data->name, $data->email)) {
-            http_response_code(400);
-            echo json_encode(["error" => "Dados incompletos"]);
-            return;
-        }
-
+    public function update($id, $data) {
         $product = new Product();
-        $product->setId($data->id);
-        $product->setSupplierId($data->supplier_id);
-        $product->setName($data->name);
-        $product->setCostPrice($data->cost_price);
-        $product->setSalePrice($data->sale_price);
-        $product->setDescription($data->Description);
-        $product->setIsFavorite($data->is_favorite);
-        $product->setCategory($data->category);
-        $product->setIsDonation($data->is_donation);
+        $product->setId($id);
+        $product->setSupplierId($data->supplier_id ?? $product->getSupplierId());
+        $product->setName($data->name ?? $product->getName());
+        $product->setCostPrice($data->cost_price ?? $product->getCostPrice());
+        $product->setSalePrice($data->sale_price ?? $product->getSalePrice());
+        $product->setDescription($data->description ?? $product->getDescription());
+        $product->setIsFavorite($data->is_favorite ?? $product->getIsFavorite());
+        $product->setCategory($data->category ?? $product->getCategory());
+        $product->setIsDonation($data->is_donation ?? $product->getIsDonation());
 
         if ($this->repository->updateProduct($product)) {
-            http_response_code(201);
-            echo json_encode(["message" => "Produto atualizado com sucesso."]);
+            return true;
         } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Erro ao atualizar produto."]);
+            return false;
         }
     }
 }
