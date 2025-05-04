@@ -1,76 +1,97 @@
 <?php
 namespace App\Backend\Service;
 
+use App\Backend\Model\Order;
 use App\Backend\Model\OrderItem;
 use App\Backend\Repository\OrderItemRepository;
+use App\Backend\Repository\ProductRepository;
 
-use Exception;
+use DomainException;
+use DateTime;
+use InvalidArgumentException;
 
 class OrderItemService {
     
-    private $repository;
+    private $orderItemRepository;
+    private $productRepository;
 
-    public function __construct(OrderItemRepository $repository)
+    public function __construct(
+        OrderItemRepository $orderItemRepository, 
+        ProductRepository $productRepository
+    ) {
+        $this->orderItemRepository = $orderItemRepository;
+        $this->productRepository = $productRepository;
+    }
+
+    public function getItemsWithProductDetails(int $orderId): array
     {
-        $this->repository = $repository;
+        return $this->orderItemRepository->findWithProductDetails($orderId);
+    }
+    public function getItemsByOrderId(int $orderId): array 
+    {
+        return $this->orderItemRepository->findByOrderId($orderId);
+    }
+    public function getItem(int $id): ?array
+    {
+        return $this->orderItemRepository->find($id);
     }
 
-    public function create($data) {
-        if (!isset($data->product_id, $data->order_id, $data->quantity, $data->unit_price)) {
-            http_response_code(400);
-            echo json_encode(["error" => "Dados incompletos"]);
-            return;
+    public function createItem(array $data): OrderItem 
+    {
+        if (empty($data['product_id']) || empty($data['order_id']) || empty($data['quantity'])) 
+        {
+            throw new InvalidArgumentException("Dados incompletos.");
         }
 
-        $orderItem = new OrderItem();
-        $orderItem->setProductId($data->product_id);
-        $orderItem->setOrderId($data->order_id);
-        $orderItem->setQuantity($data->quantity);
-        $orderItem->setUnitPrice($data->unit_price);
-
-        if ($this->repository->insertOrderItem($orderItem)) {
-            http_response_code(201);
-            echo json_encode(["message" => "Item inserido com sucesso."]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Erro ao inserir item."]);
+        $product = $this->productRepository->getById($data['product_id']);
+        if(!$product) {
+            throw new DomainException("Produto não encontrado.");
         }
+
+        $orderItem = new OrderItem(
+            productId: (int)$data['product_id'],
+            orderId: (int)$data['order_id'],
+            quantity: (int)$data['quantity'],
+            unitPrice: (float)$data['unit_price'],
+            id: null,
+            createdAt: new DateTime(),
+            updateAt: new DateTime()
+        );
+
+        $itemId = $this->orderItemRepository->save($orderItem);
+        $orderItem->setId($itemId);
+
+        return $orderItem;
     }
 
-    public function read($id = null) {
-        if ($id) {
-            $result = $this->repository->getOrderItemById($id);
-            $status = $result ? 200 : 404;
-        } else {
-            $result = $this->repository->getAllOrderItems();
-            unset($orderItem);
-            $status = !empty($result) ? 200 : 404;
+    public function updateItemQuantity(int $itemId, int $newQuantity): OrderItem 
+    {
+        if ($newQuantity <= 0) {
+            throw new InvalidArgumentException("Quantidade deve ser maior que zero.");
         }
+        $existingItem = $this->orderItemRepository->find($itemId);
+        if (!$existingItem) {
+            throw new DomainException("Item de pedido não encontrado.");
+        }
+        $orderItem = new OrderItem(
+            productId: (int)$existingItem['product_id'],
+            orderId: (int)$existingItem['order_id'],
+            quantity: $newQuantity,
+            unitPrice: (float)$existingItem['unit_price'],
+            id: (int)$existingItem['id'],
+            createdAt: new DateTime($existingItem['created_at']),
+            updateAt: new DateTime()
+        );
 
-        http_response_code($status);
-        echo json_encode($result ?: ["message" => "Nenhuma item encontrado."]);
+        $this->orderItemRepository->update($orderItem);
+        
+        return $orderItem;
     }
 
-    public function update($data) {
-        if (!isset($data->id, $data->product_id, $data->order_id, $data->quantity, $data->unit_price)) {
-            http_response_code(400);
-            echo json_encode(["error" => "Dados incompletos"]);
-            return;
-        }
-
-        $orderItem = new OrderItem();
-        $orderItem->setId($data->id);
-        $orderItem->setProductId($data->product_id);
-        $orderItem->setOrderId($data->order_id);
-        $orderItem->setQuantity($data->quantity);
-        $orderItem->setUnitPrice($data->unit_price);
-
-        if ($this->repository->updateOrderItem($orderItem)) {
-            http_response_code(201);
-            echo json_encode(["message" => "Item atualizado com sucesso."]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Erro ao atualizar item."]);
-        }
+    public function deleteItem(int $itemId): void 
+    {
+        if ($this->orderItemRepository->delete($itemId)) {
+            throw new DomainException("Item de pedido não encontrado.");
+        } 
     }
 }

@@ -1,62 +1,81 @@
 <?php
 namespace App\Backend\Routers;
 
+use App\Backend\Controller\OrderItemController;
+use App\Backend\Controller\OrderController;
 use App\Backend\Controller\ProductController;
 use App\Backend\Controller\UserController;
+use App\Backend\Controller\SaleController;
 
-class Rotas {
-    public static function fastRotas(){
+class Rotas 
+{
+    public static function fastRotas(): array 
+    {
         return [
             'GET' => [
-                // user
-                '/user' => [UserController::class, 'readAll'],
-                '/user/{id}' => [UserController::class, 'readById'],
-                '/user/login' => [UserController::class, 'login'],
+                // Users
+                '/users' => [UserController::class, 'list'],
+                '/users/{id}' => [UserController::class, 'show'],
+                '/users/{id}/orders' => [UserController::class, 'listUserOrders'],
                 
-                // product
-                '/product' => [ProductController::class, 'readAll'],
-                '/product/{id}' => [ProductController::class, 'readById'],
-                '/product/search' => [ProductController::class, 'searchProducts'],
-                '/product/search' => [ProductController::class, 'searchByCategory'],
-                '/product/search' => [ProductController::class, 'searchByCost'],
-                '/product/search' => [ProductController::class, 'searchByFavorite'],
-                '/product/search' => [ProductController::class, 'searchByDonation'],
+                // Products
+                '/products' => [ProductController::class, 'list'],
+                '/products/{id}' => [ProductController::class, 'show'],
+                '/products/search' => [ProductController::class, 'search'],
+                '/products/search/{category}' => [ProductController::class, 'searchByCategory'],
+                '/products/search/{cost}' => [ProductController::class, 'searchByCost'],
+                '/products/search/favorite' => [ProductController::class, 'searchByFavorite'],
+                '/products/search/donation' => [ProductController::class, 'searchByDonation'],
 
-                // order
+                // Orders
+                '/order/{id}/items' => [OrderItemController::class, 'listByOrder'],
 
+                // Order Items
+                '/order-items' => [OrderItemController::class, 'listItemsWithProductDetails'],
+                '/order-items/{id}' => [OrderItemController::class, 'show'],
 
-                // sale
+                // Sales
 
             ],
             'POST' => [
-                // user
-                '/user' => [UserController::class, 'create'],
+                // Users
+                '/users' => [UserController::class, 'create'],
+                '/users/login' => [UserController::class, 'login'],
 
-                // product
-                '/product' => [ProductController::class, 'create'],
+                // Products
+                '/products' => [ProductController::class, 'create'],
 
-                // order
+                // Orders
 
 
-                // sale
+                // Order Items
+                '/order-items' => [OrderItemController::class, 'create'],
+
+                // Sale
 
             ],
             'PUT' => [
-                // user
-                '/user' => [UserController::class, 'put'],
+                // Users
+                '/users/{id}' => [UserController::class, 'update'],
 
-                // product
-                '/product' => [ProductController::class, 'put'],
+                // Products
+                '/products/{id}' => [ProductController::class, 'update'],
 
-                // order
+                // Order Items
+                '/order-items/{id}/quantity' => [OrderItemController::class, 'updateQuantity'],
+
+                // Orders
 
 
-                // sale
+                // Sales
 
             ],
             'DELETE' => [
                 // user
-                '/user' => [UserController::class, 'delete'],
+                '/users/{id}' => [UserController::class, 'delete'],
+
+                // orderItem
+                '/order-items/{id}' => [OrderItemController::class, 'delete'],
             ],
         ];
     }
