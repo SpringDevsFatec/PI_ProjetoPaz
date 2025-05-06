@@ -4,7 +4,7 @@ use App\Backend\Routers\Router;
 use App\Backend\Libs\HttpHeader;
 use App\Backend\Routers\Rotas;
 
-require_once '../vendor/autoload.php';
+require_once './vendor/autoload.php';
 
 HttpHeader::setDefaultHeaders();
 
