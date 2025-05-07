@@ -28,6 +28,10 @@ class Rotas
                 '/products/search/donation' => [ProductController::class, 'searchByDonation'],
 
                 // Orders
+                '/orders/{id}' => [OrderController::class, 'listWithItems'],
+                '/orders/payment-method/{paymentMethod}' => [OrderController::class, 'listByPaymentMethod'],
+                '/orders' => [OrderController::class, 'listAll'],
+                '/orders/{id}' => [OrderController::class, 'show'],
                 '/order/{id}/items' => [OrderItemController::class, 'listByOrder'],
 
                 // Order Items
@@ -46,7 +50,8 @@ class Rotas
                 '/products' => [ProductController::class, 'create'],
 
                 // Orders
-
+                '/orders' => [OrderController::class, 'create'],
+                '/orders/{id}/items' => [OrderController::class, 'addItem'],
 
                 // Order Items
                 '/order-items' => [OrderItemController::class, 'create'],
@@ -65,7 +70,7 @@ class Rotas
                 '/order-items/{id}/quantity' => [OrderItemController::class, 'updateQuantity'],
 
                 // Orders
-
+                '/orders/{id}' => [OrderController::class, 'updateStatus'],
 
                 // Sales
 
@@ -76,6 +81,9 @@ class Rotas
 
                 // orderItem
                 '/order-items/{id}' => [OrderItemController::class, 'delete'],
+
+                // orders
+                '/orders/{id}' => [OrderController::class, 'delete'],
             ],
         ];
     }
