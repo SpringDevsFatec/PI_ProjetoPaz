@@ -60,12 +60,12 @@ class OrderItemRepository {
                 'quantity' => $orderItem->getQuantity(),
                 'unit_price' => $orderItem->getUnitPrice(),
                 'created_at' => $orderItem->getCreatedAt()->format('Y-m-d H:i:s'),
-                'updated_at' => $orderItem->getUpdateAt()->format('Y-m-d H:i:s')
+                'updated_at' => $orderItem->getUpdatedAt()->format('Y-m-d H:i:s')
             ]);
 
             return (int)$this->conn->lastInsertId();
         } catch (PDOException $e) {
-            throw new PDOException("Error saving order item: " . $e->getMessage());
+            throw new PDOException("Erro ao salvar item do pedido: " . $e->getMessage());
         }
     }
     public function update(OrderItem $orderItem): bool
@@ -83,15 +83,34 @@ class OrderItemRepository {
                 ':updated_at' => (new \DateTime)->format('Y-m-d H:i:s')
             ]);
         } catch (PDOException $e) {
-            throw new PDOException("Error updating order item: " . $e->getMessage());
+            throw new PDOException("Erro ao atualizar item do pedido: " . $e->getMessage());
         }
     }
     public function delete(int $id): bool
     {
-        $query = "DELETE FROM {$this->table} WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        try {
+            $query = "DELETE FROM {$this->table} WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
 
-        return $stmt->execute();
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao deletar item do pedido: " . $e->getMessage());
+        }
+    }
+
+    public function deleteByOrder(int $orderId): int
+    {
+        $query = "DELETE FROM order_items WHERE order_id = :order_id";
+        
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->rowCount();
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao remover itens do pedido: " . $e->getMessage());
+        }
     }
 }

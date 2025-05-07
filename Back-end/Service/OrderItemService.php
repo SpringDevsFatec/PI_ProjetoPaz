@@ -1,7 +1,6 @@
 <?php
 namespace App\Backend\Service;
 
-use App\Backend\Model\Order;
 use App\Backend\Model\OrderItem;
 use App\Backend\Repository\OrderItemRepository;
 use App\Backend\Repository\ProductRepository;
@@ -55,7 +54,7 @@ class OrderItemService {
             unitPrice: (float)$data['unit_price'],
             id: null,
             createdAt: new DateTime(),
-            updateAt: new DateTime()
+            updatedAt: new DateTime()
         );
 
         $itemId = $this->orderItemRepository->save($orderItem);
@@ -80,7 +79,7 @@ class OrderItemService {
             unitPrice: (float)$existingItem['unit_price'],
             id: (int)$existingItem['id'],
             createdAt: new DateTime($existingItem['created_at']),
-            updateAt: new DateTime()
+            updatedAt: new DateTime()
         );
 
         $this->orderItemRepository->update($orderItem);

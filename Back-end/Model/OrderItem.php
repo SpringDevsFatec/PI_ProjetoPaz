@@ -12,7 +12,7 @@ class OrderItem {
     private int $quantity;
     private float $unitPrice;
     private ?DateTimeInterface $createdAt;
-    private ?DateTimeInterface $updateAt;
+    private ?DateTimeInterface $updatedAt;
 
     public function __construct(
         int $productId,
@@ -21,7 +21,7 @@ class OrderItem {
         float $unitPrice,
         ?int $id = null,
         ?DateTimeInterface $createdAt = null,
-        ?DateTimeInterface $updateAt = null
+        ?DateTimeInterface $updatedAt = null
     ) {
         $this->id = $id;
         $this->productId = $productId;
@@ -29,7 +29,7 @@ class OrderItem {
         $this->setQuantity($quantity);
         $this->unitPrice = $unitPrice;
         $this->createdAt = $createdAt ?? new DateTime();
-        $this->updateAt = $updateAt ?? new DateTime();
+        $this->updatedAt = $updatedAt ?? new DateTime();
     }
 
     public function getId(): ?int {
@@ -50,8 +50,8 @@ class OrderItem {
     public function getCreatedAt(): ?DateTimeInterface {
         return $this->createdAt;
     }
-    public function getUpdateAt(): ?DateTimeInterface {
-        return $this->updateAt;
+    public function getUpdatedAt(): ?DateTimeInterface {
+        return $this->updatedAt;
     }
     public function setId(int $id): void {
         $this->id = $id;
@@ -72,7 +72,7 @@ class OrderItem {
         if (isset($data['quantity'])) {
             $this->setQuantity($data['quantity']);
         }
-        $this->updateAt = new DateTime();
+        $this->updatedAt = new DateTime();
     }
     public function toArray(): array {
         return [
@@ -83,7 +83,7 @@ class OrderItem {
             'unit_price' => $this->unitPrice,
             'subtotal' => $this->getSubTotal(),
             'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updateAt?->format('Y-m-d H:i:s')
+            'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s')
         ];
     }
 }
