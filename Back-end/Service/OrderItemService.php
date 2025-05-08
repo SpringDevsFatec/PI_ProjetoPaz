@@ -42,7 +42,7 @@ class OrderItemService {
             throw new InvalidArgumentException("Dados incompletos.");
         }
 
-        $product = $this->productRepository->getById($data['product_id']);
+        $product = $this->productRepository->find($data['product_id']);
         if(!$product) {
             throw new DomainException("Produto não encontrado.");
         }
@@ -89,8 +89,13 @@ class OrderItemService {
 
     public function deleteItem(int $itemId): void 
     {
-        if ($this->orderItemRepository->delete($itemId)) {
+        $orderItem = $this->orderItemRepository->find($itemId);
+        if (!$orderItem) {
             throw new DomainException("Item de pedido não encontrado.");
+        }
+
+        if (!$this->orderItemRepository->delete($itemId)) {
+            throw new DomainException("Falha ao deletar item.");
         } 
     }
 }

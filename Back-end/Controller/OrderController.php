@@ -106,8 +106,10 @@ class OrderController {
             
         } catch (InvalidArgumentException $e) {
             $this->jsonResponse(null, 400, $e->getMessage());
+            
         } catch (DomainException $e) {
             $this->jsonResponse(null, 404, $e->getMessage());
+
         } catch (Exception $e) {
             $this->jsonResponse(null, 500, 'Erro ao criar pedido: ' . $e->getMessage());
         }
@@ -135,14 +137,16 @@ class OrderController {
             
         } catch (InvalidArgumentException $e) {
             $this->jsonResponse(null, 400, $e->getMessage());
+
         } catch (DomainException $e) {
             $this->jsonResponse(null, 404, $e->getMessage());
+
         } catch (Exception $e) {
             $this->jsonResponse(null, 500, 'Erro ao adicionar item: ' . $e->getMessage());
         }
     }
 
-    public function updateQuantity(int $id, string $status): void 
+    public function updateOrder(int $id, array $data): void 
     {
         try {
             $data = json_decode(file_get_contents('php://input', true));
@@ -156,8 +160,10 @@ class OrderController {
 
         } catch (InvalidFileException $e) {
             $this->jsonResponse(null, 400, $e->getMessage());
+
         } catch (DomainException $e) {
             $this->jsonResponse(null, 404, $e->getMessage());
+
         } catch (Exception $e) {
             $this->jsonResponse(null, 500, 'Erro ao atualizar status');
         }
@@ -167,12 +173,13 @@ class OrderController {
     {
         try {
             $this->service->deleteOrder($id);
-            $this->jsonResponse(null, 204);
+            $this->jsonResponse(null, 204, 'Pedido excluído com sucesso.');
 
         } catch (DomainException $e) {
             $this->jsonResponse(null, 404, $e->getMessage());
+
         } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao remover item'); 
+            $this->jsonResponse(null, 500, 'Erro ao remover pedido: ' . $e->getMessage()); 
         }
     }
 

@@ -86,7 +86,7 @@ class OrderService {
             throw new DomainException("Só é possível adicionar itens a pedidos abertos");
         }
         
-        $product = $this->productRepository->getById($productId);
+        $product = $this->productRepository->find($productId);
         if (!$product) {
             throw new DomainException("Produto não encontrado");
         }
