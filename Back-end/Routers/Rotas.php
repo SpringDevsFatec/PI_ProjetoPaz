@@ -14,25 +14,25 @@ class Rotas
         return [
             'GET' => [
                 // Users
-                '/users' => [UserController::class, 'list'],
+                '/users' => [UserController::class, 'listAll'],
                 '/users/{id}' => [UserController::class, 'show'],
                 '/users/{id}/orders' => [UserController::class, 'listUserOrders'],
                 
                 // Products
-                '/products' => [ProductController::class, 'list'],
+                '/products' => [ProductController::class, 'listAll'],
                 '/products/{id}' => [ProductController::class, 'show'],
-                '/products/search' => [ProductController::class, 'search'],
-                '/products/search/{category}' => [ProductController::class, 'searchByCategory'],
-                '/products/search/{cost}' => [ProductController::class, 'searchByCost'],
-                '/products/search/favorite' => [ProductController::class, 'searchByFavorite'],
-                '/products/search/donation' => [ProductController::class, 'searchByDonation'],
+                '/products/list' => [ProductController::class, 'listProductsByName'],
+                '/products/list/{category}' => [ProductController::class, 'listProductsByCategory'],
+                '/products/list/{cost}' => [ProductController::class, 'listProductsByCost'],
+                '/products/list/favorite' => [ProductController::class, 'listProductsByFavorite'],
+                '/products/list/donation' => [ProductController::class, 'listProductsByDonation'],
 
                 // Orders
                 '/orders/{id}' => [OrderController::class, 'listWithItems'],
                 '/orders/payment-method/{paymentMethod}' => [OrderController::class, 'listByPaymentMethod'],
                 '/orders' => [OrderController::class, 'listAll'],
                 '/orders/{id}' => [OrderController::class, 'show'],
-                '/order/{id}/items' => [OrderItemController::class, 'listByOrder'],
+                '/orders/{id}/items' => [OrderItemController::class, 'listByOrder'],
 
                 // Order Items
                 '/order-items' => [OrderItemController::class, 'listItemsWithProductDetails'],
@@ -78,6 +78,9 @@ class Rotas
             'DELETE' => [
                 // user
                 '/users/{id}' => [UserController::class, 'delete'],
+
+                // products
+                '/products/{id}' => [ProductController::class, 'delete'],
 
                 // orderItem
                 '/order-items/{id}' => [OrderItemController::class, 'delete'],
