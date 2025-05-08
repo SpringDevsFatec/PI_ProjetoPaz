@@ -21,15 +21,15 @@ class Rotas
                 // Products
                 '/products' => [ProductController::class, 'listAll'],
                 '/products/{id}' => [ProductController::class, 'show'],
-                '/products/list' => [ProductController::class, 'listProductsByName'],
-                '/products/list/{category}' => [ProductController::class, 'listProductsByCategory'],
-                '/products/list/{cost}' => [ProductController::class, 'listProductsByCost'],
-                '/products/list/favorite' => [ProductController::class, 'listProductsByFavorite'],
-                '/products/list/donation' => [ProductController::class, 'listProductsByDonation'],
+                '/products/list/{searchTerm}' => [ProductController::class, 'listProductsByName'],
+                '/products/{category}/category' => [ProductController::class, 'listProductsByCategory'],
+                '/products/{cost}/cost' => [ProductController::class, 'listProductsByCost'],
+                '/products/favorite/{favorite}' => [ProductController::class, 'listProductsByFavorite'],
+                '/products/{donation}/donation' => [ProductController::class, 'listProductsByDonation'],
 
                 // Orders
-                '/orders/{id}' => [OrderController::class, 'listWithItems'],
-                '/orders/payment-method/{paymentMethod}' => [OrderController::class, 'listByPaymentMethod'],
+                '/orders/items/{id}' => [OrderController::class, 'listWithItems'],
+                '/orders/{paymentMethod}/payment-method' => [OrderController::class, 'listByPaymentMethod'],
                 '/orders' => [OrderController::class, 'listAll'],
                 '/orders/{id}' => [OrderController::class, 'show'],
                 '/orders/{id}/items' => [OrderItemController::class, 'listByOrder'],
@@ -39,7 +39,11 @@ class Rotas
                 '/order-items/{id}' => [OrderItemController::class, 'show'],
 
                 // Sales
-
+                'sales' => [SaleController::class, 'listAll'],
+                'sales/{id}' => [SaleController::class, 'show'],
+                'sales/{id}/orders' => [SaleController::class, 'listSalesWithOrders'],
+                'sales/{createdAt}/date' => [SaleController::class, 'listSalesByDate'],
+                'sales/{status}/status' => [SaleController::class, 'listSalesByStatus'],
             ],
             'POST' => [
                 // Users
@@ -57,6 +61,8 @@ class Rotas
                 '/order-items' => [OrderItemController::class, 'create'],
 
                 // Sale
+                '/sales' => [SaleController::class, 'create'],
+                '/sales/{id}/order' => [SaleController::class, 'addOrder'],
 
             ],
             'PUT' => [
@@ -73,10 +79,11 @@ class Rotas
                 '/orders/{id}' => [OrderController::class, 'updateStatus'],
 
                 // Sales
+                '/sales/{id}' => [SaleController::class, 'update'],
 
             ],
             'DELETE' => [
-                // user
+                // users
                 '/users/{id}' => [UserController::class, 'delete'],
 
                 // products
@@ -87,6 +94,9 @@ class Rotas
 
                 // orders
                 '/orders/{id}' => [OrderController::class, 'delete'],
+
+                // sales
+                '/sales/{id}' => [SaleController::class, 'delete'],
             ],
         ];
     }

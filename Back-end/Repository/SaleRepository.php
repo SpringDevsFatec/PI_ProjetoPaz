@@ -4,84 +4,142 @@ namespace App\Backend\Repository;
 
 use App\Backend\Model\Sale;
 use App\Backend\Config\Database;
+use App\Backend\Repository\OrderRepository;
+use DateTimeInterface;
 use PDO;
+use PDOException;
 
 class SaleRepository {
-    private $conn;
-    private $table = 'sales';
+
+    private PDO $conn;
+    private $table = 'sale';
+
+    private OrderRepository $orderRepository;
 
     public function __construct() {
         $this->conn = Database::getInstance();
+        $this->orderRepository = new OrderRepository();
     }
 
     // usar View
-    public function getByDate($dateCreate) {
-        $query = "SELECT * FROM " . $this->table . " WHERE date_create = :date_create";
+
+    public function findWithOrders(int $id): ?array
+    {
+        $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':date_create', $dateCreate, PDO::PARAM_STR);
+        $stmt->execute([':id' => $id]);
+        $sale = $stmt->fetch(PDO::FETCH_ASSOC);
+             
+        // Busca os pedidos
+        $sale['orders'] = $this->orderRepository->findBySaleId($id);
+             
+        return $sale;
+    }
+
+    public function findByDate(DateTimeInterface $createdAt): array
+    {
+        $query = "SELECT * FROM {$this->table} WHERE created_at = :created_at";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':created_at', $createdAt, PDO::PARAM_STR);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getAllSales() {
-        $query = "SELECT * FROM " . $this->table;
+    public function findByStatus(string $status): array
+    {
+        $query = "SELECT * FROM {$this->table} WHERE status = :status";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':status', $status, PDO::PARAM_STR);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /*
+    public function findBySeller(int $sellerId): array
+    {
+        $query = "SELECT * FROM {$this->table} WHERE seller_id = :seller_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':seller_d', $sellerId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    */
+
+    public function findAll(): array 
+    {
+        $query = "SELECT * FROM {$this->table}";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getById($id) {
-        $query = "SELECT * FROM " . $this->table . " WHERE id = :id";
+    public function find(int $id): ?array
+    {
+        $query = "SELECT * FROM {$this->table} WHERE id = :id";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function startSale(Sale $sale) {
-        $sellerId = $sale->getSellerId();
-        $total = $sale->getTotal();
-        $status = $sale->getStatus();
-        $dateCreate = $sale->getDateCreate();
+    public function openSale(Sale $sale): int
+    {  
+        $query = "INSERT INTO {$this->table} 
+                  (total, status, created_at, updated_at) 
+                  VALUES (:total, :status, :created_at, :updated_at)";
         
-        $query = "INSERT INTO " . $this->table . " (seller_id, total, status, date_created) VALUES (:seller_id, :total, :status, :date_created)";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':seller_id', $sellerId);
-        $stmt->bindParam(':total', $total);
-        $stmt->bindParam(':status', $status);
-        $stmt->bindParam(':date_created', $dateCreate);
-        if ($stmt->execute()) {
-            return true;
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([
+                //'seller_id' => $sale->getSellerId(),
+                'total' => $sale->getTotal(),
+                'status' => $sale->getStatus(),
+                'created_at' => $sale->getCreatedAt()?->format('Y-m-d H:i:s'),
+                'updated_at' => $sale->getUpdatedAt()?->format('Y-m-d H:i:s')
+            ]);
+
+            $saleId = $this->conn->lastInsertId();
+            return $saleId;
+
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao iniciar a venda: " . $e->getMessage());
         }
-        return false;
     }
 
-    public function updateStatusSale(Sale $sale) {
-        $id = $sale->getId();
-        $total = $sale->getTotal();
-        $status = $sale->getStatus();
-        
-        $query = "UPDATE " . $this->table . " SET total = :total, status = :status WHERE id = :id";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id);
-        $stmt->bindParam(':total', $total);
-        $stmt->bindParam(':status', $status);
-        if ($stmt->execute()) {
-            return true;
+    public function update(Sale $sale): bool
+    {    
+        $query = "UPDATE {$this->table} 
+                  SET total = :total, 
+                      status = :status,
+                      updated_at = :updated_at
+                  WHERE id = :id";
+        try {
+            $stmt = $this->conn->prepare($query);
+            return $stmt->execute([     
+            ':id' => $sale->getId(),
+            ':total' => $sale->getTotal(),
+            ':status' => $sale->getStatus(),
+            ':updated_at' => (new \DateTime)->format('Y-m-d H:i:s')
+        ]);
+
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao atualizar venda: " . $e->getMessage());
         }
-        return false;
     }
 
-    public function deleteSale($id) {
-        
-        $query = "DELETE FROM " . $this->table . " WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id);
-        if ($stmt->execute()) {
+    public function delete(int $id): bool 
+    {
+        try {
+            $this->orderRepository->deleteBySale($id);
+
+            $query = "DELETE FROM {$this->table} WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([':id' => $id]);
+            
             return true;
-        }
-        return false;
+        
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao deletar venda: " . $e->getMessage());
+        }    
     }
 }

@@ -47,20 +47,20 @@ class OrderService {
         return $this->orderRepository->find($id);
     }
 
-    public function createOrder(int $sale_id, string $paymentMethod): Order
+    public function createOrder(int $saleId, string $paymentMethod): Order
     {
         if (empty($paymentMethod))
         {
             throw new InvalidArgumentException("Dados incompletos.");
         }
 
-        $sale = $this->saleRepository->getById($sale_id);
+        $sale = $this->saleRepository->find($saleId);
         if(!$sale) {
             throw new DomainException("Venda não encontrada.");
         }
 
         $order = new Order(
-            saleId: $sale_id,
+            saleId: $saleId,
             status: 'open',
             paymentMethod: $paymentMethod,
             totalAmount: 0.0,

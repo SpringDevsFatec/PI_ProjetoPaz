@@ -60,7 +60,7 @@ class OrderRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getBySaleId(int $saleId): array 
+    public function findBySaleId(int $saleId): array 
     {
         $query = "SELECT * FROM {$this->table} WHERE sale_id = :sale_id";
         $stmt = $this->conn->prepare($query);
@@ -152,6 +152,22 @@ class OrderRepository {
             
         } catch (PDOException $e) {
             throw new PDOException("Erro ao remover pedido: " . $e->getMessage());
+        }
+    }
+
+    public function deleteBySale(int $saleId): bool
+    {
+
+        $query = "DELETE FROM order WHERE sale_id = :sale_id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':sale_id', $saleId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->rowCount();
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao remover pedidos da venda: " . $e->getMessage());
         }
     }
 }
