@@ -2,13 +2,32 @@
 
 namespace App\Backend\Model;
 
-class User {
-    private $id;
-    private $name;
-    private $email;
-    private $password;
-    private $dateCreate;
+use DateTimeInterface;
+use DateTime;
 
+class User {
+    private ?int $id;
+    private string $name;
+    private string $email;
+    private string $password;
+    private ?DateTimeInterface $createdAt;
+    private ?DateTimeInterface $updatedAt;
+    
+    public function __construct(
+        ?int $id,
+        string $name,
+        string $email,
+        string $password,
+        ?DateTimeInterface $createdAt = null,
+        ?DateTimeInterface $updatedAt = null
+    ) {
+        $this->id = $id;
+        $this->setName($name);
+        $this->setEmail($email);
+        $this->setPassword($password);
+        $this->createdAt = $createdAt ?? new DateTime();
+        $this->updatedAt = $updatedAt ?? new DateTime();
+    }
 
     public function getId() {
         return $this->id;
@@ -26,8 +45,12 @@ class User {
         return $this->password;
     }
 
-    public function getDateCreate() {
-        return $this->dateCreate;
+    public function getCreatedAt() {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt() {
+        return $this->updatedAt;
     }
 
     public function setId($id) {
@@ -46,11 +69,27 @@ class User {
         $this->password = password_hash($password, PASSWORD_BCRYPT);
     }
 
-    public function setDateCreate($dateCreate) {
-        $this->dateCreate = $dateCreate;
-    }
-
     public function checkPassword($password) {
         return password_verify($password, $this->password);
+    }
+
+    public function updateFromArray(array $data): void {
+        if (isset($data['name'])) {
+            $this->setName($data['name']);
+        }
+
+        if (isset($data['email'])) {
+            $this->setEmail($data['email']);
+        }
+    }
+    public function toArray(): array {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'password' => $this->password,
+            'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
+            'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s')
+        ];
     }
 }

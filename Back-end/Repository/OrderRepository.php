@@ -20,24 +20,6 @@ class OrderRepository {
         $this->itemRepository = new OrderItemRepository();
     }
 
-    /*
-    public function findBySeller(int $sellerId, ?string $status = null): array
-    {
-        $query = "SELECT * FROM {$this->table} WHERE seller_id = :seller_id";
-        $params = [':seller_id' => $sellerId];
-        
-        if ($status !== null) {
-            $query .= " AND status = :status";
-            $params[':status'] = $status;
-        }
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute($params);
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-    */
-
     public function findWithItems(int $id): ?array
     {
         $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
@@ -135,6 +117,36 @@ class OrderRepository {
             ]);
         } catch (PDOException $e) {
             throw new PDOException("Erro ao atualizar o pedido: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Atualiza a venda associada a vários pedidos
+     */
+    public function assignToSale(array $orderIds, int $saleId): bool
+    {
+        try {
+            $this->conn->beginTransaction();
+            
+            $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+            $query = "UPDATE {$this->table} 
+                      SET sale_id = ?, updated_at = ?
+                      WHERE id IN ($placeholders)";
+            
+            $params = array_merge(
+                [$saleId, (new \DateTime())->format('Y-m-d H:i:s')],
+                $orderIds
+            );
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute($params);
+            
+            $this->conn->commit();
+            return true;
+            
+        } catch (PDOException $e) {
+            $this->conn->rollBack();
+            throw new PDOException("Erro ao vincular pedidos à venda: " . $e->getMessage());
         }
     }
 

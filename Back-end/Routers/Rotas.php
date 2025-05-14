@@ -40,9 +40,10 @@ class Rotas
 
                 // Sales
                 'sales' => [SaleController::class, 'listAll'],
-                'sales/{id}' => [SaleController::class, 'show'],
-                'sales/{id}/orders' => [SaleController::class, 'listSalesWithOrders'],
-                'sales/{createdAt}/date' => [SaleController::class, 'listSalesByDate'],
+                'sales/{id}' => [SaleController::class, 'getSaleById'],
+                'sellers/{id}/sales' => [SaleController::class, 'show'],
+                'sales/{date}/date' => [SaleController::class, 'listSalesByDate'],
+                'sales/{seller_id}/?{status}/seller' => [SaleController::class, 'listBySeller'],
                 'sales/{status}/status' => [SaleController::class, 'listSalesByStatus'],
             ],
             'POST' => [
@@ -62,8 +63,8 @@ class Rotas
 
                 // Sale
                 '/sales' => [SaleController::class, 'create'],
-                '/sales/{id}/order' => [SaleController::class, 'addOrder'],
-
+                '/sales/{id}/orders' => [SaleController::class, 'addOrder'],
+                
             ],
             'PUT' => [
                 // Users
@@ -79,8 +80,9 @@ class Rotas
                 '/orders/{id}' => [OrderController::class, 'updateStatus'],
 
                 // Sales
-                '/sales/{id}' => [SaleController::class, 'update'],
-
+                '/sales/{id}/complete' => [SaleController::class, 'complete'],
+                '/sales/{id}/cancel' => [SaleController::class, 'cancel'],
+                
             ],
             'DELETE' => [
                 // users

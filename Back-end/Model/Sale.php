@@ -9,32 +9,33 @@ use DomainException;
 
 class Sale {
     private ?int $id;
-    //private int $sellerId;
+    private int $sellerId;
     private float $total = 0.0;
     private string $status = 'open';
+    private ?DateTimeInterface $date;
     private ?DateTimeInterface $createdAt;
     private ?DateTimeInterface $updatedAt;
-
     private array $orders = [];
 
     const STATUSES = [
         'open' => 'Aberta',
         'completed' => 'Concluída',
-        'cancelled' => 'Cancelada'
+        'canceled' => 'Cancelada'
     ];
 
     public function __construct(
-        ?int $id,
-        //int $sellerId,
-        float $total = 0.0,
+        int $sellerId,
+        DateTimeInterface $date,
         string $status = 'open',
+        ?int $id = null,
         ?DateTimeInterface $createdAt = null,
         ?DateTimeInterface $updatedAt = null
     ) {
         $this->id = $id;
-        //$this->sellerId = $sellerId;
-        $this->total = $total;
-        $this->status = $status;
+        $this->sellerId = $sellerId;
+        $this->date = $date;
+        $this->total = 0.0;
+        $this->setStatus($status);
         $this->createdAt = $createdAt ?? new DateTime();
         $this->updatedAt = $updatedAt ?? new DateTime();
     }
@@ -42,13 +43,21 @@ class Sale {
     public function getId(): ?int {
         return $this->id;
     }
-    /*
+    
     public function getSellerId(): int {
         return $this->sellerId;
     }
-    */
+    
+    public function getDate() : DateTimeInterface {
+        return $this->date;
+    }
+
+    public function getDateFormatted(string $format = 'Y-m-d') : string {
+        return $this->date->format($format);
+    }
+
     public function getTotal(): float {
-        return $this->total;
+        return round($this->total, 2);
     }
     public function getStatus(): string {
         return $this->status;
@@ -60,45 +69,20 @@ class Sale {
         return $this->updatedAt;
     }
 
+    public function getOrders(): array {
+        return $this->orders;
+    }
+
     public function setId(?int $id): void {
         $this->id = $id;
-    }
-    /*
-    public function setSellerId(int $sellerId): void {
-        $this->sellerId = $sellerId;
-    }
-    */
-    public function setTotal(float $total): void {
-        $this->total = $total;
     }
 
     public function setStatus(string $status): void {
         if (!array_key_exists($status, self::STATUSES)) {
-            throw new InvalidArgumentException("Status de pedido inválido: " . $status);
+            throw new InvalidArgumentException("Status de venda inválido: " . $status);
         }
         $this->status = $status;
         $this->updatedAt = new DateTime();
-    }
-
-    public function open(): void {
-        if ($this->status === 'calcelled') {
-            throw new DomainException("Venda cancelada não pode ser aberta novamente");
-        }
-        $this->setStatus('open');
-    }
-
-    public function complete(): void {
-        if ($this->status === 'calcelled') {
-            throw new DomainException("Venda cancelada não pode ser concluída");
-        }
-        $this->setStatus('completed');
-    }
-
-    public function cancel(): void {
-        if ($this->status === 'completed') {
-            throw new DomainException("Venda concluída não pode ser cancelada");
-        }
-        $this->setStatus('cancelled');
     }
 
     public function addOrder(Order $order): void 
@@ -106,17 +90,22 @@ class Sale {
         if ($this->status !== 'open') {
             throw new DomainException("Só é possível adicionar pedidos a vendas abertas");
         }
+        if ($this->getStatus() !== 'paid') {
+            throw new DomainException("Só é possível adicionar pedidos pagos à venda");
+        }
         $this->orders[] = $order;
         $this->calculateTotal();
     }
 
-    public function removeItem(Order $orderId): void 
+    public function removeOrder(Order $orderId): void 
     {
         if ($this->status !== 'open') {
-            throw new DomainException("Só é possível remover itens de pedidos abertos");
+            throw new DomainException("Só é possível remover pedidos de vendas abertas");
         }
 
-        $this->orders = array_filter($this->orders, fn($order) => $order->getId() !== $orderId);
+        $this->orders = array_filter($this->orders, 
+            fn($order) => $order->getId() !== $orderId
+        );
         $this->calculateTotal();
     }
 
@@ -130,25 +119,57 @@ class Sale {
         $this->updatedAt = new DateTime();
     }
 
-    public function getOrders(): array {
-        return $this->orders;
-    }
-
-    public function updateFromArray(array $data): void {
-
-        if (isset($data['status'])) {
-            $this->setStatus($data['status']);
+    /*
+    public function open(): void {
+        if ($this->status === 'calcelled') {
+            throw new DomainException("Venda cancelada não pode ser aberta novamente");
         }
+        $this->setStatus('open');
     }
+    */
+
+    public function complete(): void {
+        if ($this->status === 'canceled') {
+            throw new DomainException("Venda cancelada não pode ser concluída");
+        }
+
+        /*
+        if (empty($this->orders)) {
+            throw new DomainException("Não é possível concluir venda sem pedidos");
+        }
+        */
+
+        $this->setStatus('completed');
+    }
+
+    public function cancel(): void {
+        if ($this->status === 'completed') {
+            throw new DomainException("Venda concluída não pode ser cancelada");
+        }
+        $this->setStatus('canceled');
+    }
+
     public function toArray(): array {
         return [
             'id' => $this->id,
-            //'seller_id' => $this->sellerId,
-            'total' => $this->total,
+            'seller_id' => $this->sellerId,
+            'date' => $this->date->format('Y-m-d'),
+            //'date_formatted' => $this->date->format('d/m/Y'),
+            'total' => $this->getTotal(),
             'status' => $this->status,
-            'status_label' => self::STATUSES[$this->status] ?? null,
+            'status_label' => self::STATUSES[$this->status],
+            'orders_count' => count($this->orders),
             'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s')
         ];
+    }
+
+    public function toDetailedArray(): array {
+        $data = $this->toArray();
+        $data['orders'] = array_map(
+            fn($order) => $order->toArray(),
+            $this->orders
+        );
+        return $data;
     }
 }

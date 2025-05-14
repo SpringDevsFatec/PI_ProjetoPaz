@@ -2,8 +2,10 @@
 namespace App\Backend\Service;
 
 use App\Backend\Model\Sale;
-use App\Backend\Repository\SaleRepository;
 use App\Backend\Model\Order;
+use App\Backend\Repository\SaleRepository;
+use App\Backend\Repository\OrderRepository;
+use App\Backend\Repository\UserRepository;
 
 use DomainException;
 use DateTimeInterface;
@@ -13,29 +15,39 @@ use InvalidArgumentException;
 class SaleService {
     
     private SaleRepository $saleRepository;
+    private OrderRepository $orderRepository;
+    private UserRepository $userRepository;
 
     public function __construct(
-        SaleRepository $saleRepository    
+        SaleRepository $saleRepository,
+        OrderRepository $orderRepository,
+        UserRepository $userRepository
     ) {
         $this->saleRepository = $saleRepository;
+        $this->orderRepository = $orderRepository;
+        $this->userRepository = $userRepository;
     }
 
-    public function getWithOrders(int $id): array 
+    public function getSaleDetails(int $saleId): array
     {
-        return $this->saleRepository->findWithOrders($id);
+        $saleData = $this->saleRepository->findWithOrders($saleId);
+        if (!$saleData) {
+            throw new DomainException("Venda não encontrada");
+        }
+
+        $sale = $this->hydrateSale($saleData);
+        return $sale->toDetailedArray();
     }
 
-    public function getByDate(DateTimeInterface $createdAt): array 
+    public function getByDate(DateTimeInterface $date): array 
     {
-        return $this->saleRepository->findByDate($createdAt);
+        return $this->saleRepository->findByDate($date);
     }
 
-    /*
-    public function getBySeller(int $sellerId): array 
+    public function getSalesBySeller(int $sellerId, ?string $status = null): array 
     {
-        return $this->saleRepository->findBySeller($sellerId);
+        return $this->saleRepository->findBySeller($sellerId, $status);
     }
-    */
 
     public function getByStatus(string $status): array 
     {
@@ -52,57 +64,74 @@ class SaleService {
         return $this->saleRepository->find($id);
     }
 
-    public function createSale($data): Sale 
+    public function createSale(int $sellerId): Sale 
     {
-        /*
-        $seller = $this->sellerRepository->find($seller_id);
+        $seller = $this->userRepository->find($sellerId);
         if(!$seller) {
             throw new DomainException("Vendedor não encontrado.");
         }
-        */
+        
+        if (!$this->saleRepository->findOpenBySeller($sellerId)) 
+        {
+            throw new InvalidArgumentException("Já existe uma venda aberta para este vendedor");
+        }
 
         $sale = new Sale(
-            //sellerId: $seller_id,
-            total: 0.0,
-            status: 'open',
-            id: null,
-            createdAt: new DateTime(),
-            updatedAt: new DateTime()
+            sellerId: $sellerId,
+            date: new DateTime(),
+            status: 'open'
         );
 
-        $saleId = $this->saleRepository->openSale($sale);
+        $saleId = $this->saleRepository->create($sale);
         $sale->setId($saleId);
 
         return $sale;
     }
 
-    public function addOrderToSale(int $saleId, string $status, string $paymentMethod, float $totalAmount): Sale
+    public function addOrderToSale(int $saleId, int $orderId): Sale
     {
-        $saleData = $this->saleRepository->find($saleId);
+        $saleData = $this->saleRepository->findWithOrders($saleId);
         if (!$saleData) {
             throw new DomainException("Venda não encontrada");
         }
+
+        $orderData = $this->orderRepository->find($orderId);
+        if (!$orderData) {
+            throw new DomainException("Pedido não encontrado");
+        }
+
+        $sale = $this->hydrateSale($saleData);
         
-        if ($saleData['status'] !== 'open') {
-            throw new DomainException("Só é possível adicionar pedidos a venda aberta");
+        $order = $this->hydrateOrder($orderData);
+        
+        if ($sale->getStatus() !== 'open') {
+            throw new DomainException("Só é possível adicionar pedidos a vendas abertas");
+        }
+
+        if ($order->getStatus() !== 'paid') {
+            throw new DomainException("Só é possível adicionar pedidos pagos");
         }
         
-        $order = new Order(
-            saleId: $saleId,
-            status: $status,
-            paymentMethod: $paymentMethod,
-            totalAmount: $totalAmount
-        );
-        
-        $sale = $this->hydrateSale($saleData);
         $sale->addOrder($order);
-        
         $this->saleRepository->update($sale);
         
         return $sale;
     }
 
-    public function updateSaleStatus(int $saleId, string $status): Sale 
+    private function hydrateOrder(array $orderData): Order
+    {
+        return new Order(
+            saleId: $orderData['sale_id'],
+            status: $orderData['status'],
+            paymentMethod: $orderData['payment_method'],
+            totalAmount: $orderData['total_amount'],
+            id: $orderData['id'],
+            createdAt: new DateTime($orderData['created_at']),
+            updatedAt: new DateTime($orderData['updated_at'])
+        );
+    }
+
+    public function completeSale(int $saleId): Sale 
     {
         $saleData = $this->saleRepository->findWithOrders($saleId);
         if (!$saleData) {
@@ -111,22 +140,29 @@ class SaleService {
         
         $sale = $this->hydrateSale($saleData);
         
-        switch ($status) {
-            case 'open':
-                $sale->open();
-                break;
-            case 'completee':
-                $sale->complete();
-                break;
-            case 'cancelled':
-                $sale->cancel();
-                break;
-            default:
-                throw new InvalidArgumentException("Status inválido");
+        try {
+            $sale->complete();
+            $this->saleRepository->completeSale($saleId, $sale->getTotal());
+
+            return $sale;
+
+        } catch (DomainException $e) {
+            throw new DomainException("Não foi possível concluir a venda: " . $e->getMessage());
         }
-        
+    }
+
+    public function cancelSale(int $saleId) : Sale 
+    {
+        $saleData = $this->saleRepository->findWithOrders($saleId);
+        if (!$saleData) {
+            throw new DomainException("Venda não encontrada");
+        }
+
+        $sale = $this->hydrateSale($saleData);
+        $sale->cancel();
+
         $this->saleRepository->update($sale);
-        
+
         return $sale;
     }
 
@@ -149,7 +185,8 @@ class SaleService {
     private function hydrateSale(array $saleData): Sale
     {
         $sale = new Sale(
-            total: $saleData['total'],
+            sellerId: $saleData['seller_id'],
+            date: new DateTime($saleData['date']),
             status: $saleData['status'],
             id: $saleData['id'],
             createdAt: new DateTime($saleData['created_at']),
@@ -159,11 +196,11 @@ class SaleService {
         if (!empty($saleData['orders'])) {
             foreach ($saleData['orders'] as $orderData) {
                 $order = new Order(
-                    saleId: $orderData['sale_id'],
-                    status: $orderData['order_id'],
                     paymentMethod: $orderData['payment_method'],
                     totalAmount: $orderData['total_amount'],
+                    status: $orderData['status_id'],
                     id: $orderData['id'],
+                    saleId: $orderData['sale_id'],
                     createdAt: new DateTime($orderData['created_at']),
                     updatedAt: new DateTime($orderData['updated_at'])
                 );

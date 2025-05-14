@@ -10,7 +10,6 @@ use DomainException;
 class Order {
 
     private ?int $id;
-    //private int $sellerId;
     private ?int $saleId;
     private string $status = 'open';
     private string $paymentMethod;
@@ -34,7 +33,6 @@ class Order {
     ];
 
     public function __construct(
-        //int $sellerId,
         string $paymentMethod,
         float $totalAmount = 0.0,
         ?int $saleId = null,
@@ -44,7 +42,6 @@ class Order {
         ?DateTimeInterface $updatedAt = null
     ) {
         $this->id = $id;
-        //$this->sellerId = $sellerId;
         $this->setSaleId($saleId);
         $this->setStatus($status);
         $this->setPaymentMethod($paymentMethod);
@@ -172,7 +169,6 @@ class Order {
     public function toArray(): array {
         return [
             'id' => $this->id,
-            //'saller_id' => $this->sallerId,
             'sale_id' => $this->saleId,
             'status' => $this->status,
             'status_label' => self::STATUSES[$this->status] ?? null,

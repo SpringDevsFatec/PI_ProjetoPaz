@@ -22,7 +22,7 @@ class UserRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getUserById($id) {
+    public function find($id) {
         $query = "SELECT * FROM " . $this->table . " WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id);

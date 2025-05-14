@@ -12,16 +12,14 @@ use PDOException;
 class SaleRepository {
 
     private PDO $conn;
-    private $table = 'sale';
+    private string $table = 'sale';
 
     private OrderRepository $orderRepository;
 
-    public function __construct() {
-        $this->conn = Database::getInstance();
-        $this->orderRepository = new OrderRepository();
+    public function __construct(PDO $conn = null) 
+    {
+        $this->conn = $conn ?: Database::getInstance();
     }
-
-    // usar View
 
     public function findWithOrders(int $id): ?array
     {
@@ -36,34 +34,43 @@ class SaleRepository {
         return $sale;
     }
 
-    public function findByDate(DateTimeInterface $createdAt): array
+    public function findByDate(DateTimeInterface $date): array
     {
-        $query = "SELECT * FROM {$this->table} WHERE created_at = :created_at";
+        $query = "SELECT * FROM {$this->table} WHERE date = :date";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':created_at', $createdAt, PDO::PARAM_STR);
-        $stmt->execute();
+        $stmt->execute([':date' => $date->format('Y-m-d')]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findOpenBySeller(int $sellerId): ?array
+    {
+        $query = "SELECT * FROM {$this->table}
+                 WHERE seller_id = :seller_id
+                 AND status = 'open'
+                 AND date = CURRENT_DATE
+                 LIMIT 1";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([':seller_id' => $sellerId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
     public function findByStatus(string $status): array
     {
         $query = "SELECT * FROM {$this->table} WHERE status = :status";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':status', $status, PDO::PARAM_STR);
-        $stmt->execute();
+        $stmt->execute([':status' => $status]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /*
-    public function findBySeller(int $sellerId): array
+    public function findBySeller(int $sellerId, ?string $status = null): array
     {
-        $query = "SELECT * FROM {$this->table} WHERE seller_id = :seller_id";
+        $query = "SELECT * FROM {$this->table} 
+                  WHERE seller_id = :seller_id AND (status = :status OR status IS NULL)";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':seller_d', $sellerId, PDO::PARAM_INT);
-        $stmt->execute();
+        $stmt->execute([':seller_id' => $sellerId, ':status' => $status]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-    */
 
     public function findAll(): array 
     {
@@ -77,22 +84,21 @@ class SaleRepository {
     {
         $query = "SELECT * FROM {$this->table} WHERE id = :id";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt->execute();
+        $stmt->execute([':id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function openSale(Sale $sale): int
+    public function create(Sale $sale): int
     {  
         $query = "INSERT INTO {$this->table} 
-                  (total, status, created_at, updated_at) 
-                  VALUES (:total, :status, :created_at, :updated_at)";
+                  (seller_id, date, status, created_at, updated_at) 
+                  VALUES (:seller_id, :date, :status, :created_at, :updated_at)";
         
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->execute([
-                //'seller_id' => $sale->getSellerId(),
-                'total' => $sale->getTotal(),
+                'seller_id' => $sale->getSellerId(),
+                'date' => $sale->getDate()->format('Y-m-d'),
                 'status' => $sale->getStatus(),
                 'created_at' => $sale->getCreatedAt()?->format('Y-m-d H:i:s'),
                 'updated_at' => $sale->getUpdatedAt()?->format('Y-m-d H:i:s')
@@ -102,7 +108,7 @@ class SaleRepository {
             return $saleId;
 
         } catch (PDOException $e) {
-            throw new PDOException("Erro ao iniciar a venda: " . $e->getMessage());
+            throw new PDOException("Erro ao criar venda: " . $e->getMessage());
         }
     }
 
@@ -117,8 +123,8 @@ class SaleRepository {
             $stmt = $this->conn->prepare($query);
             return $stmt->execute([     
             ':id' => $sale->getId(),
-            ':total' => $sale->getTotal(),
             ':status' => $sale->getStatus(),
+            ':total' => $sale->getTotal(),
             ':updated_at' => (new \DateTime)->format('Y-m-d H:i:s')
         ]);
 
@@ -127,18 +133,51 @@ class SaleRepository {
         }
     }
 
+    public function completeSale(int $saleId): bool
+    {
+        try {
+            $this->conn->beginTransaction();
+
+            $orderRepository = new OrderRepository($this->conn);
+            $orders = $orderRepository->findBySaleId($saleId);
+
+            $total = array_reduce($orders, fn($sum, $order) => $sum + $order['total_amount']);
+
+            $query = "UPDATE {$this->table}
+                      SET staus = 'completed',
+                          total = :total,
+                          updated_at = NOW()
+                      WHERE id = :id";
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([':id' => $saleId, ':total' => $total]);
+
+            $this->conn->commit();
+            return true;
+
+        } catch (PDOException $e) {
+            $this->conn->rollBack();
+            throw new PDOException("Erro ao finalizar venda: " . $e->getMessage());
+        }
+    }
+
     public function delete(int $id): bool 
     {
         try {
-            $this->orderRepository->deleteBySale($id);
+            $this->conn->beginTransaction();
+
+            $orderRepository = new OrderRepository($this->conn);
+            $orderRepository->deleteBySale($id);
 
             $query = "DELETE FROM {$this->table} WHERE id = :id";
             $stmt = $this->conn->prepare($query);
             $stmt->execute([':id' => $id]);
             
+            $this->conn->commit();
             return true;
         
         } catch (PDOException $e) {
+            $this->conn->rollBack();
             throw new PDOException("Erro ao deletar venda: " . $e->getMessage());
         }    
     }
