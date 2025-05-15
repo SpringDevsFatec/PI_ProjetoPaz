@@ -4,41 +4,69 @@ namespace App\Backend\Controller;
 use App\Backend\Libs\AuthMiddleware;
 use App\Backend\Service\UserService;
 
+use DomainException;
+use Dotenv\Exception\InvalidFileException;
 use Exception;
+use InvalidArgumentException;
 
 class UserController {
 
     private $service;
 
-    public function __construct() {
-        $this->service = new UserService();
+    public function __construct(
+        UserService $service
+    ) {
+        $this->service = $service;
     }
 
-    private function handleResponse($result, $successMessage = "Operação concluída com sucesso.") {
-        if (!empty($result)) {
-            http_response_code(200);
-            echo json_encode($result);
-        } else {
-            http_response_code(404);
-            echo json_encode(['status' => false, "message" => $successMessage]);
+    private function jsonResponse(
+        mixed $data,
+        int $statusCode = 200,
+        ?string $message = null
+    ): void {
+        http_response_code($statusCode);
+        header('Content-Type: application/json');
+
+        $response = [];
+        if ($message) {
+            $response['message'] = $message;
+        }
+        if ($data !== null) {
+            $response['data'] = $data;
+        }
+
+        echo json_encode($response);
+        exit;
+    }
+
+    public function listAll(): void
+    {
+        try {
+            $users = $this->service->getAll();
+            foreach($users as &$user) {
+                unset($result['password']);
+            }
+            
+            $this->jsonResponse($users, 200, empty($sales) ? 'Nenhum usuario encontrado' : null);
+
+        } catch (Exception $e) {
+            $this->jsonResponse(null, 500, 'Erro ao buscar usuarios: ' . $e->getMessage());
         }
     }
 
-    public function readAll() {
-        $result = $this->service->readAll();
-        foreach ($result as &$user) {
-            unset($user['password']);
-        }
-        unset($user);
-        $this->handleResponse($result, "Nenhum usuário encontrado.");
-    }
+    public function show(int $id): void
+    {
+        try {
+            $users = $this->service->getById($id);
+            if ($users) {
+                unset($result['password']);
+            }
+            
+            $this->jsonResponse($users, 200, empty($sales) ? 'Nenhum usuario encontrado' : null);
 
-    public function readById($id) {
-        $result = $this->service->readById($id);
-        if ($result) {
-            unset($result['password']);
+        } catch (Exception $e) {
+            $this->jsonResponse(null, 500, 'Erro ao buscar usuario: ' . $e->getMessage());
         }
-        $this->handleResponse($result, "Nenhum usuário encontrado.");
     }
 
     public function login($data) {
@@ -48,7 +76,7 @@ class UserController {
             return;
         }
         try {
-            $user = $this->service->login($data->email);
+            $user = $this->service->getUserByEmail($data->email);
             
             if($user && password_verify($data->password, $user['password'])) {
                 unset($user['password']);
@@ -57,64 +85,109 @@ class UserController {
                     "message" => "Login bem-sucedido.", 
                     "user" => $user
                 ]); 
-            } else {
-                http_response_code(401);
-                echo json_encode(["error"=> "Email ou senha incorretos"]);
-            }
-            } catch (Exception $e) {
-                http_response_code(500);
-                echo json_encode(["error" => "Erro interno do servidor."]);
-            }
+            } 
+        } catch (Exception $e) {
+            $this->jsonResponse(null, 401, 'Email ou senha incorretos: ' . $e->getMessage());
+        
+        } catch (Exception $e) {
+            $this->jsonResponse(null, 500, 'Erro ao fazer login: ' . $e->getMessage());
+        }
     }
 
     public function create() {
         $data = json_decode(file_get_contents('php://input'));
 
-        if (!isset(
-            $data->name,
-            $data->email,
-            $data->password
-               )) {
-            http_response_code(400);
-            echo json_encode(["error" => "Dados incompletos para criação de usuário."]);
-            exit;
-        }
-        if ($this->service->create($data)) {
-            http_response_code(200);
-            echo json_encode(['status' => true, "message" => "Usuário criado com sucesso."]);
-        } else {
-            http_response_code(500);
-            echo json_encode(['status' => false, "error" => "Erro ao criar usuário."]);
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new InvalidArgumentException('Formato JSON inválido');
+            }
+
+            if (!isset($data['name'])) {
+                throw new InvalidArgumentException('Nome não informado');
+            }
+
+            if (!isset($data['email'])) {
+                throw new InvalidArgumentException('Email não informado');
+            }
+
+            if (!isset($data['password'])) {
+                throw new InvalidArgumentException('Senha necessaria');
+            }
+
+            $sale = $this->service->createUser($data);
+            $this->jsonResponse($sale->toArray(), 201, 'Usuario criado com sucesso');
+            
+        } catch (InvalidArgumentException $e) {
+            $this->jsonResponse(null, 400, $e->getMessage());
+            
+        } catch (DomainException $e) {
+            $this->jsonResponse(null, 404, $e->getMessage());
+
+        } catch (Exception $e) {
+            $this->jsonResponse(null, 500, 'Erro ao criar usuario');
         }
     }
 
-    public function put($id) {
+    public function update($id) {
         $data = json_decode(file_get_contents('php://input'));
 
-        if (!isset(
-            $data->name,
-            $data->email
-               )) {
-            http_response_code(400);
-            echo json_encode(["error" => "Dados incompletos para atualização de usuário."]);
-            exit;
+        try {
+            $data = json_decode(file_get_contents('php://input', true));
+
+            if (!isset($data['name'])) {
+                throw new InvalidArgumentException('Nome não informado');
+            }
+
+            if (!isset($data['email'])) {
+                throw new InvalidArgumentException('Email não informado');
+            }
+
+            $user = $this->service->updateUser($id, (string)$data['name'], (string)$data['email']);
+            $this->jsonResponse($user->toArray(), 200, 'Usuario atualizado');
+
+        } catch (InvalidFileException $e) {
+            $this->jsonResponse(null, 400, $e->getMessage());
+        } catch (DomainException $e) {
+            $this->jsonResponse(null, 404, $e->getMessage());
+        } catch (Exception $e) {
+            $this->jsonResponse(null, 500, 'Erro ao atualizar usuario');
         }
-        if ($this->service->update($id, $data)) {
-            http_response_code(200);
-            echo json_encode(['status' => true, "message" => "Usuário atualizado com sucesso."]);
-        } else {
-            http_response_code(500);
-            echo json_encode(['status' => false, "error" => "Erro ao atualizar usuário."]);
+    }
+
+    public function updatePassword($id) {
+        $data = json_decode(file_get_contents('php://input'));
+
+        try {
+            $data = json_decode(file_get_contents('php://input', true));
+
+            if (!isset($data['password'])) {
+                throw new InvalidArgumentException('Senha não informada');
+            }
+
+            $user = $this->service->updatePassord($id, (string)$data['password']);
+            $this->jsonResponse($user->toArray(), 200, 'Usuario atualizado');
+
+        } catch (InvalidFileException $e) {
+            $this->jsonResponse(null, 400, $e->getMessage());
+        } catch (DomainException $e) {
+            $this->jsonResponse(null, 404, $e->getMessage());
+        } catch (Exception $e) {
+            $this->jsonResponse(null, 500, 'Erro ao atualizar senha');
         }
     }
 
     public function delete($id) {
-        if ($this->service->delete($id)) {
-            http_response_code(200);
-            echo json_encode(['status' => true, "message" => "Usuário deletado com sucesso."]);
-        } else {
-            http_response_code(500);
-            echo json_encode(['status' => false, "error" => "Erro ao deletar usuário."]);
+        try {
+            $this->service->deleteUser($id);
+            $this->jsonResponse(null, 204, 'Usuario excluído com sucesso.');
+
+        } catch (DomainException $e) {
+            $this->jsonResponse(null, 404, $e->getMessage());
+
+        } catch (Exception $e) {
+            $this->jsonResponse(null, 500, 'Erro ao excluir usuario'); 
         }
     }
 }
