@@ -4,8 +4,8 @@ namespace App\Backend\Controller;
 
 use App\Backend\Service\ProductService;
 use App\Backend\Libs\AuthMiddleware;
+
 use DomainException;
-use Dotenv\Exception\InvalidFileException;
 use Exception;
 use InvalidArgumentException;
 
@@ -38,64 +38,61 @@ class ProductController {
         exit;
     }
 
-    public function listProductsByName(string $request): void
+    public function searchByName(): void
     {
-        $searchTerm = $request['searchTerm'] ?? '';
-
         try {
-            $products = $this->service->getProductsByName($searchTerm);
+            $searchTerm = $_GET['q'] ?? '';
+            $products = $this->service->searchProductsByName($searchTerm);
             $this->jsonResponse($products, 200, empty($products) ? 'Nenhum produto encontrado' : null);
+        } catch (InvalidArgumentException $e) {
+            $this->jsonResponse(null, 400, $e->getMessage());
         } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao buscar produtos: ' . $e->getMessage());
+            $this->jsonResponse(null, 500, 'Erro ao buscar produtos');
         }
     }
 
-    public function listProductsByCategory(string $category): void 
+    public function listByCategory(string $category): void 
     {
         try {
-            $products = $this->service->getProductByCategory($category);
+            $products = $this->service->getProductsByCategory($category);
             $this->jsonResponse($products, 200, empty($products) ? 'Nenhum produto encontrado' : null);
+        } catch (InvalidArgumentException $e) {
+            $this->jsonResponse(null, 400, $e->getMessage());
         } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao buscar produtos: ' . $e->getMessage());
+            $this->jsonResponse(null, 500, 'Erro ao buscar produtos por categoria');
         }
     }
 
-    public function listProductsByCost(float $cost): void
+    public function listFavorites(): void
     {
         try {
-            $products = $this->service->getProductByCost($cost);
-            $this->jsonResponse($products, 200, empty($products) ? 'Nenhum produto encontrado' : null);
+            $products = $this->service->getFavoriteProducts();
+            $this->jsonResponse($products, 200, empty($products) ? 'Nenhum produto favorito encontrado' : null);
         } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao buscar produtos: ' . $e->getMessage());
+            $this->jsonResponse(null, 500, 'Erro ao buscar produtos favoritos');
         }
     }
 
-    public function listProductsByFavorite(): void
+    public function listDonations(): void
     {
         try {
-            $products = $this->service->getProductByFavorite();
-            $this->jsonResponse($products, 200, empty($products) ? 'Nenhum produto encontrado' : null);
+            $products = $this->service->getDonationProducts();
+            $this->jsonResponse($products, 200, empty($products) ? 'Nenhum produto de doação encontrado' : null);
         } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao buscar produtos: ' . $e->getMessage());
+            $this->jsonResponse(null, 500, 'Erro ao buscar produtos de doação');
         }
     }
 
-    public function searchByDonation(): void
+    public function listAll(): void
     {
         try {
-            $products = $this->service->getProductByDonation();
+            $orderBy = $_GET['orderBy'] ?? 'name';
+            $order = $_GET['order'] ?? 'ASC';
+            
+            $products = $this->service->getAllProducts($orderBy, $order);
             $this->jsonResponse($products, 200, empty($products) ? 'Nenhum produto encontrado' : null);
         } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao buscar produtos: ' . $e->getMessage());
-        }
-    }
-
-    public function listAll() {
-        try {
-            $products = $this->service->getAllProducts();
-            $this->jsonResponse($products, 200, empty($products) ? 'Nenhum produto encontrado' : null);
-        } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao buscar produtos: ' . $e->getMessage());
+            $this->jsonResponse(null, 500, 'Erro ao listar produtos');
         }
     }
 
@@ -103,73 +100,53 @@ class ProductController {
     {
         try {
             $product = $this->service->getProduct($id);
-            if ($product === null) {
-                $this->jsonResponse(null, 404, "Nenhum produto encontrado.");
-            }
-            $this->jsonResponse($product);
-
+            $this->jsonResponse($product->toArray());
+        } catch (DomainException $e) {
+            $this->jsonResponse(null, 404, $e->getMessage());
         } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao buscar produto: ' . $e->getMessage());
+            $this->jsonResponse(null, 500, 'Erro ao buscar produto');
         }
     }
 
     public function create(): void
     {
         try {
-            $data = json_decode(file_get_contents('php://input', true));
-
+            $data = json_decode(file_get_contents('php://input'), true);
+            
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new InvalidArgumentException('JSON inválido');
             }
-
-            $requiredFields = [
-                'name',
-                'cost_price',
-                'sale_price',
-                'category',
-                'description',
-                'is_donation'
-            ];
-            foreach ($requiredFields as $field) {
-                if (!isset($data->field)) {
-                    throw new InvalidArgumentException("Campo obrigatório faltando: {$field}");
-                }
-            }
-
-            $product = $this->service->createProduct($data);
-            $this->jsonResponse($product, 201, 'Produto criado com sucesso.');
             
-        } catch (InvalidFileException $e) {
+            $product = $this->service->createProduct($data);
+            $this->jsonResponse($product->toArray(), 201, 'Produto criado com sucesso');
+            
+        } catch (InvalidArgumentException $e) {
             $this->jsonResponse(null, 400, $e->getMessage());
-
         } catch (DomainException $e) {
-            $this->jsonResponse(null, 400, $e->getMessage());
-
+            $this->jsonResponse(null, 404, $e->getMessage());
         } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao criar produto: ' . $e->getMessage());
+            $this->jsonResponse(null, 500, 'Erro ao criar produto');
         }
     }
 
-    public function update(int $id, array $data): void
+    public function update(int $id): void
     {
         try {
-            $data = json_decode(file_get_contents('php://input', true));
-
-            if (!isset($data['name'], $data['cost_price'], $data['sale_price'])) {
-                throw new InvalidArgumentException('Campos obrigatórios não informados');
+            $data = json_decode(file_get_contents('php://input'), true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new InvalidArgumentException('JSON inválido');
             }
-
+            
             $product = $this->service->updateProduct($id, $data);
-            $this->jsonResponse($product->toArray(), 200, 'Produto atualizado com sucesso.');
-
-        } catch (InvalidFileException $e) {
+            $this->jsonResponse($product->toArray(), 200, 'Produto atualizado com sucesso');
+            
+        } catch (InvalidArgumentException $e) {
             $this->jsonResponse(null, 400, $e->getMessage());
-
         } catch (DomainException $e) {
             $this->jsonResponse(null, 404, $e->getMessage());
-
         } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao atualizar produto: ' . $e->getMessage());
+            $this->jsonResponse(null, 500, 'Erro ao atualizar produto');
         }
     }
 
@@ -177,13 +154,11 @@ class ProductController {
     {
         try {
             $this->service->deleteProduct($id);
-            $this->jsonResponse(null, 204, 'Produto excluído com sucesso.');
-        
+            $this->jsonResponse(null, 204);
         } catch (DomainException $e) {
             $this->jsonResponse(null, 404, $e->getMessage());
-
         } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao excluir produto.');
+            $this->jsonResponse(null, 500, 'Erro ao remover produto');
         }
     }
 }

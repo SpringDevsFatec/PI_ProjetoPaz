@@ -10,91 +10,133 @@ use PDOException;
 class ProductRepository {
 
     private PDO $conn;
-    private string $table = 'product';
+    private string $table = 'products';
     private $tableLog = '';
 
-    public function __construct() {
-        $this->conn = Database::getInstance();
-    }
-
-    /* Getters */
-    public function findByName(string $searchTerm): array
+    public function __construct(PDO $conn = null) 
     {
-        $query = "SELECT * FROM {{$this->table}} WHERE name LIKE :searchTerm LIMIT 10";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindValue(':searchTerm', '%' . $searchTerm . '%');
-        $stmt->execute();
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $this->conn = $conn ?: Database::getInstance();
     }
 
+    public function searchByName(string $searchTerm, int $limit = 10): array
+    {
+        $query = "SELECT * FROM {$this->table} 
+                 WHERE LOWER(name) LIKE LOWER(:searchTerm) 
+                 LIMIT :limit";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindValue(':searchTerm', '%' . $searchTerm . '%', PDO::PARAM_STR);
+            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao buscar produtos: " . $e->getMessage());
+        }
+    }
 
     public function findByCategory(string $category): array
     {
-        $query = "SELECT * FROM {{$this->table}} WHERE category = :category";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(":category", $category, PDO::PARAM_STR);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $query = "SELECT * FROM {$this->table} WHERE category = :category ORDER BY name";
+        
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":category", $category, PDO::PARAM_STR);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao buscar por categoria: " . $e->getMessage());
+        }
     }
 
-    public function findByFavorite(): array 
+    private function findByFlag(string $flagName, bool $value): array
     {
-        $query = "SELECT * FROM {$this->table} WHERE is_favorite = 1";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $query = "SELECT * FROM {$this->table} 
+                 WHERE {$flagName} = :value 
+                 ORDER BY name";
+        
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindValue(':value', $value, PDO::PARAM_BOOL);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao buscar produtos: " . $e->getMessage());
+        }
     }
 
-    public function findByDonation(): array {
-        $query = "SELECT * FROM {$this->table} WHERE is_donation = 1";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function findBySalePrice(float $salePrice): array
+    public function findFavorites(): array 
     {
-        $query = "SELECT * FROM {$this->table} WHERE sale_price = :sale_price";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(":sale_price", $salePrice, PDO::PARAM_STR);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->findByFlag('is_favorite', true);
     }
 
-    public function findByCost(float $costPrice): array
+    public function findDonations(): array
     {
-        $query = "SELECT * FROM {$this->table} WHERE cost_price = :cost_price";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(":cost_price", $costPrice, PDO::PARAM_STR);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->findByFlag('is_donation', true);
     }
 
-    /* ------------------------------------------- */
-
-    public function findAll(): array
+    public function findBySalePriceRange(float $minPrice, float $maxPrice): array
     {
-        $query = "SELECT * FROM {$this->table}";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $query = "SELECT * FROM {$this->table} 
+                 WHERE sale_price BETWEEN :min_price AND :max_price
+                 ORDER BY sale_price, name";
+        
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":min_price", $minPrice);
+            $stmt->bindParam(":max_price", $maxPrice);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao buscar por faixa de preço: " . $e->getMessage());
+        }
+    }
+
+    public function findAll(string $orderBy = 'name', string $order = 'ASC'): array
+    {
+        $validOrders = ['name', 'category', 'sale_price', 'create_at'];
+        $orderBy = in_array($orderBy, $validOrders) ? $orderBy : 'name';
+        $order = strtoupper($order) === 'DESC' ? 'DESC' : 'ASC';
+ 
+        $query = "SELECT * FROM {$this->table} ORDER BY {$orderBy} {$order}";
+        
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao buscar produtos: " . $e->getMessage());
+        }
     }
 
     public function find(int $id): ?array
     {
-        $query = "SELECT * FROM {$this->table} WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
+        
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: null;
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao buscar produto: " . $e->getMessage());
+        }
     }
 
     public function save(Product $product): int
     {
         $query = "INSERT INTO {$this->table} 
-                  (supplier_id, name, cost_price, sale_price, description, is_favorite, category, is_donation, date_create)
-                  VALUES (sale_price, :description, :is_favorite, :category, :is_donation, :date_create)";
+                  (supplier_id, name, cost_price, sale_price, category, 
+                  description, is_favorite, is_donation, created_at, updated_at)
+                  VALUES 
+                  (:supplier_id, :name, :cost_price, :sale_price, :category, 
+                  :description, :is_favorite, :is_donation, :created_at, :updated_at)";
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->execute([
@@ -104,8 +146,8 @@ class ProductRepository {
                 'sale_price' => $product->getSalePrice(),
                 'category'=> $product->getCategory(),
                 'description' => $product->getDescription(),
-                'is_favorite' => $product->getIsFavorite(),
-                'is_donation'=> $product->getIsDonation(),
+                'is_favorite' => (int)$product->isFavorite(),
+                'is_donation'=> (int)$product->isDonation(),
                 'created_at' => $product->getCreatedAt()->format('Y-m-d H:i:s'),
                 'updated_at' => $product->getUpdatedAt()->format('Y-m-d H:i:s')
             ]);
@@ -122,10 +164,10 @@ class ProductRepository {
         $query = "UPDATE {$this->table} 
                   SET name = :name, 
                       cost_price = :cost_price, 
-                      sale_price = :sale_price, 
-                      description = :description, 
+                      sale_price = :sale_price,
+                      category = :category,
+                      description = :description,
                       is_favorite = :is_favorite, 
-                      category = :category, 
                       is_donation = :is_donation,
                       updated_at = :updated_at
                   WHERE id = :id";
@@ -133,14 +175,15 @@ class ProductRepository {
         try {
             $stmt = $this->conn->prepare($query);
             return $stmt->execute([
-                'name'=> $product->getName(),
-                'cost_price'=> $product->getCostPrice(),
-                'sale_price' => $product->getSalePrice(),
-                'category'=> $product->getCategory(),
-                'description' => $product->getDescription(),
-                'is_favorite' => $product->getIsFavorite(),
-                'is_donation'=> $product->getIsDonation(),
-                'updated_at' => (new \DateTime)->format('Y-m-d H:i:s')
+                ':id' => $product->getId(),
+                ':name'=> $product->getName(),
+                ':cost_price'=> $product->getCostPrice(),
+                ':sale_price' => $product->getSalePrice(),
+                ':category'=> $product->getCategory(),
+                ':description' => $product->getDescription(),
+                ':is_favorite' => (int)$product->isFavorite(),
+                ':is_donation'=> (int)$product->isDonation(),
+                ':updated_at' => (new \DateTime)->format('Y-m-d H:i:s')
             ]);
 
         } catch (PDOException $e) {
@@ -150,15 +193,17 @@ class ProductRepository {
 
     public function delete(int $id): bool
     {
+        $query = "DELETE FROM {$this->table} WHERE id = :id";
+
         try {
-            $query = "DELETE FROM {$this->table} WHERE id = :id";
+            
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
 
             return $stmt->execute();
 
         } catch (PDOException $e) {
-            throw new PDOException("Erro ao deletar produto: " . $e->getMessage());
+            throw new PDOException("Erro ao remover produto: " . $e->getMessage());
         }
     }
 }

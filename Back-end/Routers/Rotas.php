@@ -21,11 +21,10 @@ class Rotas
                 // Products
                 '/products' => [ProductController::class, 'listAll'],
                 '/products/{id}' => [ProductController::class, 'show'],
-                '/products/list/{searchTerm}' => [ProductController::class, 'listProductsByName'],
-                '/products/{category}/category' => [ProductController::class, 'listProductsByCategory'],
-                '/products/{cost}/cost' => [ProductController::class, 'listProductsByCost'],
-                '/products/favorite/{favorite}' => [ProductController::class, 'listProductsByFavorite'],
-                '/products/{donation}/donation' => [ProductController::class, 'listProductsByDonation'],
+                '/products//search{searchTerm}' => [ProductController::class, 'searchByName'],
+                '/products/category/{category}' => [ProductController::class, 'listByCategory'],
+                '/products/favorites' => [ProductController::class, 'listFavorites'],
+                '/products/donations' => [ProductController::class, 'listDonations'],
 
                 // Orders
                 '/orders/items/{id}' => [OrderController::class, 'listWithItems'],

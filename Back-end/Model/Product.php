@@ -5,6 +5,7 @@ namespace App\Backend\Model;
 use DateTime;
 use DateTimeInterface;
 use InvalidArgumentException;
+use DomainException;
 
 class Product {
     private ?int $id;
@@ -14,8 +15,8 @@ class Product {
     private float $salePrice;
     private string $category;
     private string $description;
-    private int $isFavorite = 0; //0 - is not, 1 - is
-    private int $isDonation = 0; //0 - is not, 1 - is
+    private bool $isFavorite = false;
+    private bool $isDonation = false;
     private ?DateTimeInterface $createdAt;
     private ?DateTimeInterface $updatedAt;
 
@@ -25,147 +26,141 @@ class Product {
         float $salePrice,
         string $category,
         string $description,
-        int $isFavorite = 0,
-        int $isDonation = 0,
+        bool $isFavorite = false,
+        bool $isDonation = false,
         ?int $id = null,
         ?int $supplierId = null,
         ?DateTimeInterface $createdAt = null,
         ?DateTimeInterface $updatedAt = null
     ) {
         $this->id = $id;
-        $this->setSupplierId($supplierId);
+        $this->supplierId = $supplierId;
         $this->setName($name);
         $this->setCostPrice($costPrice);
         $this->setSalePrice($salePrice);
         $this->setCategory($category);
         $this->setDescription($description);
-        $this->setIsFavorite();
-        $this->setIsDonation();
+        $this->setIsFavorite($isFavorite);
+        $this->setIsDonation($isDonation);
         $this->createdAt = $createdAt ?? new DateTime();
         $this->updatedAt = $updatedAt ?? new DateTime();
     }
 
-    public function getId(): ?int {
-        return $this->id;
-    }
-    public function getSupplierId(): ?int {
-        return $this->supplierId;
-    }
-    public function getName(): string {
-        return $this->name;
-    }
-    public function getCostPrice(): float {
-        return $this->costPrice;
-    }
-    public function getSalePrice(): float {
-        return $this->salePrice;
-    }
-    public function getCategory(): string {
-        return $this->category;
-    }
-    public function getDescription(): string {
-        return $this->description;
-    }
-    public function getIsFavorite(): int {
-        return $this->isFavorite;
-    }
-    public function getIsDonation(): int {
-        return $this->isDonation;
-    }
-    public function getCreatedAt(): ?DateTimeInterface {
-        return $this->createdAt;
-    }
-    public function getUpdatedAt(): ?DateTimeInterface {
-        return $this->updatedAt;
-    }
+    public function getId(): ?int { return $this->id; }
+    public function getSupplierId(): ?int { return $this->supplierId; }
+
+    public function getName(): string { return $this->name; }
+
+    public function getCostPrice(): float { return $this->costPrice ? 0.0 : $this->costPrice; }
+    public function getSalePrice(): float { return $this->salePrice; }
+
+    public function getCategory(): string { return $this->category; }
+    public function getDescription(): string { return $this->description; }
+
+    public function isFavorite(): int { return $this->isFavorite; }
+    public function isDonation(): int { return $this->isDonation; }
+
+    public function getCreatedAt(): ?DateTimeInterface { return $this->createdAt; }
+    public function getUpdatedAt(): ?DateTimeInterface { return $this->updatedAt; }
 
     public function setId(?int $id): void {
         $this->id = $id;
     }
-    public function setSupplierId(?int $supplierId): void {
-        $this->supplierId = $supplierId;
-    }
+
     public function setName(string $name): void {
-        $this->name = $name;
+        if (strlen(trim($name)) === 0) {
+            throw new InvalidArgumentException("Nome do produto não pode ser vazio");
+        }
+        $this->name = trim($name);
+        $this->updatedAt = new DateTime();
     }
+
     public function setCostPrice(float $costPrice): void {
         if ($costPrice <= 0) {
-            throw new \InvalidArgumentException("Preço de custo deve ser maior que zero.");
+            throw new \InvalidArgumentException("Preço de custo não pode ser negativo.");
         }
 
-        if ($this->isDonation) {
-            $this->costPrice = 0;
-        }
-
-        $this->costPrice = $costPrice;
+        $this->costPrice = $this->isDonation ? 0.0 : round($costPrice, 2);
+        $this->updatedAt = new DateTime();
     }
+
     public function setSalePrice(float $salePrice): void {
         if ($salePrice <= 0) {
             throw new \InvalidArgumentException("Preço de venda deve ser maior que zero.");
         }
-        $this->salePrice = $salePrice;
+        $this->salePrice = round($salePrice, 2);
+        $this->updatedAt = new DateTime();
     }
+
     public function setCategory(string $category): void {
         $this->category = $category;
+        $this->updatedAt = new DateTime();
     }
+
     public function setDescription(string $description): void {
         $this->description = $description;
-    }
-    public function setIsFavorite(): void {
-        if ($this->isFavorite != 0) 
-        {
-            $this->isFavorite = 1;
-        }
-        if ($this->isFavorite != 1) 
-        {
-            $this->isFavorite = 0;
-        }
-    }
-    public function setIsDonation(): void {
-        if ($this->isDonation != 0) 
-        {
-            $this->isDonation = 1;
-        }
-        if ($this->isDonation != 1) 
-        {
-            $this->isDonation = 0;
-        }
-    }
-
-    public function updateFromArray(array $data): void {
-        if (isset(
-                $data['name'], 
-                $data['cost_price'], 
-                $data['sale_price'], 
-                $data['category'], 
-                $data['description'], 
-                $data['is_favorite'], 
-                $data['is_donation'])) 
-        {
-            $this->setName($data['name']);
-            $this->setCostPrice($data['cost_price']); 
-            $this->setSalePrice($data['sale_price']); 
-            $this->setCategory($data['category']);
-            $this->setDescription($data['description']); 
-            $this->setIsFavorite($data['is_favorite']);
-            $this->setIsDonation($data['is_donation']);
-        }
-
         $this->updatedAt = new DateTime();
+    }
+
+    public function setIsFavorite(bool $isFavorite): void {
+        $this->isFavorite = $isFavorite;
+        $this->updatedAt = new DateTime();
+    }
+
+    public function setIsDonation(bool $isDonation): void {
+        $wasDonation = $this->isDonation;
+        $this->isDonation = $isDonation;
+
+        if ($this->isDonation && !$wasDonation) {
+            $this->costPrice = 0.0;
+        }
+        
+        $this->updatedAt = new DateTime();
+
+    }
+
+    public function setUpdatedAt(DateTimeInterface $updatedAt): void {
+        $this->updatedAt = $updatedAt;
+    }
+
+    public function calculateProfitMargin() : float
+    {
+        if ($this->getCostPrice() <= 0) {
+            return 0.0;
+        }
+        return round((($this->salePrice - $this->getCostPrice()) / $this->getCostPrice()) * 100, 2);
+    }
+
+    public function updateFromArray(array $data): void
+    {
+        if (isset($data['name'])) $this->setName($data['name']);
+        
+        if (isset($data['cost_price'])) $this->setCostPrice((float)$data['cost_price']);
+        
+        if (isset($data['sale_price'])) $this->setSalePrice((float)$data['sale_price']);
+        
+        if (isset($data['category'])) $this->setCategory($data['category']);
+        
+        if (isset($data['description'])) $this->setDescription($data['description']);
+        
+        if (isset($data['is_favorite'])) $this->setIsFavorite((bool)$data['is_favorite']);
+        
+        if (isset($data['is_donation'])) $this->setIsDonation((bool)$data['is_donation']);
     }
     public function toArray(): array {
         return [
             'id' => $this->id,
             'supplier_id' => $this->supplierId,
             'name' => $this->name,
-            'cost_price' => $this->costPrice,
+            'cost_price' => $this->getCostPrice(),
             'sale_price' => $this->salePrice,
             'category' => $this->category,
             'description' => $this->description,
             'is_favorite' => $this->isFavorite,
             'is_donation' => $this->isDonation,
-            'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s')
+            'profit_margin' => $this->calculateProfitMargin(),
+            'created_at' => $this->createdAt->format('Y-m-d H:i:s'),
+            'updated_at' => $this->updatedAt->format('Y-m-d H:i:s')
         ];
     }
 }

@@ -22,68 +22,60 @@ class ProductService {
         $this->supplierRepository = $supplierRepository;
     }
 
-    public function getProductsByName(string $searchTerm): array
+    public function searchProductsByName(string $searchTerm, int $limit = 10): array
     {
-        if (empty($searchTerm)) {
-            return ['success' => false, 'message' => 'Termo de pesquisa vazio'];
+        if (empty(trim($searchTerm))) {
+            throw new InvalidArgumentException("Termo de pesquisa não pode ser vazio");
         }
-        
-        return $this->repository->findByName($searchTerm);
+
+        return $this->repository->searchByName(trim($searchTerm), $limit);
     }
 
-    public function getProductByCategory(string $category): array
+    public function getProductsByCategory(string $category): array
     {
+        $validCategories = ['Alimento', 'Bebida', 'Limpeza', 'Outros'];
+        if (!in_array($category, $validCategories)) {
+            throw new InvalidArgumentException("Categoria inválida");
+        }
+
         return $this->repository->findByCategory($category);
     }
 
-    public function getProductByCost(float $cost): array
-    {
-        return $this->repository->findByCost($cost);
-    }
+    public function getFavoriteProducts(): array { return $this->repository->findFavorites(); }
 
-    public function getProductByFavorite(): array
-    {
-        return $this->repository->findByFavorite();
-    }
-
-    public function getProductByDonation(): array
-    {
-        return $this->repository->findByDonation();
-    }
+    public function getDonationProducts(): array { return $this->repository->findDonations(); }
     
-    public function getProduct(int $id): ?array
-    {
-        return $this->repository->find($id);
+    public function getProduct(int $id): Product
+    { 
+        $productData = $this->repository->find($id);
+        if (!$productData) {
+            throw new DomainException("Produto não encontrado");
+        }
+
+        return $this->hydrateProduct($productData);
     }
 
-    public function getAllProducts(): array
+    public function getAllProducts(string $orderBy = 'name', string $order = 'ASC'): array
     {
-        return $this->repository->findAll();
+        return $this->repository->findAll($orderBy, $order);
     }
 
     public function createProduct(array $data): Product
     {
-        if (empty($data['name']) || 
-            empty($data['cost_price']) ||
-            empty($data['sale_price'])
-            ) 
-        {
-            throw new InvalidArgumentException("Dados incompletos.");
-        }
+        $this->validateProductData($data);
 
-        $supplier = $this->supplierRepository->getSupplierById($data['supplier_id']);
-        if(!$supplier) {
-            throw new DomainException("Fornecedor não encontrado.");
+        if (!$this->supplierRepository->getSupplierById($data['supplier_id'])) {
+            throw new DomainException("Fornecedor não encontrado");
         }
 
         $product = new Product(
-            name: (string)$data['name'],
+            name: $this->sanitizeString($data['name']),
             costPrice: (float)$data['cost_price'],
             salePrice: (float)$data['sale_price'],
-            category: $data['category'],
-            description: $data['description'],
-            isFavorite: $data['is_facorite'],
-            isDonation: $data['is_donation'],
+            category: $this->sanitizeString($data['category']),
+            description: $this->sanitizeString($data['description'] ?? ''),
+            isFavorite: (bool)($data['is_favorite'] ?? false),
+            isDonation: (bool)($data['is_donation'] ?? false),
             id: null,
             supplierId: (int)$data['supplier_id'],
             createdAt: new DateTime(),
@@ -98,41 +90,31 @@ class ProductService {
 
     public function updateProduct(int $id, array $data): Product
     {
-        if ($data['cost_price'] <= 0)
-        {
-            throw new DomainException("Preço de custo deve ser maior que zero.");
+        $existingData = $this->repository->find($id);
+        if (!$existingData) {
+            throw new DomainException("Produto não encontrado");
         }
 
-        if ($this->repository->findByDonation($id))
-        {
-            $data['cost_price'] = 0;
+        if (isset($data['cost_price']) && $data['cost_price'] < 0) {
+            throw new InvalidArgumentException("Preço de custo não pode ser negativo");
         }
 
-        if ($data['cost_price'] <= 0)
-        {
-            throw new DomainException("Preço de venda deve ser maior que zero.");
+        if (isset($data['sale_price']) && $data['sale_price'] <= 0) {
+            throw new InvalidArgumentException("Preço de venda deve ser maior que zero");
         }
 
-        $existingItem = $this->repository->find($id);
-        if (!$existingItem) {
-            throw new DomainException("Produto não encontrado.");
+        $updateData = array_merge($existingData, $data);
+        
+        if (($updateData['is_donation'] ?? false)) {
+            $updateData['cost_price'] = 0;
         }
 
-        $product = new Product(
-            supplierId: (int)$existingItem['supplier_id'],
-            name: (string)$existingItem['name'],
-            costPrice: (float)$existingItem['cost_price'],
-            salePrice: (float)$existingItem['sale_price'],
-            category: $$existingItem['category'],
-            description: $$existingItem['description'],
-            isFavorite: $$existingItem['is_facorite'],
-            isDonation: $$existingItem['is_donation'],
-            id: (int)$existingItem['id'],
-            createdAt: new DateTime($existingItem['created_at']),
-            updatedAt: new DateTime()
-        );
+        $product = $this->hydrateProduct($updateData);
+        $product->setUpdatedAt(new DateTime());
 
-        $this->repository->update($product);
+        if (!$this->repository->update($product)) {
+            throw new DomainException("Falha ao atualizar produto");
+        }
 
         return $product;
     }
@@ -141,11 +123,62 @@ class ProductService {
     {
         $product = $this->repository->find($id);
         if (!$product) {
-            throw new DomainException("Pedido não encontrado");
+            throw new DomainException("Produto não encontrado");
         }
 
         if (!$this->repository->delete($id)) {
-            throw new DomainException("Falha ao deletar pedido.");
+            throw new DomainException("Falha ao remover produto.");
         } 
+    }
+
+    private function validateProductData(array $data): void
+    {
+        $requiredFields = ['name', 'cost_price', 'sale_price', 'category', 'supplier_id'];
+        foreach ($requiredFields as $field) {
+            if (!isset($data[$field])) {
+                throw new InvalidArgumentException("Campo obrigatório faltando: {$field}");
+            }
+        }
+
+        if (strlen(trim($data['name'])) === 0) {
+            throw new InvalidArgumentException("Nome do produto não pode ser vazio");
+        }
+
+        if ($data['cost_price'] < 0) {
+            throw new InvalidArgumentException("Preço de custo não pode ser negativo");
+        }
+
+        if ($data['sale_price'] <= 0) {
+            throw new InvalidArgumentException("Preço de venda deve ser maior que zero");
+        }
+
+        if (!$data['is_donation'] && $data['sale_price'] < $data['cost_price']) {
+            throw new DomainException("Preço de venda não pode ser menor que o custo");
+        }
+    }
+
+     private function hydrateProduct(array $productData): Product
+    {
+        return new Product(
+            name: $productData['name'],
+            costPrice: (float)$productData['cost_price'],
+            salePrice: (float)$productData['sale_price'],
+            category: $productData['category'],
+            description: $productData['description'],
+            isFavorite: (bool)$productData['is_favorite'],
+            isDonation: (bool)$productData['is_donation'],
+            id: (int)$productData['id'],
+            supplierId: (int)$productData['supplier_id'],
+            createdAt: new DateTime($productData['created_at']),
+            updatedAt: new DateTime($productData['updated_at'])
+        );
+    }
+
+    /**
+     * Cleans strings by removing extra spaces and HTML tags
+     */
+    private function sanitizeString(string $input): string
+    {
+        return trim(strip_tags($input));
     }
 }
