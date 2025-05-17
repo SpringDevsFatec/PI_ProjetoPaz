@@ -19,12 +19,15 @@ class Rotas
                 '/users/{id}/orders' => [UserController::class, 'listUserOrders'],
                 
                 // Products
-                '/products' => ['App\Backend\Controller\ProductController', 'listAll'],
-                '/products/{id}' => [ProductController::class, 'show'],
-                '/products//search{searchTerm}' => [ProductController::class, 'searchByName'],
-                '/products/category/{category}' => [ProductController::class, 'listByCategory'],
+                // Rotas específicas primeiro
+                '/products/search' => [ProductController::class, 'searchByName'],
                 '/products/favorites' => [ProductController::class, 'listFavorites'],
                 '/products/donations' => [ProductController::class, 'listDonations'],
+                // Rotas com parâmetros depois
+                '/products/category/{category}' => [ProductController::class, 'listByCategory'],
+                '/products/{id}' => [ProductController::class, 'show'],
+                // Rota genérica por último
+                '/products' => [ProductController::class, 'listAll'],
 
                 // Orders
                 '/orders/items/{id}' => [OrderController::class, 'listWithItems'],
