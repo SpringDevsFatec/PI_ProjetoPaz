@@ -33,7 +33,7 @@ class ProductService {
 
     public function getProductsByCategory(string $category): array
     {
-        $validCategories = ['Alimento', 'Bebida', 'Limpeza', 'Outros'];
+        $validCategories = ['Alimento', 'Bebida', 'Cozinha', 'Livros', 'Outros'];
         if (!in_array($category, $validCategories)) {
             throw new InvalidArgumentException("Categoria inválida");
         }
