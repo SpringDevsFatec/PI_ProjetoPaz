@@ -19,7 +19,7 @@ class Rotas
                 '/users/{id}/orders' => [UserController::class, 'listUserOrders'],
                 
                 // Products
-                '/products' => [ProductController::class, 'listAll'],
+                '/products' => ['App\Backend\Controller\ProductController', 'listAll'],
                 '/products/{id}' => [ProductController::class, 'show'],
                 '/products//search{searchTerm}' => [ProductController::class, 'searchByName'],
                 '/products/category/{category}' => [ProductController::class, 'listByCategory'],
