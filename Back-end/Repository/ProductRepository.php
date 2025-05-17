@@ -10,7 +10,7 @@ use PDOException;
 class ProductRepository {
 
     private PDO $conn;
-    private string $table = 'products';
+    private string $table = 'product';
     private $tableLog = '';
 
     public function __construct(PDO $conn = null) 
@@ -123,7 +123,7 @@ class ProductRepository {
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
 
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: null;
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
         } catch (PDOException $e) {
             throw new PDOException("Erro ao buscar produto: " . $e->getMessage());
         }
