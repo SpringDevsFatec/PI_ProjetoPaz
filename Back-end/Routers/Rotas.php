@@ -41,12 +41,12 @@ class Rotas
                 '/orders' => [OrderController::class, 'listAll'],
 
                 // Sales
-                'sales' => [SaleController::class, 'listAll'],
-                'sales/{id}' => [SaleController::class, 'getSaleById'],
-                'sellers/{id}/sales' => [SaleController::class, 'show'],
-                'sales/{date}/date' => [SaleController::class, 'listSalesByDate'],
-                'sales/{seller_id}/?{status}/seller' => [SaleController::class, 'listBySeller'],
-                'sales/{status}/status' => [SaleController::class, 'listSalesByStatus'],
+                //'/sales/{seller_id}/?{status}/seller' => [SaleController::class, 'listBySeller'],
+                '/sales/date' => [SaleController::class, 'listByDate'],
+                '/sales/status/{status}' => [SaleController::class, 'listSalesByStatus'],
+                '/sales/details/{id}' => [SaleController::class, 'show'],
+                '/sales/{id}' => [SaleController::class, 'getSaleById'],
+                '/sales' => [SaleController::class, 'listAllSales'],
             ],
             'POST' => [
                 // Users

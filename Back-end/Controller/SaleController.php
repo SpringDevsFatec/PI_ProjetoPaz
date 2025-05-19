@@ -3,11 +3,11 @@
 namespace App\Backend\Controller;
 
 use App\Backend\Service\SaleService;
-use DateTimeInterface;
+
+use DateTime;
 use DomainException;
 use Exception;
 use InvalidArgumentException;
-use Dotenv\Exception\InvalidFileException;
 
 class SaleController {
 
@@ -38,13 +38,36 @@ class SaleController {
         exit;
     }
 
-    public function listSalesByDate(DateTimeInterface $date): void 
+    public function listByDate(): void
     {
         try {
-            $sales = $this->service->getByDate($date);
-            $this->jsonResponse($sales, 200, empty($sales) ? 'Nenhuma venda encontrada' : null);
+            // Obtém parâmetros da query string
+            $startDate = $_GET['start_date'] ?? null;
+            $endDate = $_GET['end_date'] ?? null;
+            $sellerId = $_GET['seller_id'] ?? null;
+
+            // Validação básica
+            if (!$startDate || !$endDate) {
+                throw new InvalidArgumentException("As datas inicial e final são obrigatórias");
+            }
+
+            // Converte as strings para objetos DateTime
+            $start = new DateTime($startDate);
+            $end = new DateTime($endDate);
+            
+            // Busca as vendas
+            $sales = $this->service->getSalesByPeriod(
+                $start,
+                $end,
+                $sellerId ? (int)$sellerId : null
+            );
+
+            $this->jsonResponse($sales, 200, empty($sales) ? 'Nenhuma venda encontrada no período' : null);
+
+        } catch (InvalidArgumentException $e) {
+            $this->jsonResponse(null, 400, $e->getMessage());
         } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao buscar vendas: ' . $e->getMessage());
+            $this->jsonResponse(null, 500, 'Erro ao buscar vendas por período');
         }
     }
 

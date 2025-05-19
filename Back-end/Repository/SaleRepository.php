@@ -19,6 +19,7 @@ class SaleRepository {
     public function __construct(PDO $conn = null) 
     {
         $this->conn = $conn ?: Database::getInstance();
+        $this->orderRepository = new OrderRepository();
     }
 
     public function findWithOrders(int $id): ?array
@@ -34,13 +35,25 @@ class SaleRepository {
         return $sale;
     }
 
-    public function findByDate(DateTimeInterface $date): array
+    public function findByDateRange(DateTimeInterface $startDate, DateTimeInterface $endDate, ?int $sellerId = null): array
     {
-        $query = "SELECT * FROM {$this->table} WHERE date = :date";
+        $query = "SELECT * FROM {$this->table} WHERE date BETWEEN :start_date AND :end_date";
+        
+        $params = [
+            ':start_date' => $startDate->format('Y-m-d'),
+            ':end_date' => $endDate->format('Y-m-d')
+        ];
+
+        if ($sellerId !== null) {
+            $query .= " AND seller_id = :seller_id";
+            $params[':seller_id'] = $sellerId;
+        }
+
         $stmt = $this->conn->prepare($query);
-        $stmt->execute([':date' => $date->format('Y-m-d')]);
+        $stmt->execute($params);
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+}
 
     public function findOpenBySeller(int $sellerId): ?array
     {

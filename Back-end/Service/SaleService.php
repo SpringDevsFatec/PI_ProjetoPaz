@@ -39,10 +39,14 @@ class SaleService {
         return $sale->toDetailedArray();
     }
 
-    public function getByDate(DateTimeInterface $date): array 
+    public function getSalesByPeriod(DateTimeInterface $startDate, DateTimeInterface $endDate, ?int $sellerId = null): array 
     {
-        return $this->saleRepository->findByDate($date);
-    }
+        if ($startDate > $endDate) {
+            throw new InvalidArgumentException("Data final deve ser maior ou igual à data inicial");
+        }
+
+        return $this->saleRepository->findByDateRange($startDate, $endDate, $sellerId);
+}
 
     public function getSalesBySeller(int $sellerId, ?string $status = null): array 
     {
@@ -198,7 +202,7 @@ class SaleService {
                 $order = new Order(
                     paymentMethod: $orderData['payment_method'],
                     totalAmount: $orderData['total_amount'],
-                    status: $orderData['status_id'],
+                    status: $orderData['status'],
                     id: $orderData['id'],
                     saleId: $orderData['sale_id'],
                     createdAt: new DateTime($orderData['created_at']),

@@ -26,6 +26,7 @@ class Sale {
     public function __construct(
         int $sellerId,
         DateTimeInterface $date,
+        float $totalAmount = 0.0,
         string $status = 'open',
         ?int $id = null,
         ?DateTimeInterface $createdAt = null,
