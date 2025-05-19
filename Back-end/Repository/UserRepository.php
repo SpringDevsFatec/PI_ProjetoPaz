@@ -55,11 +55,14 @@ class UserRepository {
     public function verifyLogin($email, $password) {
         $query = "SELECT * FROM $this->table WHERE email = :email";
         $stmt = $this->conn->prepare($query);
+        
+        // select only the email
         $stmt->bindParam(":email", $email, PDO::PARAM_STR);
         $stmt->execute();
 
         if ($stmt->rowCount() > 0) {
             $userRepo = $stmt->fetch(PDO::FETCH_ASSOC);
+            // Check if the password matches
             if (password_verify($password, $userRepo['password'])) {
                 $user = new UserModel();
                 $user->setId($userRepo['id']);
@@ -68,6 +71,12 @@ class UserRepository {
                 $user->setPassword($userRepo['password']);
                 $user->setDateCreate($userRepo['dateCreate']);
                 $user->setUpdatedAt($userRepo['updatedAt']);
+
+                return $userRepo;
+
+            }else {
+                // Password does not match
+                return [false,'message' => 'Senha incorreta'];
             }
         }
         return null;

@@ -9,6 +9,7 @@ class Rotas {
             'GET' => [
                 '/users' => [UserController::class, 'getAllUsers'],
                 '/users/{id}' => [UserController::class, 'getUserById'],
+                '/TestUser' => [UserController::class, 'testJWT'],
             ],
             'POST' => [
 

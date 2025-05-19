@@ -17,6 +17,42 @@ class UserService {
 
     
     //public functions...
+
+    //Login
+    public function login($data) {
+        //check the token
+        $check = new AuthMiddleware();
+        $check->openToken();
+
+        $email = $data->email;
+        $password = $data->password;
+        try {
+            $this->repository->beginTransaction();
+            
+            // Check if user exists
+            $user = $this->repository->verifyLogin($email, $password);
+            
+            if ($user) {
+                // Generate JWT token
+                $token = (new AuthMiddleware())->createToken(['id' => $user['id'], 'nome' => $user['nome']]);
+                
+                return [
+                    'status' => true,
+                    'message' => 'Login realizado com sucesso',
+                    'token' => $token
+                ];
+            } else {
+                throw new Exception("Usuário ou senha inválidos.");
+            }
+            
+            $this->repository->commitTransaction();
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }    
+    }
+
+
     //Get all users
     public function getAllUsers() {
         //check the token
@@ -58,11 +94,12 @@ class UserService {
         }
     }
 
+
+
     // create user
     public function createUser($data) {
-         //check the token
-         $check = new AuthMiddleware();
-         $check->openToken();
+         
+         
  
          // set UserModel
 
