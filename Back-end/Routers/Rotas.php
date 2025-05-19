@@ -34,11 +34,11 @@ class Rotas
                 '/order-items/{id}' => [OrderItemController::class, 'show'],
 
                 // Orders
-                '/orders/items/{id}' => [OrderController::class, 'listWithItems'],
-                '/orders/{paymentMethod}/payment-method' => [OrderController::class, 'listByPaymentMethod'],
-                '/orders' => [OrderController::class, 'listAll'],
+                '/orders/with-items/{id}' => [OrderController::class, 'listWithItems'],
+                '/orders/payment-method/{paymentMethod}' => [OrderController::class, 'listByPaymentMethod'],
+                '/orders/items/{id}' => [OrderItemController::class, 'listByOrder'],
                 '/orders/{id}' => [OrderController::class, 'show'],
-                '/orders/{id}/items' => [OrderItemController::class, 'listByOrder'],
+                '/orders' => [OrderController::class, 'listAll'],
 
                 // Sales
                 'sales' => [SaleController::class, 'listAll'],

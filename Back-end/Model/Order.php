@@ -29,7 +29,7 @@ class Order {
         'open' => 'Aberto',
         'pending' => 'Pendente',
         'paid' => 'Pago',
-        'cancelled' => 'Cancelado'
+        'canceled' => 'Cancelado'
     ];
 
     public function __construct(
@@ -103,7 +103,7 @@ class Order {
     }
 
     public function markAsPaid(): void {
-        if ($this->status === 'cancelled') {
+        if ($this->status === 'canceled') {
             throw new DomainException("Pedido cancelado não pode ser marcado como pago");
         }
         $this->setStatus('paid');
@@ -113,7 +113,7 @@ class Order {
         if ($this->status === 'paid') {
             throw new DomainException("Pedido pago deve ser reembolsado, não cancelado");
         }
-        $this->setStatus('cancelled');
+        $this->setStatus('canceled');
     }
 
     public function assignToSale(int $saleId): void {
