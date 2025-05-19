@@ -10,7 +10,7 @@ use PDOException;
 class OrderItemRepository {
     
     private PDO $conn;
-    private string $table = 'order_items';
+    private string $table = 'order_item';
 
     public function __construct() {
         $this->conn = Database::getInstance();
@@ -20,7 +20,7 @@ class OrderItemRepository {
     {
         $query = "SELECT oi.*, p.name AS product_name
                   FROM {$this->table} oi
-                  JOIN products p ON oi.product_id = p.id
+                  JOIN product p ON oi.product_id = p.id
                   WHERE oi.order_id = :order_id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);

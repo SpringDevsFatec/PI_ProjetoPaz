@@ -9,7 +9,7 @@ use PDO;
 class OrderImageRepository {
 
     private $conn;
-    private $table = 'order_images';
+    private $table = 'order_image';
 
     public function __construct() {
         $this->conn = Database::getInstance();

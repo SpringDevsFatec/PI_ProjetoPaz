@@ -12,7 +12,7 @@ use PDOException;
 class OrderRepository {
 
     private PDO $conn;
-    private $table = 'orders';
+    private $table = 'order';
     private OrderItemRepository $itemRepository;
 
     public function __construct() {

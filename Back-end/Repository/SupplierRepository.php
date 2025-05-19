@@ -8,7 +8,7 @@ use PDO;
 
 class SupplierRepository {
     private $conn;
-    private $table = 'suppliers';
+    private $table = 'supplier';
 
     public function __construct() {
         $this->conn = Database::getInstance();

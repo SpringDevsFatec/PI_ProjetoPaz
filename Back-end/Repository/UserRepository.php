@@ -9,7 +9,7 @@ use PDOException;
 
 class UserRepository {
     private PDO $conn;
-    private string $table = 'users';
+    private string $table = 'user';
     private $tableLog = '';
 
     public function __construct(PDO $conn = null)

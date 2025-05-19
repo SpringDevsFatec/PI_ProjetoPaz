@@ -64,13 +64,13 @@ class Container
         $this->instances[OrderService::class] = new OrderService(
             $this->get(OrderRepository::class),
             $this->get(SaleRepository::class),
-            $this->get(ProductService::class)
+            $this->get(ProductRepository::class)
         );
 
         $this->instances[SaleService::class] = new SaleService(
             $this->get(SaleRepository::class),
             $this->get(OrderRepository::class),
-            $this->get(UserService::class)
+            $this->get(UserRepository::class)
         );
 
         $this->instances[UserService::class] = new UserService(
