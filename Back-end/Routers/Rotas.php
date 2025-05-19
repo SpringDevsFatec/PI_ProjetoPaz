@@ -29,16 +29,16 @@ class Rotas
                 // Rota genérica por último
                 '/products' => [ProductController::class, 'listAll'],
 
+                // Order Items
+                '/order-items/details/{orderId}' => [OrderItemController::class, 'listItemsWithProductDetails'],
+                '/order-items/{id}' => [OrderItemController::class, 'show'],
+
                 // Orders
                 '/orders/items/{id}' => [OrderController::class, 'listWithItems'],
                 '/orders/{paymentMethod}/payment-method' => [OrderController::class, 'listByPaymentMethod'],
                 '/orders' => [OrderController::class, 'listAll'],
                 '/orders/{id}' => [OrderController::class, 'show'],
                 '/orders/{id}/items' => [OrderItemController::class, 'listByOrder'],
-
-                // Order Items
-                '/order-items' => [OrderItemController::class, 'listItemsWithProductDetails'],
-                '/order-items/{id}' => [OrderItemController::class, 'show'],
 
                 // Sales
                 'sales' => [SaleController::class, 'listAll'],
@@ -56,12 +56,12 @@ class Rotas
                 // Products
                 '/products' => [ProductController::class, 'create'],
 
+                // Order Items
+                '/order-items' => [OrderItemController::class, 'create'],
+
                 // Orders
                 '/orders' => [OrderController::class, 'create'],
                 '/orders/{id}/items' => [OrderController::class, 'addItem'],
-
-                // Order Items
-                '/order-items' => [OrderItemController::class, 'create'],
 
                 // Sale
                 '/sales' => [SaleController::class, 'create'],
