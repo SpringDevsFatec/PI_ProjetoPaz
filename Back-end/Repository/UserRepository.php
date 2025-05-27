@@ -3,7 +3,7 @@ namespace App\Backend\Repository;
 
 use PDO;
 use App\Backend\Config\Database;
-use app\Backend\Model\UserModel;
+use App\Backend\Model\UserModel;
 
 class UserRepository {
 
@@ -15,10 +15,12 @@ class UserRepository {
         $this->conn = Database::getInstance();
     }
 
-    // begin transaction
-    public function beginTransaction() {
+   public function beginTransaction() {
+    if (!$this->conn->inTransaction()) {
         $this->conn->beginTransaction();
     }
+}
+
 
     // commit transaction
     public function commitTransaction() {
@@ -37,8 +39,12 @@ class UserRepository {
         $query = "SELECT * FROM $this->table";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $userRepo = $stmt->fetchAll(PDO::FETCH_ASSOC);
+       if ($stmt->rowCount() > 0) {
+                return ['status' => true,'user' => $userRepo];
+            }else {
+                return ['status' => false, 'user' => null];
+            }
     }
     
     //view requests by id
@@ -48,11 +54,18 @@ class UserRepository {
         $stmt->bindParam(":id", $id, PDO::PARAM_INT);
         $stmt->execute();
 
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
+         if ($stmt->rowCount() > 0) {
+                $userRepo = $stmt->fetch(PDO::FETCH_ASSOC);
+                return ['status' => true,'user' => $userRepo];
+            }else {
+                return ['status' => false, 'user' => null];
+            }
+        }
+
 
     //view requests by login
     public function verifyLogin($email, $password) {
+        
         $query = "SELECT * FROM $this->table WHERE email = :email";
         $stmt = $this->conn->prepare($query);
         
@@ -62,24 +75,25 @@ class UserRepository {
 
         if ($stmt->rowCount() > 0) {
             $userRepo = $stmt->fetch(PDO::FETCH_ASSOC);
+
             // Check if the password matches
             if (password_verify($password, $userRepo['password'])) {
                 $user = new UserModel();
                 $user->setId($userRepo['id']);
-                $user->setName($userRepo['nome']);
+                $user->setName($userRepo['name']);
                 $user->setEmail($userRepo['email']);
                 $user->setPassword($userRepo['password']);
-                $user->setDateCreate($userRepo['dateCreate']);
-                $user->setUpdatedAt($userRepo['updatedAt']);
+                $user->setCreatedAt($userRepo['created_at']);
 
-                return $userRepo;
+                return ['status' => true,'user' => $userRepo];
 
             }else {
                 // Password does not match
-                return [false,'message' => 'Senha incorreta'];
+                
+                return ['status' => false, 'user' => 'false'];
             }
         }
-        return null;
+        return ['status' => false, 'user' => null];
     }
 
     // Create a new user

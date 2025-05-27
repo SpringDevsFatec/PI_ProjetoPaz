@@ -12,7 +12,8 @@ class Rotas {
                 '/TestUser' => [UserController::class, 'testJWT'],
             ],
             'POST' => [
-
+                '/login' => [UserController::class, 'login'],
+                '/users' => [UserController::class, 'createUser'],
             ],
             'PUT' => [
 

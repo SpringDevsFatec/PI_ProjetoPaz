@@ -4,6 +4,7 @@ namespace App\Backend\Service;
 use App\Backend\Model\UserModel;
 use App\Backend\Repository\UserRepository;
 use App\Backend\Libs\AuthMiddleware;
+use App\Backend\Utils\PatternText;
 use Exception;
 
 
@@ -20,29 +21,42 @@ class UserService {
 
     //Login
     public function login($data) {
-        //check the token
-        $check = new AuthMiddleware();
-        $check->openToken();
+
+       $data = PatternText::processText($data);
 
         $email = $data->email;
         $password = $data->password;
+
         try {
             $this->repository->beginTransaction();
-            
             // Check if user exists
             $user = $this->repository->verifyLogin($email, $password);
-            
-            if ($user) {
+            if ($user['status'] == true) {
                 // Generate JWT token
-                $token = (new AuthMiddleware())->createToken(['id' => $user['id'], 'nome' => $user['nome']]);
+                $token = (new AuthMiddleware())->createToken(
+                    [
+                        'id' => $user['user']['id'],
+                        'name' => $user['user']['name']
+                    ]
+                );
                 
                 return [
                     'status' => true,
                     'message' => 'Login realizado com sucesso',
-                    'token' => $token
+                    'content' => $token
                 ];
-            } else {
-                throw new Exception("Usuário ou senha inválidos.");
+            } else if ($user['status'] == false && $user['user'] == 'false') {
+                return [
+                    'status' => false,
+                    'message' => 'senha inválida!',
+                    'content' => null
+                ];
+            }else {
+                return [
+                    'status' => false,
+                    'message' => 'Usuário não encontrado!',
+                    'content' => null
+                ];
             }
             
             $this->repository->commitTransaction();
@@ -63,7 +77,20 @@ class UserService {
             $this->repository->beginTransaction();
             
             // Get all users
-            return $this->repository->getAllUsers();
+             $reponse = $this->repository->getAllUsers();
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['user']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
             
             $this->repository->commitTransaction();
             
@@ -85,8 +112,20 @@ class UserService {
             $this->repository->beginTransaction();
             
             // Get user by id
-            return  $this->repository->getContentId($id);
-            
+            $reponse = $this->repository->getContentId($id);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['user']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
             $this->repository->commitTransaction();
         } catch (Exception $e) {
             $this->repository->rollBackTransaction();

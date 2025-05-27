@@ -13,38 +13,44 @@ class UserController {
 
     // code Get, Post, Put, Delete in private functions
 
-    private function handleResponse($result, $successMessage = "Operação concluída com sucesso.") {
+    private function handleResponse($result, $successMessage = "Operação concluída com sucesso.", $content = null, $http_response_header = null) {
         if (!empty($result)) {
-            http_response_code(200);
-            echo json_encode([$result,"message" => $successMessage]);
+            http_response_code($http_response_header);
+            echo json_encode(["status" => $result,"message" => $successMessage,"content" => $content]);
         } else {
-            http_response_code(404);
-            echo json_encode(['status' => false, "message" => $successMessage]);
+            http_response_code($http_response_header);
+            echo json_encode(['status' => false, "message" => $successMessage, "token" => $content]);
         }
     }
 
-    public function Login() {
+    public function login() {
         //Get the Json data
         $data = json_decode(file_get_contents('php://input'));
-
-        if($this->service->login($data)) {
-            $result = $this->service->login($data);
-            $this->handleResponse($result, "Login realizado com sucesso.");
+       
+        // Check if the login was successful
+        if($result = $this->service->login($data)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
-            http_response_code(401);
-            echo json_encode(['status' => false, "message" => "Usuário ou senha inválidos."]);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }
         
     }        
-
+    //Select user by id
     public function getUserById($id) {
-        $result = $this->service->getUserById($id);
-        $this->handleResponse($result, "Nenhum conteúdo encontrado.");
+        if($result = $this->service->getUserById($id)){
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
+        }
     }
 
+    //Select all users
     public function getAllUsers() {
-        $result = $this->service->getAllUsers();
-        $this->handleResponse($result, "Nenhum conteúdo encontrado.");
+        if($result = $this->service->getAllUsers()){
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
+        }
     }
 
 }

@@ -12,8 +12,14 @@ class AuthMiddleware {
     // Gera um novo token JWT
     public function createToken(array $payload): string {
         $issuedAt = time();
-        $expire = $issuedAt + 3600; // 1 hora de validade (ajuste conforme necessário)
-        
+
+        //confirma regra de token dev ilimitado
+        if ($payload['name'] == "Developer") {
+            $expire = $issuedAt + 3600 * 24 * 30; // 30 dias de validade
+        } else {
+            $expire = $issuedAt + 3600; // 1 hora de validade (ajuste conforme necessário)
+        }
+
         $payload['iat'] = $issuedAt;
         $payload['exp'] = $expire;
 
@@ -22,7 +28,7 @@ class AuthMiddleware {
 
     // Valida um token diretamente
     public function validateToken(string $token) {
-        try {
+        try {   
             $decoded = JWT::decode($token, new Key(Token::SECRET_KEY, 'HS256'));
             return $decoded;
         } catch (Exception $e) {
@@ -32,6 +38,7 @@ class AuthMiddleware {
 
     // Valida token vindo do header Authorization
     public function openToken() {
+
         $authorizationHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
 
         if (!$authorizationHeader) {
@@ -55,7 +62,6 @@ class AuthMiddleware {
             echo json_encode(['status' => false, 'message' => 'Token inválido ou expirado']);
             exit;
         }
-
         return $decoded;
     }
 

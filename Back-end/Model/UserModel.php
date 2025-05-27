@@ -11,9 +11,17 @@ class UserModel{
     private $name;
     private $email;
     private $password;
-    private $dateCreate;
-    private $updatedAt;
+    private $created_at;
 
+    // // Constructor
+    // public function __construct($id = null, $name = null, $email = null, $password = null, $dateCreate = null, $updatedAt = null) {
+    //     $this->id = $id;
+    //     $this->name = $name;
+    //     $this->email = $email;
+    //     $this->password = password_hash($password, PASSWORD_BCRYPT);
+    //     $this->dateCreate = $dateCreate;
+    //     $this->updatedAt = $updatedAt;
+    // }
     // Getters and Setters
     public function getId() {
         return $this->id;
@@ -46,21 +54,12 @@ class UserModel{
     public function setPassword($password) {
         $this->password = password_hash($password, PASSWORD_BCRYPT);
     }
-
-    public function getDateCreate() {
-        return $this->dateCreate;
+    public function getCreatedAt() {
+        return $this->created_at;
     }
 
-    public function setDateCreate($dateCreate) {
-        $this->dateCreate = $dateCreate;
-    }
-
-    public function getUpdatedAt() {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt($updatedAt) {
-        $this->updatedAt = $updatedAt;
+    public function setCreatedAt($created_at) {
+        $this->created_at = $created_at;
     }
 
 }
