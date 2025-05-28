@@ -2,18 +2,21 @@
 
 namespace App\Backend\Config;
 
+use App\Backend\Model\Product;
 use App\Backend\Repository\ProductRepository;
+use App\Backend\Repository\ProductImageRepository;
 use App\Backend\Repository\SupplierRepository;
 use App\Backend\Repository\OrderItemRepository;
 use App\Backend\Repository\OrderRepository;
 use App\Backend\Repository\SaleRepository;
 use App\Backend\Repository\UserRepository;
 use App\Backend\Service\ProductService;
+use App\Backend\Service\ProductImageService;
 use App\Backend\Service\OrderItemService;
 use App\Backend\Service\OrderService;
 use App\Backend\Service\SaleService;
 use App\Backend\Service\UserService;
-
+use App\Backend\Utils\ConvertBase64;
 use PDO;
 
 class Container
@@ -32,6 +35,9 @@ class Container
         
         // Repositórios
         $this->instances[ProductRepository::class] = new ProductRepository(
+            $this->get(PDO::class)
+        );
+        $this->instances[ProductImageRepository::class] = new ProductImageRepository(
             $this->get(PDO::class)
         );
         $this->instances[SupplierRepository::class] = new SupplierRepository(
@@ -54,6 +60,11 @@ class Container
         $this->instances[ProductService::class] = new ProductService(
             $this->get(ProductRepository::class),
             $this->get(SupplierRepository::class)
+        );
+
+        $this->instances[ProductImageService::class] = new ProductImageService(
+            $this->get(ProductImageRepository::class),
+            $this->get(ProductRepository::class)
         );
 
         $this->instances[OrderItemService::class] = new OrderItemService(
@@ -81,6 +92,11 @@ class Container
         $this->instances[\App\Backend\Controller\ProductController::class] = 
             new \App\Backend\Controller\ProductController(
                 $this->get(ProductService::class)
+            );
+        $this->instances[\App\Backend\Controller\ProductImageController::class] = 
+            new \App\Backend\Controller\ProductImageController(
+                $this->get(ConvertBase64::class),
+                $this->get(ProductImageService::class)
             );
         $this->instances[\App\Backend\Controller\OrderItemController::class] = 
             new \App\Backend\Controller\OrderItemController(

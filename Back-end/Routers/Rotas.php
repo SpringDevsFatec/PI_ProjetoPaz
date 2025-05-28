@@ -4,6 +4,7 @@ namespace App\Backend\Routers;
 use App\Backend\Controller\OrderItemController;
 use App\Backend\Controller\OrderController;
 use App\Backend\Controller\ProductController;
+use App\Backend\Controller\ProductImageController;
 use App\Backend\Controller\UserController;
 use App\Backend\Controller\SaleController;
 
@@ -28,6 +29,8 @@ class Rotas
                 '/products/{id}' => [ProductController::class, 'show'],
                 // Rota genérica por último
                 '/products' => [ProductController::class, 'listAll'],
+
+                // Product Images
 
                 // Order Items
                 '/order-items/details/{orderId}' => [OrderItemController::class, 'listItemsWithProductDetails'],
@@ -56,6 +59,8 @@ class Rotas
                 // Products
                 '/products' => [ProductController::class, 'create'],
 
+                // Product Images
+
                 // Order Items
                 '/order-items' => [OrderItemController::class, 'create'],
 
@@ -75,6 +80,8 @@ class Rotas
                 // Products
                 '/products/{id}' => [ProductController::class, 'update'],
 
+                // Product Images
+
                 // Order Items
                 '/order-items/{id}/quantity' => [OrderItemController::class, 'updateQuantity'],
 
@@ -92,6 +99,8 @@ class Rotas
 
                 // products
                 '/products/{id}' => [ProductController::class, 'delete'],
+                
+                // product-images
 
                 // orderItem
                 '/order-items/{id}' => [OrderItemController::class, 'delete'],
