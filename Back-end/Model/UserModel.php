@@ -2,6 +2,7 @@
 
 namespace App\Backend\Model;
 
+use App\Backend\Utils\PatternText;
 use PDO;
 
 class UserModel{
@@ -52,7 +53,7 @@ class UserModel{
     }
 
     public function setPassword($password) {
-        $this->password = password_hash($password, PASSWORD_BCRYPT);
+        $this->password = PatternText::cryptPassword($password);
     }
     public function getCreatedAt() {
         return $this->created_at;
@@ -60,6 +61,15 @@ class UserModel{
 
     public function setCreatedAt($created_at) {
         $this->created_at = $created_at;
+    }
+    
+    // Method to convert the object to an array for JSON serialization
+    public function jsonSerialize() {
+        return [
+            'name' => $this->name,
+            'email' => $this->email,
+            // Nunca envie a senha em produção! Só adicione se for necessário e seguro.
+        ];
     }
 
 }

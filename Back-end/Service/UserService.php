@@ -5,6 +5,7 @@ use App\Backend\Model\UserModel;
 use App\Backend\Repository\UserRepository;
 use App\Backend\Libs\AuthMiddleware;
 use App\Backend\Utils\PatternText;
+use Directory;
 use Exception;
 
 
@@ -27,10 +28,14 @@ class UserService {
         $email = $data->email;
         $password = $data->password;
 
+
         try {
             $this->repository->beginTransaction();
             // Check if user exists
             $user = $this->repository->verifyLogin($email, $password);
+
+            $this->repository->commitTransaction();
+
             if ($user['status'] == true) {
                 // Generate JWT token
                 $token = (new AuthMiddleware())->createToken(
@@ -137,26 +142,48 @@ class UserService {
 
     // create user
     public function createUser($data) {
-         
-         
- 
-         // set UserModel
+
+        // Process the data
+        $dataPadronizado = PatternText::processText($data);
+       // var_dump($dataPadronizado->password);die;
+        // Create a new UserModel instance
 
         $user = new UserModel();
-        $user->setName($data->nome);
-        $user->setEmail($data->email);
-        $user->setPassword($data->password);
+        $user->setName($dataPadronizado->name);
+        $user->setEmail($dataPadronizado->email);
+        $user->setPassword($dataPadronizado->password); // Password is already hashed in the model
+
         try {
             $this->repository->beginTransaction();
             
             // Check if user already exists
-            if ($this->repository->userExists($user) > 0) {
-                throw new Exception("User already exists.");
+            $userExists = $this->repository->userExists($user);
+            if ($userExists['status'] == false) {
+                return [
+                    'status' => false,
+                    'message' => 'User já cadastrado.',
+                    'content' => $userExists['user']
+                ];
             }
             
-            // Create user            
-           return $this->repository->createUser($user);
-            
+            // Create user
+            $userCreated = $this->repository->createUser($user); 
+            if($userCreated['status'] == true) {
+                $data->id = $userCreated['user']->getId();
+                 $this->repository->commitTransaction(); //action that make all things happen
+                return [
+                    'status' => true,
+                    'message' => 'Usuário criado com sucesso.',
+                    'content' => $data
+                ];
+            } else {
+                $this->repository->rollBackTransaction(); // action that make all things not happen
+                return [
+                    'status' => false,
+                    'message' => 'Erro ao criar usuário.',
+                    'content' => null
+                ];
+            }
             $this->repository->commitTransaction();
         } catch (Exception $e) {
             $this->repository->rollBackTransaction();
@@ -168,29 +195,55 @@ class UserService {
     public function updateUser($data) {
         //check the token
         $check = new AuthMiddleware();
-        $check->openToken();
+        $decodedToken =  $check->openToken();
+        // Get user ID from the token
+        $userId = $decodedToken->id;
+        // Process the data
+        $dataPadronizado = PatternText::processText($data);
 
         $user = new UserModel();
-        $user->setName($data->nome);
-        $user->setEmail($data->email);
-        $user->setPassword($data->password);
+        $user->setId($userId); // Id by token
+        $user->setName($dataPadronizado->name);
+        $user->setEmail($dataPadronizado->email);
+        $user->setPassword($dataPadronizado->password); // Password is already hashed in the model
         
-        if ($this->repository->userExists($user) > 0) {
-            throw new Exception("User already exists.");
-        }
+        // Check if user already exists
+            $userExists = $this->repository->userExists($user);
+            if ($userExists['status'] == true) {
+                return [
+                    'status' => false,
+                    'message' => 'User não existe.',
+                    'content' => $userExists['user']
+                ];
+            }
 
         try {
             $this->repository->beginTransaction();
             
             // Update user
-            return $this->repository->updateUser($user);
-            
+            $userUpdated = $this->repository->updateUser($user); 
+            if($userUpdated['status'] == true) {
+                 $this->repository->commitTransaction(); //action that make all things happen
+                return [
+                    'status' => true,
+                    'message' => 'Usuário Atualizado com sucesso.',
+                    'content' => $data
+                ];
+            } else {
+                $this->repository->rollBackTransaction(); // action that make all things not happen
+                return [
+                    'status' => false,
+                    'message' => 'Erro ao Atualizar usuário.',
+                    'content' => null
+                ];
+            }
             $this->repository->commitTransaction();
         } catch (Exception $e) {
             $this->repository->rollBackTransaction();
             throw $e;
         }
     }
+
 
     // update user password
     public function updateUserPassword($data) {

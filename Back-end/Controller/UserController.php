@@ -4,7 +4,7 @@ use App\Backend\Service\UserService;
 use App\Backend\Libs\AuthMiddleware;
 use Exception;
 
-class UserController {
+class  UserController {
     private $service;
 
     public function __construct() {
@@ -19,7 +19,7 @@ class UserController {
             echo json_encode(["status" => $result,"message" => $successMessage,"content" => $content]);
         } else {
             http_response_code($http_response_header);
-            echo json_encode(['status' => false, "message" => $successMessage, "token" => $content]);
+            echo json_encode(['status' => false, "message" => $successMessage, "content" => $content]);
         }
     }
 
@@ -50,6 +50,32 @@ class UserController {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
+        }
+    }
+
+    //Create user
+    public function createUser() {
+        //Get the Json data
+        $data = json_decode(file_get_contents('php://input'));
+        
+        // Check if the user was created successfully
+        if($result = $this->service->createUser($data)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 201);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
+        }
+    }
+
+    //Update user
+    public function updateUser() {
+        //Get the Json data
+        $data = json_decode(file_get_contents('php://input'));
+        
+        // Check if the user was updated successfully
+        if($result = $this->service->updateUser($data)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
         }
     }
 

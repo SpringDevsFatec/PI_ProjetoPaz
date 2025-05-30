@@ -18,5 +18,22 @@ class PatternText {
     public static function cryptPassword($password) {
         return password_hash($password, PASSWORD_BCRYPT);
     }
+
+    public static function validateRequiredFields($dataPadronizado) {
+        if (empty($dataPadronizado->nome) || empty($dataPadronizado->email) || empty($dataPadronizado->password)) {
+            return [
+                'status' => false,
+                'message' => 'Dados incompletos para atualização.',
+                'content' => null
+            ];
+        }
+        return [
+            'status' => true,
+            'message' => 'Dados completos.',
+            'content' => $dataPadronizado
+        ];
+    }
+
+// ...existing code...
 }
 

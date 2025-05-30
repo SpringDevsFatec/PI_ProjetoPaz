@@ -16,7 +16,7 @@ class Rotas {
                 '/users' => [UserController::class, 'createUser'],
             ],
             'PUT' => [
-
+                '/users' => [UserController::class, 'updateUser'],
             ],
             'DELETE' => [
 

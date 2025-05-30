@@ -64,18 +64,16 @@ class UserRepository {
 
 
     //view requests by login
-    public function verifyLogin($email, $password) {
-        
+    public function verifyLogin($email, $password ) {
+       // var_dump($email, $password);die;
         $query = "SELECT * FROM $this->table WHERE email = :email";
         $stmt = $this->conn->prepare($query);
-        
         // select only the email
-        $stmt->bindParam(":email", $email, PDO::PARAM_STR);
+        $stmt->bindParam(":email", $email, PDO::PARAM_STR); 
         $stmt->execute();
 
         if ($stmt->rowCount() > 0) {
             $userRepo = $stmt->fetch(PDO::FETCH_ASSOC);
-
             // Check if the password matches
             if (password_verify($password, $userRepo['password'])) {
                 $user = new UserModel();
@@ -84,16 +82,16 @@ class UserRepository {
                 $user->setEmail($userRepo['email']);
                 $user->setPassword($userRepo['password']);
                 $user->setCreatedAt($userRepo['created_at']);
-
+            
                 return ['status' => true,'user' => $userRepo];
 
             }else {
                 // Password does not match
-                
-                return ['status' => false, 'user' => 'false'];
-            }
-        }
-        return ['status' => false, 'user' => null];
+                    return ['status' => false, 'user' => 'false'];
+                }
+    }else {
+            return ['status' => false, 'user' => null];
+    }
     }
 
     // Create a new user
@@ -102,17 +100,20 @@ class UserRepository {
         $email = $user->getEmail();
         $password = $user->getPassword(); // Password is already hashed in the model
     
-        $query = "INSERT INTO $this->table (name, email, password) VALUES (:name, :email, :password)";
+        $query = "INSERT INTO " . $this->table . " (name, email, password) VALUES (:name, :email, :password)";
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":name", $name, PDO::PARAM_STR);
         $stmt->bindParam(":email", $email, PDO::PARAM_STR);
-        $stmt->bindParam(":password", password_hash($password, PASSWORD_BCRYPT), PDO::PARAM_STR);
-
-        if ($stmt->execute()) {
-            return true;
+        $stmt->bindParam(":password", $password, PDO::PARAM_STR);
+        $stmt->execute();
+        // Check if the user was created successfully
+        if ($stmt->rowCount() > 0) {
+            $user->setId($this->conn->lastInsertId());
+            return ['status' => true, 'user' => $user];
+        } else {
+            return ['status' => false, 'user' => null];
         }
-        return false;
     }
 
     // Update user
@@ -127,12 +128,15 @@ class UserRepository {
         $stmt->bindParam(":id", $id, PDO::PARAM_INT);
         $stmt->bindParam(":name", $name, PDO::PARAM_STR);
         $stmt->bindParam(":email", $email, PDO::PARAM_STR);
-        $stmt->bindParam(":password", password_hash($password, PASSWORD_BCRYPT), PDO::PARAM_STR);
+        $stmt->bindParam(":password", $password, PDO::PARAM_STR);
+        $stmt->execute();
 
-        if ($stmt->execute()) {
-            return true;
+        // Check if the user was updated successfully
+        if ($stmt->rowCount() > 0) {
+            return ['status' => true, 'user' => $user];
+        } else {
+            return ['status' => false, 'user' => null];
         }
-        return false;
     }
 
     // Update the user password
@@ -167,7 +171,11 @@ class UserRepository {
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":email", $email, PDO::PARAM_STR);
         $stmt->execute();
-
-        return $stmt->rowCount() > 0;
+        if ($stmt->rowCount() > 0) {
+            $userRepo = $stmt->fetch(PDO::FETCH_ASSOC);
+            return ['status' => false, 'user' => $userRepo]; // Return the number of users with the same email
+        } else {
+            return ['status' => true, 'user' => null]; // No users found with the same email
+        }
     }
 }
