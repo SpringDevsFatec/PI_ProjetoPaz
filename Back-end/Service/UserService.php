@@ -1,116 +1,275 @@
 <?php
 namespace App\Backend\Service;
 
-use App\Backend\Model\User;
+use App\Backend\Model\UserModel;
 use App\Backend\Repository\UserRepository;
+use App\Backend\Libs\AuthMiddleware;
+use App\Backend\Utils\PatternText;
+use Directory;
+use Exception;
 
-use DateTime;
-use DomainException;
-use InvalidArgumentException;
 
 class UserService {
     
-    private UserRepository $repository;
+    private $repository;
 
-    public function __construct(
-        UserRepository $repository
-    ) {
-        $this->repository = $repository;
+    public function __construct() {
+        $this->repository = new UserRepository();
     }
 
-    public function getAll(): array
-    {
-        return $this->repository->findAll();
+    
+    //public functions...
+
+    //Login
+    public function login($data) {
+
+       $data = PatternText::processText($data);
+
+        $email = $data->email;
+        $password = $data->password;
+
+
+        try {
+            $this->repository->beginTransaction();
+            // Check if user exists
+            $user = $this->repository->verifyLogin($email, $password);
+
+            $this->repository->commitTransaction();
+
+            if ($user['status'] == true) {
+                // Generate JWT token
+                $token = (new AuthMiddleware())->createToken(
+                    [
+                        'id' => $user['user']['id'],
+                        'name' => $user['user']['name']
+                    ]
+                );
+                
+                return [
+                    'status' => true,
+                    'message' => 'Login realizado com sucesso',
+                    'content' => $token
+                ];
+            } else if ($user['status'] == false && $user['user'] == 'false') {
+                return [
+                    'status' => false,
+                    'message' => 'senha inválida!',
+                    'content' => null
+                ];
+            }else {
+                return [
+                    'status' => false,
+                    'message' => 'Usuário não encontrado!',
+                    'content' => null
+                ];
+            }
+            
+            $this->repository->commitTransaction();
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }    
     }
 
-    public function getById(int $id): ?array
-    {
-        return $this->repository->find($id);
-    }
 
-    public function getUserByEmail(string $email): bool
-    {
-        if($this->repository->findUserByEmail($email)){
-            return true;
-        } else {
-            return false;
+    //Get all users
+    public function getAllUsers() {
+        //check the token
+        $check = new AuthMiddleware();
+        $check->openToken();
+        
+        try {
+            $this->repository->beginTransaction();
+            
+            // Get all users
+             $reponse = $this->repository->getAllUsers();
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['user']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->repository->commitTransaction();
+            
+         
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
         }
     }
 
-    public function createUser(array $data): User
-    {
-        if (empty($data['name']) || empty($data['email']) || empty($data['password'])) {
-            throw new InvalidArgumentException("Dados incompletos.");       
+
+    //Get user by id
+    public function getUserById($id) {
+        //check the token
+        $check = new AuthMiddleware();
+        $check->openToken();
+        
+        try {
+            $this->repository->beginTransaction();
+            
+            // Get user by id
+            $reponse = $this->repository->getContentId($id);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['user']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            $this->repository->commitTransaction();
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
         }
-
-
-        $user = new User(
-            name: (string)$data['name'],
-            email: (string)$data['email'],
-            password: (string)$data['password'],
-            id: null,
-            createdAt: new DateTime(),
-            updatedAt: new DateTime()
-        );
-
-        $userId = $this->repository->save($user);
-        $user->setId($userId);
-
-        return $user;
     }
 
-    public function updateUser(int $userId): User
-    {
-        $existingUser = $this->repository->find($userId);
-        if (!$existingUser) {
-            throw new DomainException("Usuario não encontrado.");
-        }
-        
-        $user = new User(
-            name: (string)$existingUser['name'],
-            email: (string)$existingUser['email'],
-            password: (string)$existingUser['password'],
-            id: (int)$existingUser['id'],
-            createdAt: new DateTime($existingUser['created_at']),
-            updatedAt: new DateTime()
-        );
 
-        $this->repository->update($user);
-        
-        return $user;
+
+    // create user
+    public function createUser($data) {
+
+        // Process the data
+        $dataPadronizado = PatternText::processText($data);
+       // var_dump($dataPadronizado->password);die;
+        // Create a new UserModel instance
+
+        $user = new UserModel();
+        $user->setName($dataPadronizado->name);
+        $user->setEmail($dataPadronizado->email);
+        $user->setPassword($dataPadronizado->password); // Password is already hashed in the model
+
+        try {
+            $this->repository->beginTransaction();
+            
+            // Check if user already exists
+            $userExists = $this->repository->userExists($user);
+            if ($userExists['status'] == false) {
+                return [
+                    'status' => false,
+                    'message' => 'User já cadastrado.',
+                    'content' => $userExists['user']
+                ];
+            }
+            
+            // Create user
+            $userCreated = $this->repository->createUser($user); 
+            if($userCreated['status'] == true) {
+                $data->id = $userCreated['user']->getId();
+                 $this->repository->commitTransaction(); //action that make all things happen
+                return [
+                    'status' => true,
+                    'message' => 'Usuário criado com sucesso.',
+                    'content' => $data
+                ];
+            } else {
+                $this->repository->rollBackTransaction(); // action that make all things not happen
+                return [
+                    'status' => false,
+                    'message' => 'Erro ao criar usuário.',
+                    'content' => null
+                ];
+            }
+            $this->repository->commitTransaction();
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
     }
 
-    public function updatePassord(int $userId): User
-    {
+    // update user
+    public function updateUser($data) {
+        //check the token
+        $check = new AuthMiddleware();
+        $decodedToken =  $check->openToken();
+        // Get user ID from the token
+        $userId = $decodedToken->id;
+        // Process the data
+        $dataPadronizado = PatternText::processText($data);
 
-        $existingUser = $this->repository->find($userId);
-        if (!$existingUser) {
-            throw new DomainException("Usuario não encontrado.");
+        $user = new UserModel();
+        $user->setId($userId); // Id by token
+        $user->setName($dataPadronizado->name);
+        $user->setEmail($dataPadronizado->email);
+        $user->setPassword($dataPadronizado->password); // Password is already hashed in the model
+        
+        // Check if user already exists
+            $userExists = $this->repository->userExists($user);
+            if ($userExists['status'] == true) {
+                return [
+                    'status' => false,
+                    'message' => 'User não existe.',
+                    'content' => $userExists['user']
+                ];
+            }
+
+        try {
+            $this->repository->beginTransaction();
+            
+            // Update user
+            $userUpdated = $this->repository->updateUser($user); 
+            if($userUpdated['status'] == true) {
+                 $this->repository->commitTransaction(); //action that make all things happen
+                return [
+                    'status' => true,
+                    'message' => 'Usuário Atualizado com sucesso.',
+                    'content' => $data
+                ];
+            } else {
+                $this->repository->rollBackTransaction(); // action that make all things not happen
+                return [
+                    'status' => false,
+                    'message' => 'Erro ao Atualizar usuário.',
+                    'content' => null
+                ];
+            }
+            $this->repository->commitTransaction();
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
         }
-        
-        $user = new User(
-            name: (string)$existingUser['name'],
-            email: (string)$existingUser['email'],
-            password: (string)$existingUser['password'],
-            id: (int)$existingUser['id'],
-            createdAt: new DateTime($existingUser['created_at']),
-            updatedAt: new DateTime()
-        );
-
-        $this->repository->updatePassword($user);
-        
-        return $user;
     }
 
-    public function deleteUser($id) {
 
-        $user = $this->repository->find($id);
-        if (!$user) {
-            throw new DomainException("Usuario não encontrado");
+    // update user password
+    public function updateUserPassword($data) {
+        //check the token
+        $check = new AuthMiddleware();
+        $check->openToken();
+
+        $user = new UserModel();
+        $user->setName($data->nome);
+        $user->setEmail($data->email);
+        $user->setPassword($data->password);
+
+        if ($this->repository->userExists($user) > 0) {
+            throw new Exception("User already exists.");
         }
         
-        if (!$this->repository->delete($id)) {
-            throw new DomainException("Falha ao excluir usuario");
-        } 
+        try {
+            $this->repository->beginTransaction();
+            
+            // Update user password
+            return $this->repository->updateUserPassword($user->getId(), $user->getPassword());
+            
+            $this->repository->commitTransaction();
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
     }
 }

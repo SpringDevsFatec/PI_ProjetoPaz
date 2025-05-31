@@ -1,126 +1,181 @@
-<?php 
-
+<?php
 namespace App\Backend\Repository;
 
-use App\Backend\Model\User;
-use App\Backend\Config\Database;
 use PDO;
-use PDOException;
+use App\Backend\Config\Database;
+use App\Backend\Model\UserModel;
 
 class UserRepository {
-    private PDO $conn;
-    private string $table = 'user';
-    private $tableLog = '';
 
-    public function __construct(PDO $conn = null)
-    {
-        $this->conn = $conn ?: Database::getInstance();
+    private $conn;
+    private $table = 'user';
+    //private $tableLog = '';
+
+    public function __construct() {
+        $this->conn = Database::getInstance();
     }
 
-    public function findUserByEmail($email) {
-        $query = "SELECT * FROM {$this->table} WHERE email = :email";
+   public function beginTransaction() {
+    if (!$this->conn->inTransaction()) {
+        $this->conn->beginTransaction();
+    }
+}
+
+
+    // commit transaction
+    public function commitTransaction() {
+        $this->conn->commit();
+    }
+
+    // roll back transaction
+    public function rollBackTransaction() {
+        $this->conn->rollBack();
+    }
+
+    //public functions...
+
+    // Get all users
+    public function getAllUsers() {
+        $query = "SELECT * FROM $this->table";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':email', $email, PDO::PARAM_STR);
         $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $userRepo = $stmt->fetchAll(PDO::FETCH_ASSOC);
+       if ($stmt->rowCount() > 0) {
+                return ['status' => true,'user' => $userRepo];
+            }else {
+                return ['status' => false, 'user' => null];
+            }
     }
-
-    public function findAll() {
-        $query = "SELECT * FROM {$this->table}";
+    
+    //view requests by id
+    public function getContentId($id) {
+        $query = "SELECT * FROM $this->table WHERE id = :id";
         $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
 
-    public function find($id) {
-        $query = "SELECT * FROM {$this->table} WHERE id = :id";
+         if ($stmt->rowCount() > 0) {
+                $userRepo = $stmt->fetch(PDO::FETCH_ASSOC);
+                return ['status' => true,'user' => $userRepo];
+            }else {
+                return ['status' => false, 'user' => null];
+            }
+        }
+
+
+    //view requests by login
+    public function verifyLogin($email, $password ) {
+       // var_dump($email, $password);die;
+        $query = "SELECT * FROM $this->table WHERE email = :email";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        // select only the email
+        $stmt->bindParam(":email", $email, PDO::PARAM_STR); 
         $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
 
-    public function save(User $user): int
-    {
-        $query = "INSERT INTO {$this->table} 
-                  (name, email, password, created_at, updated_at) 
-                  VALUES (:name, :email, :password, :created_at, :updated_at)";
-        try {
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute([
-                'name' => $user->getName(),
-                'email' => $user->getEmail(),
-                'password' => $user->getPassword(),
-                'created_at' => $user->getCreatedAt()?->format('Y-m-d H:i:s'),
-                'updated_at' => $user->getUpdatedAt()?->format('Y-m-d H:i:s'),
-            ]);
+        if ($stmt->rowCount() > 0) {
+            $userRepo = $stmt->fetch(PDO::FETCH_ASSOC);
+            // Check if the password matches
+            if (password_verify($password, $userRepo['password'])) {
+                $user = new UserModel();
+                $user->setId($userRepo['id']);
+                $user->setName($userRepo['name']);
+                $user->setEmail($userRepo['email']);
+                $user->setPassword($userRepo['password']);
+                $user->setCreatedAt($userRepo['created_at']);
             
-            $userId = $this->conn->lastInsertId();
-            return $userId;
+                return ['status' => true,'user' => $userRepo];
 
-        } catch (PDOException $e) {
-            throw new PDOException("Erro ao criar usuario: " . $e->getMessage());
+            }else {
+                // Password does not match
+                    return ['status' => false, 'user' => 'false'];
+                }
+    }else {
+            return ['status' => false, 'user' => null];
+    }
+    }
+
+    // Create a new user
+    public function createUser(UserModel $user) {
+        $name = $user->getName(); 
+        $email = $user->getEmail();
+        $password = $user->getPassword(); // Password is already hashed in the model
+    
+        $query = "INSERT INTO " . $this->table . " (name, email, password) VALUES (:name, :email, :password)";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":name", $name, PDO::PARAM_STR);
+        $stmt->bindParam(":email", $email, PDO::PARAM_STR);
+        $stmt->bindParam(":password", $password, PDO::PARAM_STR);
+        $stmt->execute();
+        // Check if the user was created successfully
+        if ($stmt->rowCount() > 0) {
+            $user->setId($this->conn->lastInsertId());
+            return ['status' => true, 'user' => $user];
+        } else {
+            return ['status' => false, 'user' => null];
         }
     }
 
-    public function update(User $user): bool
-    {
-        
-        $query = "UPDATE {$this->table} 
-                  SET name = :name, 
-                      email = :email,
-                      updated_at = :updated_at
-                  WHERE id = :id";
-        
-        try {
-            $stmt = $this->conn->prepare($query);
-            return $stmt->execute([
-                ':id' => $user->getId(),
-                ':name' => $user->getName(),
-                ':email' => $user->getEmail(),
-                ':updated_at' => (new \DateTime)->format('Y-m-d H:i:s'),
-            ]);
+    // Update user
+    public function updateUser(UserModel $user) {
+        $id = $user->getId();   
+        $name = $user->getName();
+        $email = $user->getEmail();
+        $password = $user->getPassword(); // Password is already hashed in the model
 
-        } catch (PDOException $e) {
-            throw new PDOException("Erro ao atualizar usuario: " . $e->getMessage());
+        $query = "UPDATE $this->table SET name = :name, email = :email, password = :password WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
+        $stmt->bindParam(":name", $name, PDO::PARAM_STR);
+        $stmt->bindParam(":email", $email, PDO::PARAM_STR);
+        $stmt->bindParam(":password", $password, PDO::PARAM_STR);
+        $stmt->execute();
+
+        // Check if the user was updated successfully
+        if ($stmt->rowCount() > 0) {
+            return ['status' => true, 'user' => $user];
+        } else {
+            return ['status' => false, 'user' => null];
         }
     }
 
-    public function updatePassword(User $user): bool
-    {
-        $query = "UPDATE {$this->table} 
-                  SET password = :password,
-                      updated_at = :updated_at
-                  WHERE id = :id";
-        
-        try {
-            $stmt = $this->conn->prepare($query);
-            return $stmt->execute([
-                ':id' => $user->getId(),
-                ':passoword' => $user->getPassword(),
-                ':updated_at' => (new \DateTime)->format('Y-m-d H:i:s'),
-            ]);
+    // Update the user password
+    public function updateUserPassword($id, $password) {
+        $query = "UPDATE $this->table SET password = :password WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
+        $stmt->bindParam(":password", password_hash($password, PASSWORD_BCRYPT), PDO::PARAM_STR);
 
-        } catch (PDOException $e) {
-            throw new PDOException("Erro ao atualizar senha: " . $e->getMessage());
-        }
-    }
-
-    public function delete($id): bool
-    {
-        try {
-            $this->conn->beginTransaction();
-
-            $query = "DELETE FROM {$this->table} WHERE id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute([':id' => $id]);
-            
-            $this->conn->commit();
+        if ($stmt->execute()) {
             return true;
-        
-        } catch (PDOException $e) {
-            $this->conn->rollBack();
-            throw new PDOException("Erro ao deletar usuario: " . $e->getMessage());
-        } 
+        }
+        return false;
+    }
+    
+    // Delete user
+    public function deleteUser($id) {
+        $query = "DELETE FROM $this->table WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            return true;
+        }
+        return false;
+    }
+
+    public function userExists(UserModel $user) {
+        $email = $user->getEmail();
+
+        $query = "SELECT * FROM $this->table WHERE email = :email";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":email", $email, PDO::PARAM_STR);
+        $stmt->execute();
+        if ($stmt->rowCount() > 0) {
+            $userRepo = $stmt->fetch(PDO::FETCH_ASSOC);
+            return ['status' => false, 'user' => $userRepo]; // Return the number of users with the same email
+        } else {
+            return ['status' => true, 'user' => null]; // No users found with the same email
+        }
     }
 }
