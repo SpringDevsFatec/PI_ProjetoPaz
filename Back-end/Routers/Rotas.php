@@ -8,7 +8,7 @@ class Rotas {
         return [
             'GET' => [
                 '/users' => [UserController::class, 'getAllUsers'],
-                '/users/{id}' => [UserController::class, 'getUserById'],
+                '/user' => [UserController::class, 'getUserById'],
                 '/TestUser' => [UserController::class, 'testJWT'],
             ],
             'POST' => [
@@ -17,6 +17,7 @@ class Rotas {
             ],
             'PUT' => [
                 '/users' => [UserController::class, 'updateUser'],
+                '/users/passworld' => [UserController::class, 'updateUserPassword'],
             ],
             'DELETE' => [
 

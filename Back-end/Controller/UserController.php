@@ -36,8 +36,9 @@ class  UserController {
         
     }        
     //Select user by id
-    public function getUserById($id) {
-        if($result = $this->service->getUserById($id)){
+    public function getUserById() {
+
+        if($result = $this->service->getUserById()){
             $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
@@ -79,4 +80,16 @@ class  UserController {
         }
     }
 
+     //Update password user
+    public function updateUserPassword() {
+        //Get the Json data
+        $data = json_decode(file_get_contents('php://input'));
+        
+        // Check if the user was updated successfully
+        if($result = $this->service->updateUserPassword($data)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
+        }
+    }
 }

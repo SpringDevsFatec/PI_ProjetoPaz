@@ -108,16 +108,18 @@ class UserService {
 
 
     //Get user by id
-    public function getUserById($id) {
+    public function getUserById() {
         //check the token
         $check = new AuthMiddleware();
-        $check->openToken();
-        
+        $decodedToken =  $check->openToken();
+        // Get user ID from the token
+        $userId = $decodedToken->id;
+
         try {
             $this->repository->beginTransaction();
             
             // Get user by id
-            $reponse = $this->repository->getContentId($id);
+            $reponse = $this->repository->getContentId($userId);
             if ($reponse['status'] == true) {
                 return [
                     'status' => true,
@@ -247,24 +249,41 @@ class UserService {
 
     // update user password
     public function updateUserPassword($data) {
-        //check the token
-        $check = new AuthMiddleware();
-        $check->openToken();
 
         $user = new UserModel();
-        $user->setName($data->nome);
         $user->setEmail($data->email);
         $user->setPassword($data->password);
 
-        if ($this->repository->userExists($user) > 0) {
-            throw new Exception("User already exists.");
-        }
+         // Check if user already exists
+            $userExists = $this->repository->userExists($user);
+            if ($userExists['status'] == true) {
+                return [
+                    'status' => false,
+                    'message' => 'User não existe.',
+                    'content' => $userExists['user']
+                ];
+            }
         
         try {
             $this->repository->beginTransaction();
             
             // Update user password
-            return $this->repository->updateUserPassword($user->getId(), $user->getPassword());
+            $passwordNew = $this->repository->updateUserPassword($user);
+            if($passwordNew['status'] == true) {
+                 $this->repository->commitTransaction(); //action that make all things happen
+                return [
+                    'status' => true,
+                    'message' => 'Senha Atualizada com sucesso.',
+                    'content' => $data
+                ];
+            } else {
+                $this->repository->rollBackTransaction(); // action that make all things not happen
+                return [
+                    'status' => false,
+                    'message' => 'Erro ao Atualizar senha.',
+                    'content' => null
+                ];
+            }
             
             $this->repository->commitTransaction();
         } catch (Exception $e) {
