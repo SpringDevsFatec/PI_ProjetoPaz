@@ -31,6 +31,8 @@ CREATE TABLE `product` (
   `is_favorite` tinyint(1) DEFAULT 0,
   `category` varchar(50) DEFAULT NULL,
   `donation` tinyint(1) DEFAULT 0,
+  `img_product` varchar(50) DEFAULT NULL,
+  `status` tinyint(1) DEFAULT 0,
   `supplier_id` int DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

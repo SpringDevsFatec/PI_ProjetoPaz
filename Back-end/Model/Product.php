@@ -17,8 +17,10 @@ class Product {
     private string $description;
     private bool $isFavorite = false;
     private bool $isDonation = false;
+    private string $img_product;
+    private int $status;
     private ?DateTimeInterface $createdAt;
-    private ?DateTimeInterface $updatedAt;
+
 
     public function __construct(
         string $name,
@@ -28,10 +30,11 @@ class Product {
         string $description,
         bool $isFavorite = false,
         bool $isDonation = false,
+        string $img_product = '',
+        int $status = 1, // 1 for active, 0 for inactive
         ?int $id = null,
         ?int $supplierId = null,
         ?DateTimeInterface $createdAt = null,
-        ?DateTimeInterface $updatedAt = null
     ) {
         $this->id = $id;
         $this->supplierId = $supplierId;
@@ -43,7 +46,6 @@ class Product {
         $this->setIsFavorite($isFavorite);
         $this->setIsDonation($isDonation);
         $this->createdAt = $createdAt ?? new DateTime();
-        $this->updatedAt = $updatedAt ?? new DateTime();
     }
 
     public function getId(): ?int { return $this->id; }
@@ -57,11 +59,12 @@ class Product {
     public function getCategory(): string { return $this->category; }
     public function getDescription(): string { return $this->description; }
 
-    public function isFavorite(): int { return $this->isFavorite; }
-    public function isDonation(): int { return $this->isDonation; }
+    public function getFavorite(): int { return $this->isFavorite; }
+    public function getDonation(): int { return $this->isDonation; }
 
     public function getCreatedAt(): ?DateTimeInterface { return $this->createdAt; }
-    public function getUpdatedAt(): ?DateTimeInterface { return $this->updatedAt; }
+
+    //setters
 
     public function setId(?int $id): void {
         $this->id = $id;
@@ -72,7 +75,6 @@ class Product {
             throw new InvalidArgumentException("Nome do produto não pode ser vazio");
         }
         $this->name = trim($name);
-        $this->updatedAt = new DateTime();
     }
 
     public function setCostPrice(float $costPrice): void {
@@ -81,7 +83,6 @@ class Product {
         }
 
         $this->costPrice = $this->isDonation ? 0.0 : round($costPrice, 2);
-        $this->updatedAt = new DateTime();
     }
 
     public function setSalePrice(float $salePrice): void {
@@ -89,22 +90,18 @@ class Product {
             throw new \InvalidArgumentException("Preço de venda deve ser maior que zero.");
         }
         $this->salePrice = round($salePrice, 2);
-        $this->updatedAt = new DateTime();
     }
 
     public function setCategory(string $category): void {
         $this->category = $category;
-        $this->updatedAt = new DateTime();
     }
 
     public function setDescription(string $description): void {
         $this->description = $description;
-        $this->updatedAt = new DateTime();
     }
 
     public function setIsFavorite(bool $isFavorite): void {
         $this->isFavorite = $isFavorite;
-        $this->updatedAt = new DateTime();
     }
 
     public function setIsDonation(bool $isDonation): void {
@@ -114,14 +111,9 @@ class Product {
         if ($this->isDonation && !$wasDonation) {
             $this->costPrice = 0.0;
         }
-        
-        $this->updatedAt = new DateTime();
 
     }
 
-    public function setUpdatedAt(DateTimeInterface $updatedAt): void {
-        $this->updatedAt = $updatedAt;
-    }
 
     public function calculateProfitMargin() : float
     {
@@ -160,7 +152,6 @@ class Product {
             'is_donation' => $this->isDonation,
             'profit_margin' => $this->calculateProfitMargin(),
             'created_at' => $this->createdAt->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updatedAt->format('Y-m-d H:i:s')
         ];
     }
 }
