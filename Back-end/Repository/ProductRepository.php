@@ -132,15 +132,14 @@ class ProductRepository {
     public function save(Product $product): int
     {
         $query = "INSERT INTO {$this->table} 
-                  (supplier_id, name, cost_price, sale_price, category, 
+                  (name, cost_price, sale_price, category, 
                   description, is_favorite, is_donation, created_at, updated_at)
                   VALUES 
-                  (:supplier_id, :name, :cost_price, :sale_price, :category, 
+                  (:name, :cost_price, :sale_price, :category, 
                   :description, :is_favorite, :is_donation, :created_at, :updated_at)";
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->execute([
-                'supplier_id' => $product->getSupplierId(),
                 'name'=> $product->getName(),
                 'cost_price'=> $product->getCostPrice(),
                 'sale_price' => $product->getSalePrice(),

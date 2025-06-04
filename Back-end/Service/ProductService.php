@@ -77,7 +77,6 @@ class ProductService {
             isFavorite: (bool)($data['is_favorite'] ?? false),
             isDonation: (bool)($data['is_donation'] ?? false),
             id: null,
-            supplierId: (int)$data['supplier_id'],
             createdAt: new DateTime(),
             updatedAt: new DateTime()
         );
@@ -133,7 +132,7 @@ class ProductService {
 
     private function validateProductData(array $data): void
     {
-        $requiredFields = ['name', 'cost_price', 'sale_price', 'category', 'supplier_id'];
+        $requiredFields = ['name', 'cost_price', 'sale_price', 'category'];
         foreach ($requiredFields as $field) {
             if (!isset($data[$field])) {
                 throw new InvalidArgumentException("Campo obrigatório faltando: {$field}");
@@ -168,7 +167,6 @@ class ProductService {
             isFavorite: (bool)$productData['is_favorite'],
             isDonation: (bool)$productData['is_donation'],
             id: (int)$productData['id'],
-            supplierId: (int)$productData['supplier_id'],
             createdAt: new DateTime($productData['created_at']),
             updatedAt: new DateTime($productData['updated_at'])
         );

@@ -9,7 +9,6 @@ use DomainException;
 
 class Product {
     private ?int $id;
-    private ?int $supplierId;
     private string $name;
     private float $costPrice;
     private float $salePrice;
@@ -29,12 +28,10 @@ class Product {
         bool $isFavorite = false,
         bool $isDonation = false,
         ?int $id = null,
-        ?int $supplierId = null,
         ?DateTimeInterface $createdAt = null,
         ?DateTimeInterface $updatedAt = null
     ) {
         $this->id = $id;
-        $this->supplierId = $supplierId;
         $this->setName($name);
         $this->setCostPrice($costPrice);
         $this->setSalePrice($salePrice);
@@ -47,7 +44,6 @@ class Product {
     }
 
     public function getId(): ?int { return $this->id; }
-    public function getSupplierId(): ?int { return $this->supplierId; }
 
     public function getName(): string { return $this->name; }
 
@@ -150,7 +146,6 @@ class Product {
     public function toArray(): array {
         return [
             'id' => $this->id,
-            'supplier_id' => $this->supplierId,
             'name' => $this->name,
             'cost_price' => $this->getCostPrice(),
             'sale_price' => $this->salePrice,
