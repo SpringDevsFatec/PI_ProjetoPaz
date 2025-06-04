@@ -1,11 +1,39 @@
-import React from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Image, Text, Animated } from 'react-native';
+import React, { useContext, useRef, useEffect, useState } from 'react';
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Image,
+  Text,
+  Animated,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../services/api';
+import jwt_decode from 'jwt-decode';
+import { AuthContext } from '../contexts/AuthContext';
 
-const LoginScreen = ({ navigation }) => { // Adicionei "navigation" para redirecionar
-  const [email, setEmail] = React.useState('');
-  const [senha, setSenha] = React.useState('');
-  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+const LoginScreen = ({ navigation }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const { login } = useContext(AuthContext);
+
+  // Verificar se já está logado
+  useEffect(() => {
+    const checkLogin = async () => {
+      const token = await AsyncStorage.getItem('@token');
+      if (token) {
+        navigation.navigate('Welcome');
+      }
+    };
+    checkLogin();
+  }, [navigation]);
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -22,23 +50,53 @@ const LoginScreen = ({ navigation }) => { // Adicionei "navigation" para redirec
     }).start();
   };
 
-  const handleLogin = () => {
-    console.log('Dados de login:', { email, senha });
-      // Adicione aqui sua validação de login (ex: Firebase, API)
-    navigation.navigate('Welcome'); // Redireciona para a tela de boas-vindas
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Erro', 'Por favor, preencha todos os campos');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await api.post('/login', {
+        email: email.toLowerCase().trim(),
+        password,
+      });
+
+      console.log('Resposta do login:', response.data);
+
+if (response.data.status && response.data.content) {
+  const token = response.data.content;
+
+await login(token);
+
+  navigation.navigate('Welcome');
+} else {
+  Alert.alert('Erro', response.data.message || 'Credenciais inválidas');
+}
+
+    } catch (error) {
+      console.error('Erro no login:', error.response?.data || error.message);
+      Alert.alert(
+        'Erro',
+        error.response?.data?.message || 'Falha ao realizar login'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCadastro = () => {
-    navigation.navigate('Cadastro'); // Redireciona para a tela de cadastro
+    navigation.navigate('Cadastro');
   };
 
   return (
     <LinearGradient colors={['#FFFFFF', '#F5F5F5', '#E0E0E0']} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
-          {/* Logo */}
-          <Image source={require('../../assets/images/logopaz.jpeg')} style={styles.logo} />
-          
+          <Image source={require('../../assets/images/logopaz.png')} style={styles.logo} />
+
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -46,32 +104,40 @@ const LoginScreen = ({ navigation }) => { // Adicionei "navigation" para redirec
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
           />
-          
+
           <TextInput
             style={styles.input}
             placeholder="Senha"
             placeholderTextColor="rgba(0, 0, 0, 0.6)"
             secureTextEntry
-            value={senha}
-            onChangeText={setSenha}
+            value={password}
+            onChangeText={setPassword}
+            autoComplete="password"
           />
-          
+
           <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
             <TouchableOpacity
-              style={styles.botao}
+              style={[styles.botao, loading && styles.botaoDisabled]}
               onPress={handleLogin}
               onPressIn={handlePressIn}
               onPressOut={handlePressOut}
+              disabled={loading}
             >
-              <Text style={styles.textoBotao}>Entrar</Text>
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.textoBotao}>Entrar</Text>
+              )}
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Botão de Cadastro */}
-          <TouchableOpacity 
-            style={styles.botaoCadastro} 
+          <TouchableOpacity
+            style={styles.botaoCadastro}
             onPress={handleCadastro}
+            disabled={loading}
           >
             <Text style={styles.textoCadastro}>Criar uma conta</Text>
           </TouchableOpacity>
@@ -82,9 +148,7 @@ const LoginScreen = ({ navigation }) => { // Adicionei "navigation" para redirec
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   safeArea: {
     flex: 1,
     justifyContent: 'center',
@@ -129,6 +193,9 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     textDecorationLine: 'underline',
+  },
+  botaoDisabled: {
+    backgroundColor: '#666',
   },
 });
 

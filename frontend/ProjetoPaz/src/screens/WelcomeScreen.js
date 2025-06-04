@@ -1,31 +1,75 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Image } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Image, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const WelcomeScreen = ({ navigation }) => {
+  const [loading, setLoading] = React.useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = await AsyncStorage.getItem('@token');
+        console.log('Token encontrado:', token);
+        
+        if (!token) {
+          console.log('Nenhum token encontrado, redirecionando para Login...');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+        } else {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Erro ao verificar token:', error);
+        Alert.alert('Erro', 'Não foi possível verificar sua autenticação');
+        navigation.navigate('Login');
+      }
+    };
+
+    checkAuth();
+  }, [navigation]);
+
+  const handleSistemaPress = () => {
+    navigation.navigate('GestaoProdutos');
+  };
+
+  if (loading) {
+    return (
+      <LinearGradient colors={['#FFFFFF', '#F5F5F5', '#E0E0E0']} style={[styles.container, { justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color="#333" />
+      </LinearGradient>
+    );
+  }
+
   return (
     <LinearGradient colors={['#FFFFFF', '#F5F5F5', '#E0E0E0']} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
-          {/* Logo */}
-          <Image source={require('../../assets/images/logopaz.jpeg')} style={styles.logo} />
+          <Image source={require('../../assets/images/logopaz.png')} style={styles.logo} />
           
-          {/* Caixa escura com texto e botões */}
           <View style={styles.card}>
             <Text style={styles.titulo}>Seja bem-vindo!</Text>
             <Text style={styles.subtitulo}>
               Nosso aplicativo visa facilitar e organizar suas vendas na igreja Santo Agostinho.
             </Text>
-            
-            {/* Seções do sistema */}
+
             <View style={styles.opcoesContainer}>
-              <TouchableOpacity style={styles.opcao} onPress={() => navigation.navigate('Products')} >
+              <TouchableOpacity 
+                style={styles.opcao}
+                onPress={handleSistemaPress}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="person-circle-outline" size={55} color="white" />
                 <Text style={styles.textoOpcao}>Sistema</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.opcao}>
+              <TouchableOpacity 
+                style={styles.opcao}
+                onPress={() => navigation.navigate('Products')} 
+              >
                 <MaterialCommunityIcons name="cart-outline" size={55} color="white" />
                 <Text style={styles.textoOpcao}>Comece a vender</Text>
               </TouchableOpacity>
@@ -51,12 +95,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 180, // Aumentei a logo
+    width: 180,
     height: 180,
     marginBottom: 25,
   },
   card: {
-    backgroundColor: '#333', // Cor do fundo escuro
+    backgroundColor: '#333',
     padding: 20,
     borderRadius: 10,
     width: '100%',
@@ -71,7 +115,7 @@ const styles = StyleSheet.create({
   },
   subtitulo: {
     fontSize: 14,
-    color: '#ccc', // Tornando o texto mais visível
+    color: '#ccc',
     textAlign: 'center',
     marginBottom: 20,
   },
