@@ -14,7 +14,7 @@ class AuthMiddleware {
         $issuedAt = time();
 
         //confirma regra de token dev ilimitado
-        if ($payload['name'] == "Developer") {
+        if ($payload['name'] == "Dev") {
             $expire = $issuedAt + 3600 * 24 * 30; // 30 dias de validade
         } else {
             $expire = $issuedAt + 3600; // 1 hora de validade (ajuste conforme necessário)
@@ -28,8 +28,10 @@ class AuthMiddleware {
 
     // Valida um token diretamente
     public function validateToken(string $token) {
+
         try {   
             $decoded = JWT::decode($token, new Key(Token::SECRET_KEY, 'HS256'));
+     
             return $decoded;
         } catch (Exception $e) {
             return null;

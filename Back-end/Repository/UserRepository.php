@@ -140,16 +140,23 @@ class UserRepository {
     }
 
     // Update the user password
-    public function updateUserPassword($id, $password) {
-        $query = "UPDATE $this->table SET password = :password WHERE id = :id";
+    public function updateUserPassword(UserModel $user) {
+  
+        $email = $user->getEmail();
+        $password = $user->getPassword(); // Password is already hashed in the model
+        
+        $query = "UPDATE $this->table SET password = :password WHERE email = :email";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
-        $stmt->bindParam(":password", password_hash($password, PASSWORD_BCRYPT), PDO::PARAM_STR);
+        $stmt->bindParam(":email", $email, PDO::PARAM_STR);
+        $stmt->bindParam(":password", $password, PDO::PARAM_STR);
+        $stmt->execute();
 
-        if ($stmt->execute()) {
-            return true;
+        // Check if the user was updated successfully
+        if ($stmt->rowCount() > 0) {
+            return ['status' => true, 'user' => $user];
+        } else {
+            return ['status' => false, 'user' => null];
         }
-        return false;
     }
     
     // Delete user
