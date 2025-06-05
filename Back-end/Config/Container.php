@@ -16,7 +16,7 @@ use App\Backend\Service\OrderItemService;
 use App\Backend\Service\OrderService;
 use App\Backend\Service\SaleService;
 use App\Backend\Service\UserService;
-use App\Backend\Utils\ConvertBase64;
+//use App\Backend\Utils\ConvertBase64;
 use PDO;
 
 class Container
@@ -89,15 +89,23 @@ class Container
         );
         
         // Controllers
+
+        $this->instances[\App\Backend\Controller\UserController::class] = 
+            new \App\Backend\Controller\UserController(
+                $this->get(UserService::class)
+            );
+
         $this->instances[\App\Backend\Controller\ProductController::class] = 
             new \App\Backend\Controller\ProductController(
                 $this->get(ProductService::class)
             );
-        $this->instances[\App\Backend\Controller\ProductImageController::class] = 
-            new \App\Backend\Controller\ProductImageController(
-                $this->get(ConvertBase64::class),
-                $this->get(ProductImageService::class)
-            );
+   
+            // $this->instances[\App\Backend\Controller\ProductImageController::class] = 
+        //     new \App\Backend\Controller\ProductImageController(
+        //         $this->get(ConvertBase64::class),
+        //         $this->get(ProductImageService::class)
+        //     );
+   
         $this->instances[\App\Backend\Controller\OrderItemController::class] = 
             new \App\Backend\Controller\OrderItemController(
                 $this->get(OrderItemService::class)

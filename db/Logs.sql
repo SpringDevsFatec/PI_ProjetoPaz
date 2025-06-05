@@ -27,6 +27,8 @@ CREATE TABLE product_log (
   donation TINYINT(1),
   is_favorite TINYINT(1),
   supplier_id INT,
+  img_product varchar(50) DEFAULT NULL,
+  status tinyint(1) DEFAULT 0,
   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 );

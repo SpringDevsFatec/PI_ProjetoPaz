@@ -1,7 +1,7 @@
 <?php
 namespace App\Backend\Service;
 
-use App\Backend\Model\Product;
+use App\Backend\Model\ProductModel;
 use App\Backend\Repository\ProductRepository;
 use App\Backend\Repository\SupplierRepository;
 
@@ -45,7 +45,7 @@ class ProductService {
 
     public function getDonationProducts(): array { return $this->repository->findDonations(); }
     
-    public function getProduct(int $id): Product
+    public function getProduct(int $id): ProductModel
     { 
         $productData = $this->repository->find($id);
         if (!$productData) {
@@ -60,7 +60,7 @@ class ProductService {
         return $this->repository->findAll($orderBy, $order);
     }
 
-    public function createProduct(array $data): Product
+    public function createProduct(array $data): ProductModel
     {
         $this->validateProductData($data);
 
@@ -68,7 +68,7 @@ class ProductService {
             throw new DomainException("Fornecedor não encontrado");
         }
 
-        $product = new Product(
+        $ProductModel = new ProductModel(
             name: $this->sanitizeString($data['name']),
             costPrice: (float)$data['cost_price'],
             salePrice: (float)$data['sale_price'],
@@ -81,13 +81,13 @@ class ProductService {
             updatedAt: new DateTime()
         );
 
-        $productId = $this->repository->save($product);
-        $product->setId($productId);
+        $productId = $this->repository->save($ProductModel);
+        $ProductModel->setId($productId);
 
-        return $product;
+        return $ProductModel;
     }
 
-    public function updateProduct(int $id, array $data): Product
+    public function updateProduct(int $id, array $data): ProductModel
     {
         $existingData = $this->repository->find($id);
         if (!$existingData) {
@@ -108,20 +108,20 @@ class ProductService {
             $updateData['cost_price'] = 0;
         }
 
-        $product = $this->hydrateProduct($updateData);
-        $product->setUpdatedAt(new DateTime());
+        $ProductModel = $this->hydrateProduct($updateData);
+        $ProductModel->setUpdatedAt(new DateTime());
 
-        if (!$this->repository->update($product)) {
+        if (!$this->repository->update($ProductModel)) {
             throw new DomainException("Falha ao atualizar produto");
         }
 
-        return $product;
+        return $ProductModel;
     }
 
     public function deleteProduct(int $id): void 
     {
-        $product = $this->repository->find($id);
-        if (!$product) {
+        $ProductModel = $this->repository->find($id);
+        if (!$ProductModel) {
             throw new DomainException("Produto não encontrado");
         }
 
@@ -156,9 +156,9 @@ class ProductService {
         }
     }
 
-     private function hydrateProduct(array $productData): Product
+     private function hydrateProduct(array $productData): ProductModel
     {
-        return new Product(
+        return new ProductModel(
             name: $productData['name'],
             costPrice: (float)$productData['cost_price'],
             salePrice: (float)$productData['sale_price'],

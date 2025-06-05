@@ -170,13 +170,28 @@ class UserRepository {
         }
         return false;
     }
-
+    // Check if user exists by email
     public function userExists(UserModel $user) {
         $email = $user->getEmail();
 
         $query = "SELECT * FROM $this->table WHERE email = :email";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":email", $email, PDO::PARAM_STR);
+        $stmt->execute();
+        if ($stmt->rowCount() > 0) {
+            $userRepo = $stmt->fetch(PDO::FETCH_ASSOC);
+            return ['status' => false, 'user' => $userRepo]; // Return the number of users with the same email
+        } else {
+            return ['status' => true, 'user' => null]; // No users found with the same email
+        }
+    }
+
+    public function userExistsUpdate(UserModel $user) {
+        $id = $user->getId();
+
+        $query = "SELECT * FROM $this->table WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":id", $id, PDO::PARAM_STR);
         $stmt->execute();
         if ($stmt->rowCount() > 0) {
             $userRepo = $stmt->fetch(PDO::FETCH_ASSOC);
