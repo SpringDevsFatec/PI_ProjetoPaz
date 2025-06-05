@@ -7,7 +7,7 @@ use DateTimeInterface;
 use InvalidArgumentException;
 use DomainException;
 
-class Product {
+class ProductModel {
     private  $id;
     private  $supplierId;
     private  $name;

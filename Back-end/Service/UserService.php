@@ -210,7 +210,7 @@ class UserService {
         $user->setPassword($dataPadronizado->password); // Password is already hashed in the model
         
         // Check if user already exists
-            $userExists = $this->repository->userExists($user);
+            $userExists = $this->repository->userExistsUpdate($user);
             if ($userExists['status'] == true) {
                 return [
                     'status' => false,
@@ -249,6 +249,10 @@ class UserService {
 
     // update user password
     public function updateUserPassword($data) {
+
+        //check the token
+        $check = new AuthMiddleware();
+        $decodedToken =  $check->openToken();
 
         $user = new UserModel();
         $user->setEmail($data->email);
