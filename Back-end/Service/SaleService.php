@@ -1,8 +1,8 @@
 <?php
 namespace App\Backend\Service;
 
-use App\Backend\Model\Sale;
-use App\Backend\Model\Order;
+use App\Backend\Model\SaleModel;
+use App\Backend\Model\OrderModel;
 use App\Backend\Repository\SaleRepository;
 use App\Backend\Repository\OrderRepository;
 use App\Backend\Repository\UserRepository;
@@ -68,9 +68,9 @@ class SaleService {
         return $this->saleRepository->find($id);
     }
 
-    public function createSale(int $sellerId): Sale 
+    public function createSale(int $sellerId): SaleModel 
     {
-        $seller = $this->userRepository->find($sellerId);
+        $seller = $this->userRepository->getContentId($sellerId);
         if(!$seller) {
             throw new DomainException("Vendedor não encontrado.");
         }
@@ -80,7 +80,7 @@ class SaleService {
             throw new InvalidArgumentException("Já existe uma venda aberta para este vendedor");
         }
 
-        $sale = new Sale(
+        $sale = new SaleModel(
             sellerId: $sellerId,
             date: new DateTime(),
             status: 'open'
@@ -92,7 +92,7 @@ class SaleService {
         return $sale;
     }
 
-    public function addOrderToSale(int $saleId, int $orderId): Sale
+    public function addOrderToSale(int $saleId, int $orderId): SaleModel
     {
         $saleData = $this->saleRepository->findWithOrders($saleId);
         if (!$saleData) {
@@ -122,20 +122,19 @@ class SaleService {
         return $sale;
     }
 
-    private function hydrateOrder(array $orderData): Order
+    private function hydrateOrder(array $orderData): OrderModel
     {
-        return new Order(
+        return new OrderModel(
             saleId: $orderData['sale_id'],
             status: $orderData['status'],
             paymentMethod: $orderData['payment_method'],
             totalAmount: $orderData['total_amount'],
             id: $orderData['id'],
-            createdAt: new DateTime($orderData['created_at']),
-            updatedAt: new DateTime($orderData['updated_at'])
+            createdAt: new DateTime($orderData['created_at'])
         );
     }
 
-    public function completeSale(int $saleId): Sale 
+    public function completeSale(int $saleId): SaleModel 
     {
         $saleData = $this->saleRepository->findWithOrders($saleId);
         if (!$saleData) {
@@ -155,7 +154,7 @@ class SaleService {
         }
     }
 
-    public function cancelSale(int $saleId) : Sale 
+    public function cancelSale(int $saleId) : SaleModel 
     {
         $saleData = $this->saleRepository->findWithOrders($saleId);
         if (!$saleData) {
@@ -186,27 +185,25 @@ class SaleService {
         } 
     }
 
-    private function hydrateSale(array $saleData): Sale
+    private function hydrateSale(array $saleData): SaleModel
     {
-        $sale = new Sale(
+        $sale = new SaleModel(
             sellerId: $saleData['seller_id'],
             date: new DateTime($saleData['date']),
             status: $saleData['status'],
             id: $saleData['id'],
-            createdAt: new DateTime($saleData['created_at']),
-            updatedAt: new DateTime($saleData['updated_at'])
+            createdAt: new DateTime($saleData['created_at'])
         );
         
         if (!empty($saleData['orders'])) {
             foreach ($saleData['orders'] as $orderData) {
-                $order = new Order(
+                $order = new OrderModel(
                     paymentMethod: $orderData['payment_method'],
                     totalAmount: $orderData['total_amount'],
                     status: $orderData['status'],
                     id: $orderData['id'],
                     saleId: $orderData['sale_id'],
-                    createdAt: new DateTime($orderData['created_at']),
-                    updatedAt: new DateTime($orderData['updated_at'])
+                    createdAt: new DateTime($orderData['created_at'])
                 );
                 $sale->addOrder($order);
             }

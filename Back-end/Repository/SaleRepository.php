@@ -2,7 +2,7 @@
 
 namespace App\Backend\Repository;
 
-use App\Backend\Model\Sale;
+use App\Backend\Model\SaleModel;
 use App\Backend\Config\Database;
 use App\Backend\Repository\OrderRepository;
 use DateTimeInterface;
@@ -101,11 +101,11 @@ class SaleRepository {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function create(Sale $sale): int
+    public function create(SaleModel $sale): int
     {  
         $query = "INSERT INTO {$this->table} 
-                  (seller_id, date, status, created_at, updated_at) 
-                  VALUES (:seller_id, :date, :status, :created_at, :updated_at)";
+                  (seller_id, date, status, created_at) 
+                  VALUES (:seller_id, :date, :status, :created_at)";
         
         try {
             $stmt = $this->conn->prepare($query);
@@ -113,8 +113,7 @@ class SaleRepository {
                 'seller_id' => $sale->getSellerId(),
                 'date' => $sale->getDate()->format('Y-m-d'),
                 'status' => $sale->getStatus(),
-                'created_at' => $sale->getCreatedAt()?->format('Y-m-d H:i:s'),
-                'updated_at' => $sale->getUpdatedAt()?->format('Y-m-d H:i:s')
+                'created_at' => $sale->getCreatedAt()?->format('Y-m-d H:i:s')
             ]);
 
             $saleId = $this->conn->lastInsertId();
@@ -125,20 +124,18 @@ class SaleRepository {
         }
     }
 
-    public function update(Sale $sale): bool
+    public function update(SaleModel $sale): bool
     {    
         $query = "UPDATE {$this->table} 
                   SET total = :total, 
-                      status = :status,
-                      updated_at = :updated_at
+                      status = :status
                   WHERE id = :id";
         try {
             $stmt = $this->conn->prepare($query);
             return $stmt->execute([     
             ':id' => $sale->getId(),
             ':status' => $sale->getStatus(),
-            ':total' => $sale->getTotal(),
-            ':updated_at' => (new \DateTime)->format('Y-m-d H:i:s')
+            ':total' => $sale->getTotal()
         ]);
 
         } catch (PDOException $e) {
@@ -158,8 +155,7 @@ class SaleRepository {
 
             $query = "UPDATE {$this->table}
                       SET staus = 'completed',
-                          total = :total,
-                          updated_at = NOW()
+                          total = :total
                       WHERE id = :id";
 
             $stmt = $this->conn->prepare($query);

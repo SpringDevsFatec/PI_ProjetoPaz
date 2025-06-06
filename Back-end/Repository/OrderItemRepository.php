@@ -2,7 +2,7 @@
 
 namespace App\Backend\Repository;
 
-use App\Backend\Model\OrderItem;
+use App\Backend\Model\OrderItemModel;
 use App\Backend\Config\Database;
 use PDO;
 use PDOException;
@@ -46,11 +46,11 @@ class OrderItemRepository {
 
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
-    public function save(OrderItem $orderItem): int 
+    public function save(OrderItemModel $orderItem): int 
     {
         $query = "INSERT INTO {$this->table}
-                  (order_id, product_id, quantity, unit_price, created_at, updated_at)
-                  VALUES (:order_id, :product_id, :quantity, :unit_price, :created_at, :updated_at)";
+                  (order_id, product_id, quantity, unit_price, created_at)
+                  VALUES (:order_id, :product_id, :quantity, :unit_price, :created_at)";
         
         try {
             $stmt = $this->conn->prepare($query);
@@ -59,8 +59,7 @@ class OrderItemRepository {
                 'order_id' => $orderItem->getOrderId(),
                 'quantity' => $orderItem->getQuantity(),
                 'unit_price' => $orderItem->getUnitPrice(),
-                'created_at' => $orderItem->getCreatedAt()->format('Y-m-d H:i:s'),
-                'updated_at' => $orderItem->getUpdatedAt()->format('Y-m-d H:i:s')
+                'created_at' => $orderItem->getCreatedAt()->format('Y-m-d H:i:s')
             ]);
 
             return (int)$this->conn->lastInsertId();
@@ -68,19 +67,17 @@ class OrderItemRepository {
             throw new PDOException("Erro ao salvar item do pedido: " . $e->getMessage());
         }
     }
-    public function update(OrderItem $orderItem): bool
+    public function update(OrderItemModel $orderItem): bool
     {
         $query = "UPDATE {$this->table} 
-                  SET quantity = :quantity, 
-                      updated_at = :updated_at 
+                  SET quantity = :quantity
                   WHERE id = :id";
         
         try {
             $stmt = $this->conn->prepare($query);
             return $stmt->execute([
                 ':id' => $orderItem->getId(),
-                ':quantity' => $orderItem->getQuantity(),
-                ':updated_at' => (new \DateTime)->format('Y-m-d H:i:s')
+                ':quantity' => $orderItem->getQuantity()
             ]);
         } catch (PDOException $e) {
             throw new PDOException("Erro ao atualizar item do pedido: " . $e->getMessage());

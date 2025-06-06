@@ -1,7 +1,7 @@
 <?php
 namespace App\Backend\Service;
 
-use App\Backend\Model\OrderItem;
+use App\Backend\Model\OrderItemModel;
 use App\Backend\Repository\OrderItemRepository;
 use App\Backend\Repository\ProductRepository;
 
@@ -35,7 +35,7 @@ class OrderItemService {
         return $this->orderItemRepository->find($id);
     }
 
-    public function createItem(array $data): OrderItem 
+    public function createItem(array $data): OrderItemModel 
     {
         if (empty($data['product_id']) || empty($data['order_id']) || empty($data['quantity'])) 
         {
@@ -47,14 +47,13 @@ class OrderItemService {
             throw new DomainException("Produto não encontrado.");
         }
 
-        $orderItem = new OrderItem(
+        $orderItem = new OrderItemModel(
             productId: (int)$data['product_id'],
             orderId: (int)$data['order_id'],
             quantity: (int)$data['quantity'],
             unitPrice: (float)$data['unit_price'],
             id: null,
-            createdAt: new DateTime(),
-            updatedAt: new DateTime()
+            createdAt: new DateTime()
         );
 
         $itemId = $this->orderItemRepository->save($orderItem);
@@ -63,7 +62,7 @@ class OrderItemService {
         return $orderItem;
     }
 
-    public function updateItemQuantity(int $itemId, int $newQuantity): OrderItem 
+    public function updateItemQuantity(int $itemId, int $newQuantity): OrderItemModel 
     {
         if ($newQuantity <= 0) {
             throw new InvalidArgumentException("Quantidade deve ser maior que zero.");
@@ -72,14 +71,13 @@ class OrderItemService {
         if (!$existingItem) {
             throw new DomainException("Item de pedido não encontrado.");
         }
-        $orderItem = new OrderItem(
+        $orderItem = new OrderItemModel(
             productId: (int)$existingItem['product_id'],
             orderId: (int)$existingItem['order_id'],
             quantity: $newQuantity,
             unitPrice: (float)$existingItem['unit_price'],
             id: (int)$existingItem['id'],
-            createdAt: new DateTime($existingItem['created_at']),
-            updatedAt: new DateTime()
+            createdAt: new DateTime($existingItem['created_at'])
         );
 
         $this->orderItemRepository->update($orderItem);

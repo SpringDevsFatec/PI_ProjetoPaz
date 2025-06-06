@@ -1,7 +1,7 @@
 <?php
 namespace App\Backend\Service;
 
-use App\Backend\Model\Order;
+use App\Backend\Model\OrderModel;
 use App\Backend\Model\OrderItem;
 use App\Backend\Repository\OrderRepository;
 use App\Backend\Repository\SaleRepository;
@@ -47,7 +47,7 @@ class OrderService {
         return $this->orderRepository->find($id);
     }
 
-    public function createOrder(int $saleId, string $paymentMethod): Order
+    public function createOrder(int $saleId, string $paymentMethod): OrderModel
     {
         if (empty($paymentMethod))
         {
@@ -59,7 +59,7 @@ class OrderService {
             throw new DomainException("Venda não encontrada.");
         }
 
-        $order = new Order(
+        $order = new OrderModel(
             saleId: $saleId,
             status: 'open',
             paymentMethod: $paymentMethod,
@@ -75,7 +75,7 @@ class OrderService {
         return $order;
     }
 
-    public function addItemToOrder(int $orderId, int $productId, int $quantity): Order
+    public function addItemToOrder(int $orderId, int $productId, int $quantity): OrderModel
     {
         $orderData = $this->orderRepository->find($orderId);
         if (!$orderData) {
@@ -106,7 +106,7 @@ class OrderService {
         return $order;
     }
 
-    public function updateOrderStatus(int $orderId, string $status): Order
+    public function updateOrderStatus(int $orderId, string $status): OrderModel
     {
         $orderData = $this->orderRepository->findWithItems($orderId);
         if (!$orderData) {
@@ -147,9 +147,9 @@ class OrderService {
         } 
     }
 
-    private function hydrateOrder(array $orderData): Order
+    private function hydrateOrder(array $orderData): OrderModel
     {
-        $order = new Order(
+        $order = new OrderModel(
             paymentMethod: $orderData['payment_method'],
             totalAmount: $orderData['total_amount'],
             saleId: $orderData['sale_id'],

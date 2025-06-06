@@ -2,7 +2,7 @@
 
 namespace App\Backend\Repository;
 
-use App\Backend\Model\Order;
+use App\Backend\Model\OrderModel;
 use App\Backend\Config\Database;
 use App\Backend\Repository\OrderItemRepository;
 
@@ -68,11 +68,11 @@ class OrderRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public function save(Order $order): bool 
+    public function save(OrderModel $order): bool 
     {
         $query = "INSERT INTO {$this->table}
-                  (sale_id, status, payment_method, total_amount, created_at, updated_at) 
-                  VALUES (:sale_id, :status, :payment_method, :total_amount, :created_at, :updated_at)";
+                  (sale_id, status, payment_method, total_amount, created_at) 
+                  VALUES (:sale_id, :status, :payment_method, :total_amount, :created_at)";
     
         try {
             $stmt = $this->conn->prepare($query);
@@ -82,8 +82,7 @@ class OrderRepository {
                 'status' => $order->getStatus(),
                 'payment_method' => $order->getPaymentMethod(),
                 'total_amount' => $order->getTotalAmount(),
-                'created_at' => $order->getCreatedAt()?->format('Y-m-d H:i:s'),
-                'updated_at' => $order->getUpdatedAt()?->format('Y-m-d H:i:s')
+                'created_at' => $order->getCreatedAt()?->format('Y-m-d H:i:s')
             ]);
 
             $orderId = (int)$this->conn->lastInsertId();
@@ -99,12 +98,11 @@ class OrderRepository {
         }
     }
 
-    public function update(Order $order): bool 
+    public function update(OrderModel $order): bool 
     {
         $query = "UPDATE {$this->table} 
                   SET status = :status, 
-                      payment_method = :payment_method,
-                      updated_at = :updated_at
+                      payment_method = :payment_method
                   WHERE id = :id";
         
         try {
@@ -112,8 +110,7 @@ class OrderRepository {
             return $stmt->execute([
                 ':id' => $order->getId(),
                 ':status' => $order->getStatus(),
-                ':payment_method' => $order->getPaymentMethod(),
-                ':updated_at' => (new \DateTime)->format('Y-m-d H:i:s')
+                ':payment_method' => $order->getPaymentMethod()
             ]);
         } catch (PDOException $e) {
             throw new PDOException("Erro ao atualizar o pedido: " . $e->getMessage());
@@ -130,11 +127,11 @@ class OrderRepository {
             
             $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
             $query = "UPDATE {$this->table} 
-                      SET sale_id = ?, updated_at = ?
+                      SET sale_id = ?
                       WHERE id IN ($placeholders)";
             
             $params = array_merge(
-                [$saleId, (new \DateTime())->format('Y-m-d H:i:s')],
+                $saleId,
                 $orderIds
             );
             
