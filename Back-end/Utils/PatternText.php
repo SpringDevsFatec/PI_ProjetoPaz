@@ -34,6 +34,17 @@ class PatternText {
         ];
     }
 
+    // Handles the response for the API
+    public static function handleResponse($result, $successMessage = "Operação concluída com sucesso.", $content = null, $http_response_header = null) {
+        if (!empty($result)) {
+            http_response_code($http_response_header);
+            echo json_encode(["status" => $result,"message" => $successMessage,"content" => $content]);
+        } else {
+            http_response_code($http_response_header);
+            echo json_encode(['status' => false, "message" => $successMessage, "content" => $content]);
+        }
+    }
+
 // ...existing code...
 }
 

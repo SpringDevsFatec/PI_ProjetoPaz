@@ -16,27 +16,41 @@ class OrderItemRepository {
         $this->conn = Database::getInstance();
     }
 
+    public function beginTransaction() {
+        if (!$this->conn->inTransaction()) {
+            $this->conn->beginTransaction();
+        }
+    }
+
+    // commit transaction
+    public function commitTransaction() {
+        $this->conn->commit();
+    }
+
+    // roll back transaction
+    public function rollBackTransaction() {
+        $this->conn->rollBack();
+    }
+
     public function findWithProductDetails(int $orderId): array
     {
-        $query = "SELECT oi.*, p.name AS product_name
+        $query = "SELECT oi.*, p.name AS product_name, p.description AS product_description, p.category AS product_category, p.img_product
                   FROM {$this->table} oi
                   JOIN product p ON oi.product_id = p.id
                   WHERE oi.order_id = :order_id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
 
-    public function findByOrderId(int $orderId): array 
-    {
-        $query = "SELECT * FROM {$this->table} WHERE order_id = :order_id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
-        $stmt->execute();
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Check if any order items were found
+        if ($stmt->rowCount() > 0) {
+            $orderItemRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return ['status' => true, 'order_item' => $orderItemRepository];
+        } else {
+            return ['status' => true, 'order_item' => null];
+        }
     }
+    
     public function find(int $id): ?array 
     {
         $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
@@ -44,8 +58,14 @@ class OrderItemRepository {
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
 
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        if ($stmt->rowCount() > 0) {
+            $orderItemRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            return ['status' => true, 'order_item' => $orderItemRepository];
+        } else {
+            return ['status' => true, 'order_item' => null];
+        }
     }
+
     public function save(OrderItemModel $orderItem): int 
     {
         $query = "INSERT INTO {$this->table}

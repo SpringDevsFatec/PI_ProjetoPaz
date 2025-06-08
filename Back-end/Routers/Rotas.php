@@ -2,14 +2,52 @@
 namespace App\Backend\Routers;
 
 use App\Backend\Controller\UserController;
+use App\Backend\Controller\ProductController;
+use App\Backend\Controller\ProductImageController;
+use App\Backend\Controller\OrderItemController;
+use App\Backend\Controller\OrderController;
+use App\Backend\Controller\SaleController;
 
 class Rotas {
     public static function fastRotas(){
         return [
             'GET' => [
+                // User
                 '/users' => [UserController::class, 'getAllUsers'],
                 '/user' => [UserController::class, 'getUserById'],
                 '/TestUser' => [UserController::class, 'testJWT'],
+
+                // Product
+                // Rotas específicas primeiro
+                '/products/search' => [ProductController::class, 'searchByName'],
+                '/products/favorites' => [ProductController::class, 'listFavorites'],
+                '/products/donations' => [ProductController::class, 'listDonations'],
+                // Rotas com parâmetros depois
+                '/products/category/{category}' => [ProductController::class, 'listByCategory'],
+                '/products/{id}' => [ProductController::class, 'show'],
+                // Rota genérica por último
+                '/products' => [ProductController::class, 'listAll'],
+
+                // Product Image
+
+                // Order Item
+                '/order-items/details/{orderId}' => [OrderItemController::class, 'listItemsWithProductDetails'],
+                '/order-items/{id}' => [OrderItemController::class, 'show'],
+
+                // Order
+                '/orders/with-items/{id}' => [OrderController::class, 'listWithItems'],
+                '/orders/payment-method/{paymentMethod}' => [OrderController::class, 'listByPaymentMethod'],
+                '/orders/items/{id}' => [OrderItemController::class, 'listByOrder'],
+                '/orders/{id}' => [OrderController::class, 'show'],
+                '/orders' => [OrderController::class, 'listAll'],
+
+                // Sale
+                //'/sales/{seller_id}/?{status}/seller' => [SaleController::class, 'listBySeller'],
+                '/sales/date' => [SaleController::class, 'listByDate'],
+                '/sales/status/{status}' => [SaleController::class, 'listSalesByStatus'],
+                '/sales/details/{id}' => [SaleController::class, 'show'],
+                '/sales/{id}' => [SaleController::class, 'getSaleById'],
+                '/sales' => [SaleController::class, 'listAllSales'],
             ],
             'POST' => [
                 '/login' => [UserController::class, 'login'],

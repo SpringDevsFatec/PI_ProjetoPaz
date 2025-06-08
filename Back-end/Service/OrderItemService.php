@@ -8,6 +8,7 @@ use App\Backend\Repository\ProductRepository;
 use DomainException;
 use DateTime;
 use InvalidArgumentException;
+use Exception;
 
 class OrderItemService {
     
@@ -24,15 +25,58 @@ class OrderItemService {
 
     public function getItemsWithProductDetails(int $orderId): array
     {
-        return $this->orderItemRepository->findWithProductDetails($orderId);
+        try {
+            $this->orderItemRepository->beginTransaction();
+
+            $reponse = $this->orderItemRepository->findWithProductDetails($orderId);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['order_item']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->orderItemRepository->commitTransaction();
+
+        } catch (Exception $e) {
+            $this->orderItemRepository->rollBackTransaction();
+            throw $e;
+        }
     }
-    public function getItemsByOrderId(int $orderId): array 
-    {
-        return $this->orderItemRepository->findByOrderId($orderId);
-    }
+    
     public function getItem(int $id): ?array
     {
-        return $this->orderItemRepository->find($id);
+        try {
+            $this->orderItemRepository->beginTransaction();
+
+            $reponse = $this->orderItemRepository->find($id);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['order_item']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->orderItemRepository->commitTransaction();
+
+        } catch (Exception $e) {
+            $this->orderItemRepository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function createItem(array $data): OrderItemModel 
