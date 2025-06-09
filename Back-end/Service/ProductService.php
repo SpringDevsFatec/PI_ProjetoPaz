@@ -4,7 +4,7 @@ namespace App\Backend\Service;
 use App\Backend\Model\ProductModel;
 use App\Backend\Repository\ProductRepository;
 use App\Backend\Repository\SupplierRepository;
-
+use Exception;
 use DateTime;
 use InvalidArgumentException;
 use DomainException;
@@ -28,7 +28,30 @@ class ProductService {
             throw new InvalidArgumentException("Termo de pesquisa não pode ser vazio");
         }
 
-        return $this->repository->searchByName(trim($searchTerm), $limit);
+        try {
+            $this->repository->beginTransaction();
+            
+            $reponse = $this->repository->searchByName(trim($searchTerm), $limit);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['product']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->repository->commitTransaction();
+            
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function getProductsByCategory(string $category): array
@@ -38,26 +61,144 @@ class ProductService {
             throw new InvalidArgumentException("Categoria inválida");
         }
 
-        return $this->repository->findByCategory($category);
+        try {
+            $this->repository->beginTransaction();
+            
+            $reponse = $this->repository->findByCategory($category);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['product']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->repository->commitTransaction();
+            
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
     }
 
-    public function getFavoriteProducts(): array { return $this->repository->findFavorites(); }
+    public function getFavoriteProducts(): array { 
+        try {
+            $this->repository->beginTransaction();
+            
+            $reponse = $this->repository->findFavorites();
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['product']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->repository->commitTransaction();
+            
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
+    }
 
-    public function getDonationProducts(): array { return $this->repository->findDonations(); }
+    public function getDonationProducts(): array { 
+        try {
+            $this->repository->beginTransaction();
+            
+            $reponse = $this->repository->findDonations();
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['product']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->repository->commitTransaction();
+            
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
+    }
     
-    public function getProduct(int $id): ProductModel
+    public function getProduct(int $id): array
     { 
         $productData = $this->repository->find($id);
         if (!$productData) {
             throw new DomainException("Produto não encontrado");
         }
-
-        return $this->hydrateProduct($productData);
+        try {
+            $this->repository->beginTransaction();
+            
+            $reponse = $productData;
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['product']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->repository->commitTransaction();
+            
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function getAllProducts(string $orderBy = 'name', string $order = 'ASC'): array
     {
-        return $this->repository->findAll($orderBy, $order);
+        try {
+            $this->repository->beginTransaction();
+            
+            $reponse = $this->repository->findAll($orderBy, $order);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['product']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->repository->commitTransaction();
+            
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function createProduct(array $data): ProductModel

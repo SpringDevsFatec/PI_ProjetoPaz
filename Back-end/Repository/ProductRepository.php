@@ -18,6 +18,20 @@ class ProductRepository {
         $this->conn = $conn ?: Database::getInstance();
     }
 
+    public function beginTransaction() {
+        if (!$this->conn->inTransaction()) {
+            $this->conn->beginTransaction();
+        }
+    }
+
+    public function commitTransaction() {
+        $this->conn->commit();
+    }
+
+    public function rollBackTransaction() {
+        $this->conn->rollBack();
+    }
+
     public function searchByName(string $searchTerm, int $limit = 10): array
     {
         $query = "SELECT * FROM {$this->table} 
@@ -29,8 +43,12 @@ class ProductRepository {
             $stmt->bindValue(':searchTerm', '%' . $searchTerm . '%', PDO::PARAM_STR);
             $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
             $stmt->execute();
-            
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $productRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if ($stmt->rowCount() > 0) {
+                return ['status' => true,'product' => $productRepository];
+            }else {
+                return ['status' => false, 'product' => null];
+            }
         } catch (PDOException $e) {
             throw new PDOException("Erro ao buscar produtos: " . $e->getMessage());
         }
@@ -44,8 +62,12 @@ class ProductRepository {
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(":category", $category, PDO::PARAM_STR);
             $stmt->execute();
-
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $productRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if ($stmt->rowCount() > 0) {
+                return ['status' => true,'product' => $productRepository];
+            }else {
+                return ['status' => false, 'product' => null];
+            }
         } catch (PDOException $e) {
             throw new PDOException("Erro ao buscar por categoria: " . $e->getMessage());
         }
@@ -61,8 +83,12 @@ class ProductRepository {
             $stmt = $this->conn->prepare($query);
             $stmt->bindValue(':value', $value, PDO::PARAM_BOOL);
             $stmt->execute();
-
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $productRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if ($stmt->rowCount() > 0) {
+                return ['status' => true,'product' => $productRepository];
+            }else {
+                return ['status' => false, 'product' => null];
+            }
         } catch (PDOException $e) {
             throw new PDOException("Erro ao buscar produtos: " . $e->getMessage());
         }
@@ -75,7 +101,7 @@ class ProductRepository {
 
     public function findDonations(): array
     {
-        return $this->findByFlag('is_donation', true);
+        return $this->findByFlag('donation', true);
     }
 
     public function findBySalePriceRange(float $minPrice, float $maxPrice): array
@@ -89,8 +115,12 @@ class ProductRepository {
             $stmt->bindParam(":min_price", $minPrice);
             $stmt->bindParam(":max_price", $maxPrice);
             $stmt->execute();
-
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $productRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if ($stmt->rowCount() > 0) {
+                return ['status' => true,'product' => $productRepository];
+            }else {
+                return ['status' => false, 'product' => null];
+            }
         } catch (PDOException $e) {
             throw new PDOException("Erro ao buscar por faixa de preço: " . $e->getMessage());
         }
@@ -107,8 +137,12 @@ class ProductRepository {
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->execute();
-
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $productRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if ($stmt->rowCount() > 0) {
+                return ['status' => true,'product' => $productRepository];
+            }else {
+                return ['status' => false, 'product' => null];
+            }
         } catch (PDOException $e) {
             throw new PDOException("Erro ao buscar produtos: " . $e->getMessage());
         }
@@ -122,8 +156,12 @@ class ProductRepository {
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
-
-            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            $productRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            if ($stmt->rowCount() > 0) {
+                return ['status' => true,'product' => $productRepository];
+            }else {
+                return ['status' => false, 'product' => null];
+            }
         } catch (PDOException $e) {
             throw new PDOException("Erro ao buscar produto: " . $e->getMessage());
         }
