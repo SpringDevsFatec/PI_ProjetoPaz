@@ -10,6 +10,7 @@ use App\Backend\Repository\ProductRepository;
 use DomainException;
 use DateTime;
 use InvalidArgumentException;
+use Exception;
 
 class OrderService {
     
@@ -29,22 +30,114 @@ class OrderService {
 
     public function getWithItems(int $id): array
     {
-        return $this->orderRepository->findWithItems($id);
+        try {
+            $this->orderRepository->beginTransaction();
+
+            $reponse = $this->orderRepository->findWithItems($id);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['order']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->orderRepository->commitTransaction();
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function getByPaymentMethod(string $paymentMethod): array
     {
-        return $this->orderRepository->findByPaymentMethod($paymentMethod);
+        try {
+            $this->orderRepository->beginTransaction();
+
+            $reponse = $this->orderRepository->findByPaymentMethod($paymentMethod);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['order']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->orderRepository->commitTransaction();
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function getAll(): array
     {
-        return $this->orderRepository->findAll();
+        try {
+            $this->orderRepository->beginTransaction();
+
+            $reponse = $this->orderRepository->findAll();
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['order']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->orderRepository->commitTransaction();
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function getOrder(int $id): ?array
     {
-        return $this->orderRepository->find($id);
+        try {
+            $this->orderRepository->beginTransaction();
+
+            $reponse = $this->orderRepository->find($id);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['order']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->orderRepository->commitTransaction();
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function createOrder(int $saleId, string $paymentMethod): OrderModel

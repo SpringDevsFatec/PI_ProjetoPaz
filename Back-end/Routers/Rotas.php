@@ -37,7 +37,7 @@ class Rotas {
                 // Order
                 '/orders/with-items/{id}' => [OrderController::class, 'listWithItems'],
                 '/orders/payment-method/{paymentMethod}' => [OrderController::class, 'listByPaymentMethod'],
-                '/orders/items/{id}' => [OrderItemController::class, 'listByOrder'],
+                '/orders/items/{id}' => [OrderItemController::class, 'listItemsWithProductDetails'],
                 '/orders/{id}' => [OrderController::class, 'show'],
                 '/orders' => [OrderController::class, 'listAll'],
 

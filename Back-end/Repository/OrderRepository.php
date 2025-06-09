@@ -5,7 +5,6 @@ namespace App\Backend\Repository;
 use App\Backend\Model\OrderModel;
 use App\Backend\Config\Database;
 use App\Backend\Repository\OrderItemRepository;
-
 use PDO;
 use PDOException;
 
@@ -20,17 +19,35 @@ class OrderRepository {
         $this->itemRepository = new OrderItemRepository();
     }
 
+    public function beginTransaction() {
+        if (!$this->conn->inTransaction()) {
+            $this->conn->beginTransaction();
+        }
+    }
+
+    public function commitTransaction() {
+        $this->conn->commit();
+    }
+
+    public function rollBackTransaction() {
+        $this->conn->rollBack();
+    }
+
     public function findWithItems(int $id): ?array
     {
         $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->execute([':id' => $id]);
-        $order = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-        // Busca os itens
-        $order['items'] = $this->itemRepository->findByOrderId($id);
-            
-        return $order;
+        
+        if ($stmt->rowCount() > 0) {
+            $orderRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            // Busca os itens
+            $orderRepository['items'] = $this->itemRepository->findWithProductDetails($id);
+            return ['status' => true, 'order' => $orderRepository];
+        
+        } else {
+            return ['status' => false, 'order' => null];
+        }
     }
 
     public function findByPaymentMethod(string $paymentMethod): array 
@@ -39,7 +56,13 @@ class OrderRepository {
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':payment_method', $paymentMethod, PDO::PARAM_STR);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($stmt->rowCount() > 0) {
+            $orderRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return ['status' => true, 'order' => $orderRepository];
+        } else {
+            return ['status' => true, 'order' => null];
+        }
     }
 
     public function findBySaleId(int $saleId): array 
@@ -48,7 +71,13 @@ class OrderRepository {
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':sale_id', $saleId, PDO::PARAM_INT);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($stmt->rowCount() > 0) {
+            $orderRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return ['status' => true, 'order' => $orderRepository];
+        } else {
+            return ['status' => true, 'order' => null];
+        }
     }
 
     public function findAll(): array
@@ -56,7 +85,13 @@ class OrderRepository {
         $query = "SELECT * FROM {$this->table}";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($stmt->rowCount() > 0) {
+            $orderItemRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return ['status' => true, 'order' => $orderItemRepository];
+        } else {
+            return ['status' => true, 'order' => null];
+        }
     }
 
     public function find(int $id): ?array
@@ -65,7 +100,13 @@ class OrderRepository {
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: null;
+
+        if ($stmt->rowCount() > 0) {
+            $orderRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            return ['status' => true, 'order' => $orderRepository];
+        } else {
+            return ['status' => true, 'order' => null];
+        }
     }
 
     public function save(OrderModel $order): bool 
