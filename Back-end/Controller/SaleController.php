@@ -3,7 +3,7 @@
 namespace App\Backend\Controller;
 
 use App\Backend\Service\SaleService;
-
+use App\Backend\Utils\Responses;
 use DateTime;
 use DomainException;
 use Exception;
@@ -12,216 +12,149 @@ use InvalidArgumentException;
 class SaleController {
 
     private SaleService $service;
+    use Responses;
 
     public function __construct(SaleService $service) 
     {
         $this->service = $service;
     }
 
-    private function jsonResponse(
-        mixed $data,
-        int $statusCode = 200,
-        ?string $message = null
-    ): void {
-        http_response_code($statusCode);
-        header('Content-Type: application/json');
-
-        $response = [];
-        if ($message) {
-            $response['message'] = $message;
-        }
-        if ($data !== null) {
-            $response['data'] = $data;
-        }
-
-        echo json_encode($response);
-        exit;
-    }
-
     public function listByDate(): void
     {
-        try {
-            // Obtém parâmetros da query string
-            $startDate = $_GET['start_date'] ?? null;
-            $endDate = $_GET['end_date'] ?? null;
-            $sellerId = $_GET['seller_id'] ?? null;
 
-            // Validação básica
-            if (!$startDate || !$endDate) {
-                throw new InvalidArgumentException("As datas inicial e final são obrigatórias");
-            }
+        // Obtém parâmetros da query string
+        $startDate = $_GET['start_date'] ?? null;
+        $endDate = $_GET['end_date'] ?? null;
+        $sellerId = $_GET['seller_id'] ?? null;
 
-            // Converte as strings para objetos DateTime
-            $start = new DateTime($startDate);
-            $end = new DateTime($endDate);
-            
-            // Busca as vendas
-            $sales = $this->service->getSalesByPeriod(
-                $start,
-                $end,
-                $sellerId ? (int)$sellerId : null
-            );
+        // Validação básica
+        if (!$startDate || !$endDate) {
+            throw new InvalidArgumentException("As datas inicial e final são obrigatórias");
+        }
 
-            $this->jsonResponse($sales, 200, empty($sales) ? 'Nenhuma venda encontrada no período' : null);
-
-        } catch (InvalidArgumentException $e) {
-            $this->jsonResponse(null, 400, $e->getMessage());
-        } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao buscar vendas por período');
+        // Converte as strings para objetos DateTime
+        $start = new DateTime($startDate);
+        $end = new DateTime($endDate);
+        
+        // Busca as vendas
+        if ($result = $this->service->getSalesByPeriod(
+            $start,
+            $end,
+            $sellerId ? (int)$sellerId : null
+        )) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }
     }
 
     public function listBySeller(int $sellerId): void
     {
-        try {
-            $status = $_GET['status'] ?? null;
-            $sales = $this->service->getSalesBySeller($sellerId, $status);
-            $this->jsonResponse($sales, 200, empty($sales) ? 'Nenhuma venda encontrada' : null);
-        } catch (DomainException $e) {
-            $this->jsonResponse(null, 404, $e->getMessage());
-        } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao listar vendas');
+        $status = $_GET['status'] ?? null;
+        if ($result = $this->service->getSalesBySeller($sellerId, $status)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }
     }
 
     public function listSalesByStatus(string $status): void 
     {
-        try {
-            $sales = $this->service->getByStatus($status);
-            $this->jsonResponse($sales, 200, empty($sales) ? 'Nenhuma venda encontrada' : null);
-        } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao buscar vendas: ' . $e->getMessage());
+        if ($result = $this->service->getByStatus($status)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }
     }
 
     public function listAllSales(): void 
     {
-        try {
-            $sales = $this->service->getAll();
-            $this->jsonResponse($sales, 200, empty($sales) ? 'Nenhuma venda encontrada' : null);
-        } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao buscar vendas: ' . $e->getMessage());
+        if ($result = $this->service->getAll()) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }
     }
 
     public function getSaleById(int $id): void 
     {
-        try {
-            $sale = $this->service->getSale($id);
-            if ($sale === null) {
-                $this->jsonResponse(null, 404, 'Venda não encontrada');
-            }
-            $this->jsonResponse($sale);
-        } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao buscar venda');
+        if ($result = $this->service->getSale($id)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }
     }
 
     public function show(int $id): void 
     {
-        try {
-            $sale = $this->service->getSaleDetails($id);
-            if ($sale === null) {
-                $this->jsonResponse(null, 404, 'Venda não encontrada');
-            }
-            $this->jsonResponse($sale);
-        } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao buscar venda');
+        if ($result = $this->service->getSaleDetails($id)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }
     }
 
     public function create(): void
     {
-        try {
-            $data = json_decode(file_get_contents('php://input'), true);
-            
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new InvalidArgumentException('Formato JSON inválido');
-            }
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new InvalidArgumentException('Formato JSON inválido');
+        }
 
-            if (empty($data['seller_id'])) {
-                throw new InvalidArgumentException('ID do vendedor é obrigatório');
-            }
+        if (empty($data['seller_id'])) {
+            throw new InvalidArgumentException('ID do vendedor é obrigatório');
+        }
 
-            $sale = $this->service->createSale((int)$data['seller_id']);
-            $this->jsonResponse($sale->toArray(), 201, 'Venda criada com sucesso');
-            
-        } catch (InvalidArgumentException $e) {
-            $this->jsonResponse(null, 400, $e->getMessage());
-            
-        } catch (DomainException $e) {
-            $this->jsonResponse(null, 404, $e->getMessage());
-
-        } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao criar venda');
+        if ($result = $this->service->createSale((int)$data['seller_id'])) {
+            $this->handleResponse($result['status'], $result['message'], $result->toArray()['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }
     }
 
     public function addOrder(int $saleId): void
     {
-        try {
-            $data = json_decode(file_get_contents('php://input'), true);
-            
-            $requiredFields = ['sale_id', 'status', 'payment_method', 'total_amount'];
-            foreach ($requiredFields as $field) {
-                if (empty($data[$field])) {
-                    throw new InvalidArgumentException("Campo obrigatório faltando: {$field}");
-                }
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        $requiredFields = ['sale_id', 'status', 'payment_method', 'total_amount'];
+        foreach ($requiredFields as $field) {
+            if (empty($data[$field])) {
+                throw new InvalidArgumentException("Campo obrigatório faltando: {$field}");
             }
-
-            $sale = $this->service->addOrderToSale($saleId, (int)$data['order_id']);
-            $this->jsonResponse($sale->toArray(), 200, 'Pedido adicionado a venda');
-            
-        } catch (InvalidArgumentException $e) {
-            $this->jsonResponse(null, 400, $e->getMessage());
-
-        } catch (DomainException $e) {
-            $this->jsonResponse(null, 404, $e->getMessage());
-
-        } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao adicionar pedido');
         }
+
+        if ($result = $this->service->addOrderToSale($saleId, (int)$data['order_id'])) {
+            $this->handleResponse($result['status'], $result['message'], $result->toArray()['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
+        } 
     }
 
     public function complete(int $id): void 
     {
-        try {
-            $sale = $this->service->completeSale($id);
-            $this->jsonResponse($sale->toArray(), 200, 'Venda concluída com sucesso');
-
-        } catch (DomainException $e) {
-            $this->jsonResponse(null, 400, $e->getMessage());
-
-        } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao concluir venda');
+        if ($result = $this->service->completeSale($id)) {
+            $this->handleResponse($result['status'], $result['message'], $result->toArray()['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }
     }
 
     public function cancel(int $id): void 
     {
-        try {
-            $sale = $this->service->cancelSale($id);
-            $this->jsonResponse($sale->toArray(), 200, 'Status atualizado');
-
-        } catch (DomainException $e) {
-            $this->jsonResponse(null, 400, $e->getMessage());
-
-        } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao cancelar venda');
+        if ($result = $this->service->cancelSale($id)) {
+            $this->handleResponse($result['status'], $result['message'], $result->toArray()['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }
     }
 
     public function delete(int $id): void 
     {
-        try {
-            $this->service->deleteSale($id);
-            $this->jsonResponse(null, 204, 'Venda excluída com sucesso.');
-
-        } catch (DomainException $e) {
-            $this->jsonResponse(null, 404, $e->getMessage());
-
-        } catch (Exception $e) {
-            $this->jsonResponse(null, 500, 'Erro ao excluir venda'); 
+        if ($result = $this->service->deleteSale($id)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }
     }
 }

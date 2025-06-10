@@ -22,17 +22,34 @@ class SaleRepository {
         $this->orderRepository = new OrderRepository();
     }
 
+    public function beginTransaction() {
+        if (!$this->conn->inTransaction()) {
+            $this->conn->beginTransaction();
+        }
+    }
+
+    public function commitTransaction() {
+        $this->conn->commit();
+    }
+
+    public function rollBackTransaction() {
+        $this->conn->rollBack();
+    }
+
     public function findWithOrders(int $id): ?array
     {
         $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->execute([':id' => $id]);
-        $sale = $stmt->fetch(PDO::FETCH_ASSOC);
-             
-        // Busca os pedidos
-        $sale['orders'] = $this->orderRepository->findBySaleId($id);
-             
-        return $sale;
+        if ($stmt->rowCount() > 0) {
+            $saleRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            // Busca os pedidos
+            $saleRepository['orders'] = $this->orderRepository->findBySaleId($id);
+            return ['status' => true, 'sale' => $saleRepository];
+        
+        } else {
+            return ['status' => false, 'sale' => null];
+        }
     }
 
     public function findByDateRange(DateTimeInterface $startDate, DateTimeInterface $endDate, ?int $sellerId = null): array
@@ -51,9 +68,14 @@ class SaleRepository {
 
         $stmt = $this->conn->prepare($query);
         $stmt->execute($params);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
+        if ($stmt->rowCount() > 0) {
+            $saleRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return ['status' => true, 'sale' => $saleRepository];
+        
+        } else {
+            return ['status' => false, 'sale' => null];
+        }
+    }
 
     public function findOpenBySeller(int $sellerId): ?array
     {
@@ -65,7 +87,13 @@ class SaleRepository {
 
         $stmt = $this->conn->prepare($query);
         $stmt->execute([':seller_id' => $sellerId]);
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        if ($stmt->rowCount() > 0) {
+            $saleRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            return ['status' => true, 'sale' => $saleRepository];
+        
+        } else {
+            return ['status' => false, 'sale' => null];
+        }
     }
 
     public function findByStatus(string $status): array
@@ -73,7 +101,13 @@ class SaleRepository {
         $query = "SELECT * FROM {$this->table} WHERE status = :status";
         $stmt = $this->conn->prepare($query);
         $stmt->execute([':status' => $status]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($stmt->rowCount() > 0) {
+            $saleRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return ['status' => true, 'sale' => $saleRepository];
+        
+        } else {
+            return ['status' => false, 'sale' => null];
+        }
     }
 
     public function findBySeller(int $sellerId, ?string $status = null): array
@@ -82,7 +116,13 @@ class SaleRepository {
                   WHERE seller_id = :seller_id AND (status = :status OR status IS NULL)";
         $stmt = $this->conn->prepare($query);
         $stmt->execute([':seller_id' => $sellerId, ':status' => $status]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($stmt->rowCount() > 0) {
+            $saleRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return ['status' => true, 'sale' => $saleRepository];
+        
+        } else {
+            return ['status' => false, 'sale' => null];
+        }
     }
 
     public function findAll(): array 
@@ -90,7 +130,13 @@ class SaleRepository {
         $query = "SELECT * FROM {$this->table}";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($stmt->rowCount() > 0) {
+            $saleRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return ['status' => true, 'sale' => $saleRepository];
+        
+        } else {
+            return ['status' => false, 'sale' => null];
+        }
     }
 
     public function find(int $id): ?array
@@ -98,7 +144,13 @@ class SaleRepository {
         $query = "SELECT * FROM {$this->table} WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->execute([':id' => $id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($stmt->rowCount() > 0) {
+            $saleRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            return ['status' => true, 'sale' => $saleRepository];
+        
+        } else {
+            return ['status' => false, 'sale' => null];
+        }
     }
 
     public function create(SaleModel $sale): int

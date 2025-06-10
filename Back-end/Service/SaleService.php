@@ -6,7 +6,7 @@ use App\Backend\Model\OrderModel;
 use App\Backend\Repository\SaleRepository;
 use App\Backend\Repository\OrderRepository;
 use App\Backend\Repository\UserRepository;
-
+use Exception;
 use DomainException;
 use DateTimeInterface;
 use DateTime;
@@ -34,9 +34,31 @@ class SaleService {
         if (!$saleData) {
             throw new DomainException("Venda não encontrada");
         }
-
         $sale = $this->hydrateSale($saleData);
-        return $sale->toDetailedArray();
+        try {
+            $this->orderRepository->beginTransaction();
+
+            $reponse = $sale->toDetailedArray();
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['sale']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->orderRepository->commitTransaction();
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function getSalesByPeriod(DateTimeInterface $startDate, DateTimeInterface $endDate, ?int $sellerId = null): array 
@@ -44,28 +66,142 @@ class SaleService {
         if ($startDate > $endDate) {
             throw new InvalidArgumentException("Data final deve ser maior ou igual à data inicial");
         }
+        try {
+            $this->orderRepository->beginTransaction();
 
-        return $this->saleRepository->findByDateRange($startDate, $endDate, $sellerId);
+            $reponse = $this->saleRepository->findByDateRange($startDate, $endDate, $sellerId);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['sale']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->orderRepository->commitTransaction();
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
 }
 
     public function getSalesBySeller(int $sellerId, ?string $status = null): array 
     {
-        return $this->saleRepository->findBySeller($sellerId, $status);
+        try {
+            $this->orderRepository->beginTransaction();
+
+            $reponse = $this->saleRepository->findBySeller($sellerId, $status);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['sale']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->orderRepository->commitTransaction();
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function getByStatus(string $status): array 
     {
-        return $this->saleRepository->findByStatus($status);
+        try {
+            $this->orderRepository->beginTransaction();
+
+            $reponse = $this->saleRepository->findByStatus($status);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['sale']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->orderRepository->commitTransaction();
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function getAll(): array 
     {
-        return $this->saleRepository->findAll();
+        try {
+            $this->orderRepository->beginTransaction();
+
+            $reponse = $this->saleRepository->findAll();
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['sale']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->orderRepository->commitTransaction();
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function getSale(int $id): ?array 
     {
-        return $this->saleRepository->find($id);
+        try {
+            $this->orderRepository->beginTransaction();
+
+            $reponse = $this->saleRepository->find($id);
+            if ($reponse['status'] == true) {
+                return [
+                    'status' => true,
+                    'message' => 'Conteúdo encontrado.',
+                    'content' => $reponse['sale']
+                ];
+            } else {
+                return [
+                    'status' => false,
+                    'message' => 'Nenhum conteúdo encontrado.',
+                    'content' => null
+                ];
+            }
+            
+            $this->orderRepository->commitTransaction();
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function createSale(int $sellerId): SaleModel 
