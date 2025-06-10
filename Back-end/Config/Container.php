@@ -16,6 +16,7 @@ use App\Backend\Service\OrderItemService;
 use App\Backend\Service\OrderService;
 use App\Backend\Service\SaleService;
 use App\Backend\Service\UserService;
+use App\Backend\Service\SupplierService;
 //use App\Backend\Utils\ConvertBase64;
 use PDO;
 
@@ -87,6 +88,9 @@ class Container
         $this->instances[UserService::class] = new UserService(
             $this->get(UserRepository::class)
         );
+        $this->instances[SupplierService::class] = new SupplierService(
+            $this->get(SupplierRepository::class)
+        );
         
         // Controllers
 
@@ -121,6 +125,10 @@ class Container
         $this->instances[\App\Backend\Controller\SaleController::class] = 
             new \App\Backend\Controller\SaleController(
                 $this->get(SaleService::class)
+            );
+        $this->instances[\App\Backend\Controller\SupplierController::class] = 
+            new \App\Backend\Controller\SupplierController(
+                $this->get(SupplierService::class)
             );
     }
 

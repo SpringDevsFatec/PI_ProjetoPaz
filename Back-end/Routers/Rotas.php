@@ -7,6 +7,7 @@ use App\Backend\Controller\ProductImageController;
 use App\Backend\Controller\OrderItemController;
 use App\Backend\Controller\OrderController;
 use App\Backend\Controller\SaleController;
+use App\Backend\Controller\SupplierController;
 
 class Rotas {
     public static function fastRotas(){
@@ -48,14 +49,31 @@ class Rotas {
                 '/sales/details/{id}' => [SaleController::class, 'show'],
                 '/sales/{id}' => [SaleController::class, 'getSaleById'],
                 '/sales' => [SaleController::class, 'listAllSales'],
+
+                //Supplier
+                 '/suppliers' => [SupplierController::class, 'getAllSuppliers'],
+                 '/supplier/{id}' => [SupplierController::class, 'getSupplierById'],
             ],
             'POST' => [
+            
+                // User
                 '/login' => [UserController::class, 'login'],
                 '/users' => [UserController::class, 'createUser'],
+            
+                // Supplier
+                '/supplier' => [SupplierController::class, 'createSupplier'],
+            
+                // Product
             ],
             'PUT' => [
+                // User
                 '/users' => [UserController::class, 'updateUser'],
                 '/users/passworld' => [UserController::class, 'updateUserPassword'],
+
+                // Supplier
+                '/supplier/{id}' => [SupplierController::class, 'updateSupplier'],
+
+                // Product
             ],
             'DELETE' => [
                 // users

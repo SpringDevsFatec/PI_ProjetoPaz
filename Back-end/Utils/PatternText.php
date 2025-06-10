@@ -11,6 +11,9 @@ class PatternText {
         if (isset($data->email)) {
             $data->email = mb_strtolower($data->email);
         }
+        if (isset($data->location)) {
+            $data->location = ucfirst($data->location);
+        }
         // ... another Pattners for other attributes
         return $data;
     }
