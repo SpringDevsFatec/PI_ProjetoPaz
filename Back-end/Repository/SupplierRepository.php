@@ -2,6 +2,7 @@
 
 namespace App\Backend\Repository;
 
+use App\Backend\Model\SupplierModel;
 use PDO;
 use PDOException;
 use Exception;
@@ -36,11 +37,15 @@ class SupplierRepository {
         }
     }
 
-    public function create(object $data) {
+    public function create(SupplierModel $data) {
+        
+        $name = $data->getName();
+        $location = $data->getLocation();
+
         try {
             $stmt = $this->db->prepare("INSERT INTO $this->table (name, location) VALUES (:name, :location)");
-            $stmt->bindParam(':name', $data->name, PDO::PARAM_STR);
-            $stmt->bindParam(':location', $data->location, PDO::PARAM_STR);
+            $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+            $stmt->bindParam(':location', $location, PDO::PARAM_STR);
 
             if ($stmt->execute()) {
                 return (int)$this->db->lastInsertId();
@@ -51,18 +56,23 @@ class SupplierRepository {
         }
     }
 
-    public function update(object $data): bool {
+    public function update(SupplierModel $data): bool {
+        $id = $data->getId();
+        $name = $data->getName();
+        $location = $data->getLocation();
+
+
         try {
             $setClauses = [];
-            $params = ['id' => $data->id];
+            $params = ['id' => $id];
 
-            if (isset($data->name)) {
+            if (isset($name)) {
                 $setClauses[] = "name = :name";
-                $params[':name'] = $data->name;
+                $params[':name'] = $name;
             }
-            if (isset($data->location)) {
+            if (isset($location)) {
                 $setClauses[] = "location = :location";
-                $params[':location'] = $data->location;
+                $params[':location'] = $location;
             }
 
             if (empty($setClauses)) {

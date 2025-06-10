@@ -8,14 +8,14 @@ use JsonSerializable;
 class SupplierModel implements JsonSerializable {
     private $id;
     private $name;
-    private $place;
-    private $dataCreate;
+    private $location;
+    private $created_at;
 
-    public function __construct($id = null, $name = null, $place = null, $dataCreate = null) {
+    public function __construct($id = null, $name = null, $location = null, $created_at = null) {
         $this->id = $id;
         $this->name = $name;
-        $this->place = $place;
-        $this->dataCreate = $dataCreate;
+        $this->location = $location;
+        $this->created_at = $created_at;
     }
 
     public function getId(): ?int {
@@ -34,28 +34,28 @@ class SupplierModel implements JsonSerializable {
         $this->name = $name;
     }
 
-    public function getPlace(): ?string {
-        return $this->place;
+    public function getLocation(): ?string {
+        return $this->location;
     }
 
-    public function setPlace(string $place): void {
-        $this->place = $place;
+    public function setLocation(string $location): void {
+        $this->location = $location;
     }
 
-    public function getDataCreate(): ?string {
-        return $this->dataCreate;
+    public function getCreatedAt(): ?string {
+        return $this->created_at;
     }
 
-    public function setDataCreate(string $dataCreate): void {
-        $this->dataCreate = $dataCreate;
+    public function setCreatedAt(string $created_at): void {
+        $this->created_at = $created_at;
     }
     
     public function jsonSerialize(): array {
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'place' => $this->place,
-            'dataCreate' => $this->dataCreate,
+            'location' => $this->location,
+            'created_at' => $this->created_at,
         ];
     }
 }

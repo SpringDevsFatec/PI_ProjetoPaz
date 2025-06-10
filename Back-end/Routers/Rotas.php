@@ -52,15 +52,28 @@ class Rotas {
 
                 //Supplier
                  '/suppliers' => [SupplierController::class, 'getAllSuppliers'],
-                 '/supplier' => [SupplierController::class, 'getSupplierById'],
+                 '/supplier/{id}' => [SupplierController::class, 'getSupplierById'],
             ],
             'POST' => [
+            
+                // User
                 '/login' => [UserController::class, 'login'],
                 '/users' => [UserController::class, 'createUser'],
+            
+                // Supplier
+                '/supplier' => [SupplierController::class, 'createSupplier'],
+            
+                // Product
             ],
             'PUT' => [
+                // User
                 '/users' => [UserController::class, 'updateUser'],
                 '/users/passworld' => [UserController::class, 'updateUserPassword'],
+
+                // Supplier
+                '/supplier/{id}' => [SupplierController::class, 'updateSupplier'],
+
+                // Product
             ],
             'DELETE' => [
                 // users

@@ -2,6 +2,7 @@
 
 namespace App\Backend\Service;
 
+use App\Backend\Model\SupplierModel;
 use App\Backend\Repository\SupplierRepository;
 use Exception;
 
@@ -63,14 +64,21 @@ class SupplierService {
         }
     }
 
-    public function createSupplier(object $data): array {
-        if (!isset($data->name) || !isset($data->place)) {
+    public function createSupplier(SupplierModel $data){
+        // Validate required fields
+        $name = $data->getName();
+        $location = $data->getLocation();
+
+        if (!isset($name) || !isset($location)) {
             return [
                 'status' => false,
                 'message' => 'Nome e local são campos obrigatórios para criar um fornecedor.',
                 'content' => null
             ];
         }
+
+        // create a new supplier object
+
 
         try {
             $newSupplierId = $this->supplierRepository->create($data);
@@ -98,17 +106,11 @@ class SupplierService {
         }
     }
 
-    public function updateSupplier(object $data): array {
-        if (!isset($data->id)) {
-            return [
-                'status' => false,
-                'message' => 'ID do fornecedor é obrigatório para atualização.',
-                'content' => null
-            ];
-        }
-
+    public function updateSupplier(SupplierModel $data): array {
+        
+        $id = $data->getId();
         try {
-            $existingSupplier = $this->supplierRepository->find($data->id);
+            $existingSupplier = $this->supplierRepository->find($id);
             if (!$existingSupplier) {
                 return [
                     'status' => false,
@@ -123,7 +125,7 @@ class SupplierService {
                 return [
                     'status' => true,
                     'message' => 'Fornecedor atualizado com sucesso.',
-                    'content' => null
+                    'content' => $data
                 ];
             } else {
                 return [
