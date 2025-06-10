@@ -5,25 +5,19 @@ use App\Backend\Service\SupplierService;
 use App\Backend\Libs\AuthMiddleware;
 use App\Backend\Utils\PatternText;
 use App\Backend\Model\SupplierModel;
+use App\Backend\Utils\Responses;
 use Exception;
 
 class SupplierController {
     private $service;
     private $authMiddleware;
 
+    // Use the Responses trait 
+    use Responses;
+
     public function __construct(SupplierService $supplierService) {
         $this->service = $supplierService;
         $this->authMiddleware = new AuthMiddleware();
-    }
-
-    private function handleResponse($result, $successMessage = "Operação concluída com sucesso.", $content = null, $http_response_header = null) {
-        if ($result['status']) {
-            http_response_code($http_response_header);
-            echo json_encode(["status" => true, "message" => $successMessage, "content" => $content]);
-        } else {
-            http_response_code($http_response_header);
-            echo json_encode(['status' => false, "message" => $result['message'], "content" => $content]);
-        }
     }
 
     public function getSupplierById($id) {
