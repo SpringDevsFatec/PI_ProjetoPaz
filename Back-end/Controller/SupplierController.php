@@ -30,7 +30,7 @@ class SupplierController {
         }
 
         if ($result = $this->service->getSupplierById($id)) {
-            $this->handleResponse($result, $result['message'], $result['content'], 200);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse(['status' => false, 'message' => 'Fornecedor não encontrado.'], "Erro ao buscar fornecedor.", null, 404);
         }
@@ -41,7 +41,7 @@ class SupplierController {
         $this->authMiddleware->openToken();
 
         if ($result = $this->service->getAllSuppliers()) {
-            $this->handleResponse($result, $result['message'], $result['content'], 200);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse(['status' => false, 'message' => 'Nenhum fornecedor encontrado.'], "Erro ao buscar fornecedores.", null, 404);
         }
@@ -68,9 +68,9 @@ class SupplierController {
         // Call the service to create the supplier
 
         if ($result = $this->service->createSupplier($supplierData)) {
-            $this->handleResponse($result, $result['message'], $result['content'], 201);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 201);
         } else {
-            $this->handleResponse($result, "Erro ao criar fornecedor.", null, 400);
+            $this->handleResponse($result['status'], "Erro ao criar fornecedor.", null, 400);
         }
     }
 
@@ -97,9 +97,9 @@ class SupplierController {
 
 
         if ($result = $this->service->updateSupplier($supplierData)) {
-            $this->handleResponse($result, $result['message'], $result['content'], 200);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
-            $this->handleResponse($result, "Erro ao atualizar fornecedor.", null, 400);
+            $this->handleResponse($result['status'], "Erro ao atualizar fornecedor.", null, 400);
         }
     }
 
@@ -115,9 +115,9 @@ class SupplierController {
         }
 
         if ($result = $this->service->deleteSupplier($id)) {
-            $this->handleResponse($result, $result['message'], $result['content'], 200);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
-            $this->handleResponse($result, "Erro ao excluir fornecedor.", null, 400);
+            $this->handleResponse($result['status'], "Erro ao excluir fornecedor.", null, 400);
         }
     }
 }

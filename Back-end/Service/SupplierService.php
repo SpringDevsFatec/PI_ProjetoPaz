@@ -4,9 +4,12 @@ namespace App\Backend\Service;
 
 use App\Backend\Model\SupplierModel;
 use App\Backend\Repository\SupplierRepository;
+use App\Backend\Utils\Responses;
 use Exception;
 
 class SupplierService {
+    use Responses;
+
     private $supplierRepository;
 
     public function __construct(SupplierRepository $supplierRepository) {
@@ -18,128 +21,69 @@ class SupplierService {
             $supplier = $this->supplierRepository->find($id);
 
             if ($supplier) {
-                return [
-                    'status' => true,
-                    'message' => 'Fornecedor encontrado com sucesso.',
-                    'content' => $supplier
-                ];
+                return $this->buildResponse(true, 'Fornecedor encontrado com sucesso.', $supplier);
             } else {
-                return [
-                    'status' => false,
-                    'message' => 'Fornecedor não encontrado.',
-                    'content' => null
-                ];
+                return $this->buildResponse(false, 'Fornecedor não encontrado.', null);
             }
         } catch (Exception $e) {
-            return [
-                'status' => false,
-                'message' => 'Erro interno ao buscar fornecedor: ' . $e->getMessage(),
-                'content' => null
-            ];
+            return $this->buildResponse(false, 'Erro interno ao buscar fornecedor: ' . $e->getMessage(), null);
         }
     }
 
     public function getAllSuppliers(): array {
         try {
             $suppliers = $this->supplierRepository->findAll();
+
             if (!empty($suppliers)) {
-                return [
-                    'status' => true,
-                    'message' => 'Fornecedores encontrados com sucesso.',
-                    'content' => $suppliers
-                ];
+                return $this->buildResponse(true, 'Fornecedores encontrados com sucesso.', $suppliers);
             } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum fornecedor encontrado.',
-                    'content' => []
-                ];
+                return $this->buildResponse(false, 'Nenhum fornecedor encontrado.', []);
             }
         } catch (Exception $e) {
-            return [
-                'status' => false,
-                'message' => 'Erro interno ao buscar todos os fornecedores: ' . $e->getMessage(),
-                'content' => null
-            ];
+            return $this->buildResponse(false, 'Erro interno ao buscar todos os fornecedores: ' . $e->getMessage(), null);
         }
     }
 
-    public function createSupplier(SupplierModel $data){
-        // Validate required fields
+    public function createSupplier(SupplierModel $data): array {
         $name = $data->getName();
         $location = $data->getLocation();
 
         if (!isset($name) || !isset($location)) {
-            return [
-                'status' => false,
-                'message' => 'Nome e local são campos obrigatórios para criar um fornecedor.',
-                'content' => null
-            ];
+            return $this->buildResponse(false, 'Nome e local são campos obrigatórios para criar um fornecedor.', null);
         }
-
-        // create a new supplier object
-
 
         try {
             $newSupplierId = $this->supplierRepository->create($data);
 
             if ($newSupplierId) {
                 $newSupplier = $this->supplierRepository->find($newSupplierId);
-                return [
-                    'status' => true,
-                    'message' => 'Fornecedor criado com sucesso.',
-                    'content' => $newSupplier
-                ];
+                return $this->buildResponse(true, 'Fornecedor criado com sucesso.', $newSupplier);
             } else {
-                return [
-                    'status' => false,
-                    'message' => 'Falha ao criar o fornecedor.',
-                    'content' => null
-                ];
+                return $this->buildResponse(false, 'Falha ao criar o fornecedor.', null);
             }
         } catch (Exception $e) {
-            return [
-                'status' => false,
-                'message' => 'Erro interno ao criar fornecedor: ' . $e->getMessage(),
-                'content' => null
-            ];
+            return $this->buildResponse(false, 'Erro interno ao criar fornecedor: ' . $e->getMessage(), null);
         }
     }
 
     public function updateSupplier(SupplierModel $data): array {
-        
         $id = $data->getId();
+
         try {
             $existingSupplier = $this->supplierRepository->find($id);
             if (!$existingSupplier) {
-                return [
-                    'status' => false,
-                    'message' => 'Fornecedor não encontrado para atualização.',
-                    'content' => null
-                ];
+                return $this->buildResponse(false, 'Fornecedor não encontrado para atualização.', null);
             }
 
             $updated = $this->supplierRepository->update($data);
 
             if ($updated) {
-                return [
-                    'status' => true,
-                    'message' => 'Fornecedor atualizado com sucesso.',
-                    'content' => $data
-                ];
+                return $this->buildResponse(true, 'Fornecedor atualizado com sucesso.', $data);
             } else {
-                return [
-                    'status' => false,
-                    'message' => 'Falha ao atualizar o fornecedor.',
-                    'content' => null
-                ];
+                return $this->buildResponse(false, 'Falha ao atualizar o fornecedor.', null);
             }
         } catch (Exception $e) {
-            return [
-                'status' => false,
-                'message' => 'Erro interno ao atualizar fornecedor: ' . $e->getMessage(),
-                'content' => null
-            ];
+            return $this->buildResponse(false, 'Erro interno ao atualizar fornecedor: ' . $e->getMessage(), null);
         }
     }
 
@@ -147,34 +91,18 @@ class SupplierService {
         try {
             $existingSupplier = $this->supplierRepository->find($id);
             if (!$existingSupplier) {
-                return [
-                    'status' => false,
-                    'message' => 'Fornecedor não encontrado para exclusão.',
-                    'content' => null
-                ];
+                return $this->buildResponse(false, 'Fornecedor não encontrado para exclusão.', null);
             }
 
             $deleted = $this->supplierRepository->delete($id);
 
             if ($deleted) {
-                return [
-                    'status' => true,
-                    'message' => 'Fornecedor excluído com sucesso.',
-                    'content' => null
-                ];
+                return $this->buildResponse(true, 'Fornecedor excluído com sucesso.', null);
             } else {
-                return [
-                    'status' => false,
-                    'message' => 'Falha ao excluir o fornecedor.',
-                    'content' => null
-                ];
+                return $this->buildResponse(false, 'Falha ao excluir o fornecedor.', null);
             }
         } catch (Exception $e) {
-            return [
-                'status' => false,
-                'message' => 'Erro interno ao excluir fornecedor: ' . $e->getMessage(),
-                'content' => null
-            ];
+            return $this->buildResponse(false, 'Erro interno ao excluir fornecedor: ' . $e->getMessage(), null);
         }
     }
 }
