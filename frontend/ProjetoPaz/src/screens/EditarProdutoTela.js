@@ -12,10 +12,14 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
+import { showImagePickerOptions } from '../utils/imageUtils';
+import { atualizarProdutoComImagem } from '../services/api';
+import api from '../services/api';
 
 const EditarProdutoTela = ({ route, navigation }) => {
   const { produtoId } = route.params; // Recebe o ID do produto a ser editado
   const [loading, setLoading] = useState(true);
+  const [imagemSelecionada, setImagemSelecionada] = useState(null);
   const [produto, setProduto] = useState({
     nome: '',
     preco: '',
@@ -32,7 +36,7 @@ const EditarProdutoTela = ({ route, navigation }) => {
       try {
         setLoading(true);
         // Substitua pela sua chamada real à API
-        const response = await axios.get(`/produtos/${produtoId}`);
+        const response = await api.get(`/produtos/${produtoId}`);
         setProduto(response.data);
       } catch (error) {
         Alert.alert('Erro', 'Não foi possível carregar os dados do produto');
@@ -49,23 +53,35 @@ const EditarProdutoTela = ({ route, navigation }) => {
     setProduto({...produto, isFavorito: !produto.isFavorito});
   };
 
-  const editarImagem = () => {
-    Alert.alert(
-      'Editar Imagem',
-      'Escolha uma opção:',
-      [
-        { text: 'Tirar Foto', onPress: () => console.log('Tirar foto') },
-        { text: 'Escolher da Galeria', onPress: () => console.log('Galeria') },
-        { text: 'Cancelar', style: 'cancel' },
-      ]
-    );
+  const editarImagem = async () => {
+    try {
+      const resultado = await showImagePickerOptions();
+      if (resultado) {
+        setImagemSelecionada(resultado);
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Falha ao selecionar imagem');
+      console.error(error);
+    }
   };
 
   const salvarAlteracoes = async () => {
     try {
       setLoading(true);
-      // Chamada para atualizar no backend
-      await axios.put(`/produtos/${produtoId}`, produto);
+      
+      // Faz a requisição com ou sem imagem
+      let response;
+      if (imagemSelecionada) {
+        response = await atualizarProdutoComImagem(
+          produtoId,
+          produto, 
+          imagemSelecionada.base64, 
+          imagemSelecionada.type
+        );
+      } else {
+        response = await atualizarProdutoComImagem(produtoId, produto);
+      }
+      
       Alert.alert('Sucesso', 'Produto atualizado com sucesso!');
       navigation.goBack();
     } catch (error) {
@@ -149,18 +165,22 @@ const EditarProdutoTela = ({ route, navigation }) => {
 
         {/* Imagem */}
         <Text style={styles.label}>Imagem do Produto</Text>
-        <View style={styles.imageUploadContainer}>
-          {produto.imagemUrl ? (
+        <TouchableOpacity style={styles.imageUploadContainer} onPress={editarImagem}>
+          {imagemSelecionada ? (
+            <Image source={{ uri: imagemSelecionada.uri }} style={styles.produtoImage} />
+          ) : produto.imagemUrl ? (
             <Image source={{ uri: produto.imagemUrl }} style={styles.produtoImage} />
           ) : (
-            <Ionicons name="cloud-upload-outline" size={40} color="#888" />
+            <>
+              <Ionicons name="cloud-upload-outline" size={40} color="#888" />
+              <Text style={styles.uploadText}>Clique para editar imagem</Text>
+            </>
           )}
-          <Text style={styles.uploadText}>Clique para editar imagem</Text>
           
-          <TouchableOpacity style={styles.editIcon} onPress={editarImagem}>
+          <View style={styles.editIcon}>
             <MaterialIcons name="edit" size={18} color="#555" />
-          </TouchableOpacity>
-        </View>
+          </View>
+        </TouchableOpacity>
 
         {/* Favorito */}
         <View style={styles.favoritoContainer}>

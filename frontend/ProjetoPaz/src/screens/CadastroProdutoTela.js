@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
+import { showImagePickerOptions } from '../utils/imageUtils';
+import { cadastrarProdutoComImagem } from '../services/api';
 
 const CadastroProdutoTela = ({ navigation }) => {
   // Estados do formulário
@@ -11,6 +13,8 @@ const CadastroProdutoTela = ({ navigation }) => {
   const [tipo, setTipo] = useState('');
   const [fornecedor, setFornecedor] = useState('');
   const [isFavorito, setIsFavorito] = useState(false);
+  const [imagemSelecionada, setImagemSelecionada] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Função para alternar favorito
   const toggleFavorito = () => {
@@ -18,48 +22,59 @@ const CadastroProdutoTela = ({ navigation }) => {
   };
 
   // Função para editar imagem
-  const editarImagem = () => {
-    Alert.alert(
-      'Editar Imagem',
-      'Escolha uma opção:',
-      [
-        {
-          text: 'Tirar Foto',
-          onPress: () => console.log('Tirar foto selecionado'),
-        },
-        {
-          text: 'Escolher da Galeria',
-          onPress: () => console.log('Galeria selecionada'),
-        },
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-      ],
-      { cancelable: true }
-    );
+  const editarImagem = async () => {
+    try {
+      const resultado = await showImagePickerOptions();
+      if (resultado) {
+        setImagemSelecionada(resultado);
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Falha ao selecionar imagem');
+      console.error(error);
+    }
   };
 
   // Função para cadastrar produto
-  const cadastrarProduto = () => {
+  const cadastrarProduto = async () => {
     if (!nome || !preco || !categoria || !tipo) {
       Alert.alert('Atenção', 'Preencha todos os campos obrigatórios');
       return;
     }
 
-    const produto = {
-      nome,
-      preco,
-      categoria,
-      tipo,
-      fornecedor,
-      isFavorito,
-      dataCadastro: new Date().toLocaleDateString(),
-    };
+    try {
+      setLoading(true);
 
-    console.log('Produto cadastrado:', produto);
-    Alert.alert('Sucesso', 'Produto cadastrado com sucesso!');
-    navigation.goBack();
+      const produto = {
+        nome,
+        preco,
+        categoria,
+        tipo,
+        fornecedor,
+        isFavorito,
+        dataCadastro: new Date().toLocaleDateString(),
+      };
+
+      // Faz a requisição com ou sem imagem
+      let response;
+      if (imagemSelecionada) {
+        response = await cadastrarProdutoComImagem(
+          produto, 
+          imagemSelecionada.base64, 
+          imagemSelecionada.type
+        );
+      } else {
+        response = await cadastrarProdutoComImagem(produto);
+      }
+
+      console.log('Produto cadastrado:', response.data);
+      Alert.alert('Sucesso', 'Produto cadastrado com sucesso!');
+      navigation.goBack();
+    } catch (error) {
+      console.error('Erro ao cadastrar produto:', error);
+      Alert.alert('Erro', 'Falha ao cadastrar produto. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -135,15 +150,21 @@ const CadastroProdutoTela = ({ navigation }) => {
 
         {/* Imagem */}
         <Text style={styles.label}>Imagem do Produto</Text>
-        <View style={styles.imageUploadContainer}>
-          <Ionicons name="cloud-upload-outline" size={40} color="#888" />
-          <Text style={styles.uploadText}>Clique para adicionar imagem</Text>
+        <TouchableOpacity style={styles.imageUploadContainer} onPress={editarImagem}>
+          {imagemSelecionada ? (
+            <Image source={{ uri: imagemSelecionada.uri }} style={styles.produtoImage} />
+          ) : (
+            <>
+              <Ionicons name="cloud-upload-outline" size={40} color="#888" />
+              <Text style={styles.uploadText}>Clique para adicionar imagem</Text>
+            </>
+          )}
           
           {/* Ícone de editar */}
-          <TouchableOpacity style={styles.editIcon} onPress={editarImagem}>
+          <View style={styles.editIcon}>
             <MaterialIcons name="edit" size={18} color="#555" />
-          </TouchableOpacity>
-        </View>
+          </View>
+        </TouchableOpacity>
 
         {/* Favorito */}
         <View style={styles.favoritoContainer}>
@@ -158,9 +179,19 @@ const CadastroProdutoTela = ({ navigation }) => {
         </View>
 
         {/* Botão de Cadastro */}
-        <TouchableOpacity style={styles.cadastrarButton} onPress={cadastrarProduto}>
-          <Text style={styles.cadastrarButtonText}>Cadastrar Produto</Text>
-          <Feather name="arrow-right" size={20} color="white" />
+        <TouchableOpacity 
+          style={[styles.cadastrarButton, loading && styles.buttonDisabled]} 
+          onPress={cadastrarProduto}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <>
+              <Text style={styles.cadastrarButtonText}>Cadastrar Produto</Text>
+              <Feather name="arrow-right" size={20} color="white" />
+            </>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </LinearGradient>
@@ -286,6 +317,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginRight: 10,
     fontSize: 16,
+  },
+  produtoImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });
 
