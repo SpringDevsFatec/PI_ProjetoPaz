@@ -4,24 +4,37 @@ namespace App\Backend\Utils;
 trait Responses {
 
     /**
-     * Handles the response for the API.
+     * Sends the HTTP response (used in Controllers).
      *
-     * @param array $result The result of the operation.
+     * @param bool $status The operation status.
      * @param string $message The message to return.
      * @param mixed $content The content to return.
-     * @param int $statusCode The HTTP status code.
+     * @param int $http_response_code The HTTP status code.
      */
-    
-    public function handleResponse($result, $successMessage = "Operação concluída com sucesso.", $content = null, $http_response_code = 200) {
+
+    public function handleResponse( $status,  $message , $content , $http_response_code ){
         http_response_code($http_response_code);
 
         echo json_encode([
-            "status" => $result,
-            "message" => $successMessage,
+            "status" => $status,
+            "message" => $message,
             "content" => $content
         ]);
     }
 
-    
-
+       /**
+     * Handles the response for the API.
+     *
+     * @param bool $status The operation status.
+     * @param string $message The message to return.
+     * @param mixed $content The content to return.
+     * @return array
+     */
+    public function buildResponse( $status,  $message, $content) {
+        return [
+            "status" => $status,
+            "message" => $message,
+            "content" => $content
+        ];
+    }
 }
