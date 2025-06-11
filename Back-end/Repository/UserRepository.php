@@ -41,9 +41,9 @@ class UserRepository {
         $stmt->execute();
         $userRepo = $stmt->fetchAll(PDO::FETCH_ASSOC);
        if ($stmt->rowCount() > 0) {
-                return ['status' => true,'user' => $userRepo];
+                return ['status' => true,'content' => $userRepo];
             }else {
-                return ['status' => false, 'user' => null];
+                return ['status' => false, 'content' => null];
             }
     }
     
@@ -56,9 +56,9 @@ class UserRepository {
 
          if ($stmt->rowCount() > 0) {
                 $userRepo = $stmt->fetch(PDO::FETCH_ASSOC);
-                return ['status' => true,'user' => $userRepo];
+                return ['status' => true,'content' => $userRepo];
             }else {
-                return ['status' => false, 'user' => null];
+                return ['status' => false, 'content' => null];
             }
         }
 
@@ -83,14 +83,14 @@ class UserRepository {
                 $user->setPassword($userRepo['password']);
                 $user->setCreatedAt($userRepo['created_at']);
             
-                return ['status' => true,'user' => $userRepo];
+                return ['status' => true,'content' => $userRepo];
 
             }else {
                 // Password does not match
-                    return ['status' => false, 'user' => 'false'];
+                    return ['status' => false, 'content' => 'false'];
                 }
     }else {
-            return ['status' => false, 'user' => null];
+            return ['status' => false, 'content' => null];
     }
     }
 
@@ -110,9 +110,9 @@ class UserRepository {
         // Check if the user was created successfully
         if ($stmt->rowCount() > 0) {
             $user->setId($this->conn->lastInsertId());
-            return ['status' => true, 'user' => $user];
+            return ['status' => true, 'content' => $user];
         } else {
-            return ['status' => false, 'user' => null];
+            return ['status' => false, 'content' => null];
         }
     }
 
@@ -133,9 +133,9 @@ class UserRepository {
 
         // Check if the user was updated successfully
         if ($stmt->rowCount() > 0) {
-            return ['status' => true, 'user' => $user];
+            return ['status' => true, 'content' => $user];
         } else {
-            return ['status' => false, 'user' => null];
+            return ['status' => false, 'content' => null];
         }
     }
 
@@ -153,9 +153,9 @@ class UserRepository {
 
         // Check if the user was updated successfully
         if ($stmt->rowCount() > 0) {
-            return ['status' => true, 'user' => $user];
+            return ['status' => true, 'content' => $user];
         } else {
-            return ['status' => false, 'user' => null];
+            return ['status' => false, 'content' => null];
         }
     }
     
@@ -180,9 +180,9 @@ class UserRepository {
         $stmt->execute();
         if ($stmt->rowCount() > 0) {
             $userRepo = $stmt->fetch(PDO::FETCH_ASSOC);
-            return ['status' => false, 'user' => $userRepo]; // Return the number of users with the same email
+            return ['status' => false, 'content' => $userRepo]; // Return the number of users with the same email
         } else {
-            return ['status' => true, 'user' => null]; // No users found with the same email
+            return ['status' => true, 'content' => null]; // No users found with the same email
         }
     }
 
@@ -195,9 +195,9 @@ class UserRepository {
         $stmt->execute();
         if ($stmt->rowCount() > 0) {
             $userRepo = $stmt->fetch(PDO::FETCH_ASSOC);
-            return ['status' => false, 'user' => $userRepo]; // Return the number of users with the same email
+            return ['status' => false, 'content' => $userRepo]; // Return the number of users with the same email
         } else {
-            return ['status' => true, 'user' => null]; // No users found with the same email
+            return ['status' => true, 'content' => null]; // No users found with the same email
         }
     }
 }

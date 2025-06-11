@@ -29,11 +29,11 @@ class UserService {
 
             if ($user['status'] === true) {
                 $token = (new AuthMiddleware())->createToken([
-                    'id' => $user['user']['id'],
-                    'name' => $user['user']['name']
+                    'id' => $user['content']['id'],
+                    'name' => $user['content']['name']
                 ]);
                 return $this->buildResponse(true, 'Login realizado com sucesso.', $token);
-            } elseif ($user['status'] === false && $user['user'] === 'false') {
+            } elseif ($user['status'] === false && $user['content'] === 'false') {
                 return $this->buildResponse(false, 'Senha inválida!', null);
             } else {
                 return $this->buildResponse(false, 'Usuário não encontrado!', null);
@@ -53,7 +53,7 @@ class UserService {
             $this->repository->commitTransaction();
 
             if ($response['status'] === true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['user']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
             }
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
         } catch (Exception $e) {
@@ -72,7 +72,7 @@ class UserService {
             $this->repository->commitTransaction();
 
             if ($response['status'] === true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['user']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
             }
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
         } catch (Exception $e) {
@@ -94,12 +94,12 @@ class UserService {
 
             $userExists = $this->repository->userExists($user);
             if ($userExists['status'] === false) {
-                return $this->buildResponse(false, 'User já cadastrado.', $userExists['user']);
+                return $this->buildResponse(false, 'User já cadastrado.', $userExists['content']);
             }
 
             $userCreated = $this->repository->createUser($user);
             if ($userCreated['status'] === true) {
-                $data->id = $userCreated['user']->getId();
+                $data->id = $userCreated['content']->getId();
                 $this->repository->commitTransaction();
                 return $this->buildResponse(true, 'Usuário criado com sucesso.', $data);
             }
@@ -126,7 +126,7 @@ class UserService {
 
         $userExists = $this->repository->userExistsUpdate($user);
         if ($userExists['status'] === true) {
-            return $this->buildResponse(false, 'User não existe.', $userExists['user']);
+            return $this->buildResponse(false, 'User não existe.', $userExists['content']);
         }
 
         try {
@@ -155,7 +155,7 @@ class UserService {
 
         $userExists = $this->repository->userExists($user);
         if ($userExists['status'] === true) {
-            return $this->buildResponse(false, 'User não existe.', $userExists['user']);
+            return $this->buildResponse(false, 'User não existe.', $userExists['content']);
         }
 
         try {
