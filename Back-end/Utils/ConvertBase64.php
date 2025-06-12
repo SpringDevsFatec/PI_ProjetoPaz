@@ -15,6 +15,7 @@ use Responses;
             $fileData = base64_decode($data, true);
         
             if ($fileData === false) {
+                // If the base64 data is invalid, return an error response
                 $response = self::buildResponse(true, "Invalid base64 data", null);
             }
             var_dump($fileData);die;
@@ -23,7 +24,6 @@ use Responses;
         }else {
             // If no data is provided, return an error response
            $response = self::buildResponse(false, "No data provided for processing.", null);
-            die;
         }
         
         return $response;
