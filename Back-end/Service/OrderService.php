@@ -6,13 +6,15 @@ use App\Backend\Model\OrderItem;
 use App\Backend\Repository\OrderRepository;
 use App\Backend\Repository\SaleRepository;
 use App\Backend\Repository\ProductRepository;
-
+use App\Backend\Utils\Responses;
 use DomainException;
 use DateTime;
 use InvalidArgumentException;
 use Exception;
 
 class OrderService {
+
+    use Responses;
     
     private OrderRepository $orderRepository;
     private SaleRepository $saleRepository;
@@ -32,23 +34,14 @@ class OrderService {
     {
         try {
             $this->orderRepository->beginTransaction();
-
-            $reponse = $this->orderRepository->findWithItems($id);
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['order']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
-            
+            $response = $this->orderRepository->findWithItems($id);
             $this->orderRepository->commitTransaction();
+            
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
 
         } catch (Exception $e) {
             $this->orderRepository->rollBackTransaction();
@@ -60,23 +53,14 @@ class OrderService {
     {
         try {
             $this->orderRepository->beginTransaction();
-
-            $reponse = $this->orderRepository->findByPaymentMethod($paymentMethod);
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['order']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
-            
+            $response = $this->orderRepository->findByPaymentMethod($paymentMethod);
             $this->orderRepository->commitTransaction();
+            
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
 
         } catch (Exception $e) {
             $this->orderRepository->rollBackTransaction();
@@ -88,23 +72,14 @@ class OrderService {
     {
         try {
             $this->orderRepository->beginTransaction();
-
-            $reponse = $this->orderRepository->findAll();
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['order']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
-            
+            $response = $this->orderRepository->findAll();
             $this->orderRepository->commitTransaction();
+            
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
 
         } catch (Exception $e) {
             $this->orderRepository->rollBackTransaction();
@@ -116,23 +91,14 @@ class OrderService {
     {
         try {
             $this->orderRepository->beginTransaction();
-
-            $reponse = $this->orderRepository->find($id);
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['order']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
-            
+            $response = $this->orderRepository->find($id);
             $this->orderRepository->commitTransaction();
+            
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
 
         } catch (Exception $e) {
             $this->orderRepository->rollBackTransaction();

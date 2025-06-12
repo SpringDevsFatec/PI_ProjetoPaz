@@ -4,6 +4,7 @@ namespace App\Backend\Service;
 use App\Backend\Model\ProductModel;
 use App\Backend\Repository\ProductRepository;
 use App\Backend\Repository\SupplierRepository;
+use App\Backend\Utils\Responses;
 use Exception;
 use DateTime;
 use InvalidArgumentException;
@@ -11,6 +12,8 @@ use DomainException;
 
 class ProductService {
     
+    use Responses;
+
     private $repository;
     private $supplierRepository;
 
@@ -30,24 +33,15 @@ class ProductService {
 
         try {
             $this->repository->beginTransaction();
-            
-            $reponse = $this->repository->searchByName(trim($searchTerm), $limit);
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['product']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
-            
+            $response = $this->repository->searchByName(trim($searchTerm), $limit);
             $this->repository->commitTransaction();
             
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
+
         } catch (Exception $e) {
             $this->repository->rollBackTransaction();
             throw $e;
@@ -63,24 +57,15 @@ class ProductService {
 
         try {
             $this->repository->beginTransaction();
-            
-            $reponse = $this->repository->findByCategory($category);
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['product']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
-            
+            $response = $this->repository->findByCategory($category);
             $this->repository->commitTransaction();
             
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
+
         } catch (Exception $e) {
             $this->repository->rollBackTransaction();
             throw $e;
@@ -90,24 +75,15 @@ class ProductService {
     public function getFavoriteProducts(): array { 
         try {
             $this->repository->beginTransaction();
-            
-            $reponse = $this->repository->findFavorites();
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['product']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
-            
+            $response = $this->repository->findFavorites();
             $this->repository->commitTransaction();
             
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
+
         } catch (Exception $e) {
             $this->repository->rollBackTransaction();
             throw $e;
@@ -117,24 +93,15 @@ class ProductService {
     public function getDonationProducts(): array { 
         try {
             $this->repository->beginTransaction();
-            
-            $reponse = $this->repository->findDonations();
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['product']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
-            
+            $response = $this->repository->findDonations();
             $this->repository->commitTransaction();
             
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
+
         } catch (Exception $e) {
             $this->repository->rollBackTransaction();
             throw $e;
@@ -149,24 +116,15 @@ class ProductService {
         }
         try {
             $this->repository->beginTransaction();
-            
-            $reponse = $productData;
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['product']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
-            
+            $response = $productData;
             $this->repository->commitTransaction();
             
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
+
         } catch (Exception $e) {
             $this->repository->rollBackTransaction();
             throw $e;
@@ -177,24 +135,15 @@ class ProductService {
     {
         try {
             $this->repository->beginTransaction();
-            
-            $reponse = $this->repository->findAll($orderBy, $order);
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['product']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
-            
+            $response = $this->repository->findAll($orderBy, $order);
             $this->repository->commitTransaction();
             
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
+
         } catch (Exception $e) {
             $this->repository->rollBackTransaction();
             throw $e;

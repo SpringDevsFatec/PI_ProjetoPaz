@@ -5,11 +5,14 @@ namespace App\Backend\Repository;
 use App\Backend\Model\SaleModel;
 use App\Backend\Config\Database;
 use App\Backend\Repository\OrderRepository;
+use App\Backend\Utils\Responses;
 use DateTimeInterface;
 use PDO;
 use PDOException;
 
 class SaleRepository {
+
+    use Responses;
 
     private PDO $conn;
     private string $table = 'sale';
@@ -45,10 +48,9 @@ class SaleRepository {
             $saleRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
             // Busca os pedidos
             $saleRepository['orders'] = $this->orderRepository->findBySaleId($id);
-            return ['status' => true, 'sale' => $saleRepository];
-        
+            return $this->buildRepositoryResponse(true, $saleRepository);
         } else {
-            return ['status' => false, 'sale' => null];
+            return $this->buildRepositoryResponse(false, null);
         }
     }
 
@@ -70,10 +72,9 @@ class SaleRepository {
         $stmt->execute($params);
         if ($stmt->rowCount() > 0) {
             $saleRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return ['status' => true, 'sale' => $saleRepository];
-        
+            return $this->buildRepositoryResponse(true, $saleRepository);
         } else {
-            return ['status' => false, 'sale' => null];
+            return $this->buildRepositoryResponse(false, null);
         }
     }
 
@@ -89,10 +90,9 @@ class SaleRepository {
         $stmt->execute([':seller_id' => $sellerId]);
         if ($stmt->rowCount() > 0) {
             $saleRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
-            return ['status' => true, 'sale' => $saleRepository];
-        
+            return $this->buildRepositoryResponse(true, $saleRepository);
         } else {
-            return ['status' => false, 'sale' => null];
+            return $this->buildRepositoryResponse(false, null);
         }
     }
 
@@ -103,10 +103,9 @@ class SaleRepository {
         $stmt->execute([':status' => $status]);
         if ($stmt->rowCount() > 0) {
             $saleRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return ['status' => true, 'sale' => $saleRepository];
-        
+            return $this->buildRepositoryResponse(true, $saleRepository);
         } else {
-            return ['status' => false, 'sale' => null];
+            return $this->buildRepositoryResponse(false, null);
         }
     }
 
@@ -118,10 +117,9 @@ class SaleRepository {
         $stmt->execute([':seller_id' => $sellerId, ':status' => $status]);
         if ($stmt->rowCount() > 0) {
             $saleRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return ['status' => true, 'sale' => $saleRepository];
-        
+            return $this->buildRepositoryResponse(true, $saleRepository);
         } else {
-            return ['status' => false, 'sale' => null];
+            return $this->buildRepositoryResponse(false, null);
         }
     }
 
@@ -132,10 +130,9 @@ class SaleRepository {
         $stmt->execute();
         if ($stmt->rowCount() > 0) {
             $saleRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return ['status' => true, 'sale' => $saleRepository];
-        
+            return $this->buildRepositoryResponse(true, $saleRepository);
         } else {
-            return ['status' => false, 'sale' => null];
+            return $this->buildRepositoryResponse(false, null);
         }
     }
 
@@ -146,10 +143,9 @@ class SaleRepository {
         $stmt->execute([':id' => $id]);
         if ($stmt->rowCount() > 0) {
             $saleRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
-            return ['status' => true, 'sale' => $saleRepository];
-        
+            return $this->buildRepositoryResponse(true, $saleRepository);
         } else {
-            return ['status' => false, 'sale' => null];
+            return $this->buildRepositoryResponse(false, null);
         }
     }
 

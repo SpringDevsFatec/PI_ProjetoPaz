@@ -3,12 +3,14 @@
 namespace App\Backend\Controller;
 
 use App\Backend\Service\OrderItemService;
-use App\Backend\Utils\PatternText;
+use App\Backend\Utils\Responses;
 use InvalidArgumentException;
 
 class OrderItemController {
 
     private OrderItemService $service;
+
+    use Responses;
 
     public function __construct(OrderItemService $service) 
     {
@@ -18,18 +20,18 @@ class OrderItemController {
     public function listItemsWithProductDetails(int $orderId): void 
     {
         if ($result = $this->service->getItemsWithProductDetails($orderId)) {
-            PatternText::handleResponse($result['status'], $result['message'], $result['content'], 200);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
-            PatternText::handleResponse($result['status'], $result['message'], $result['content'], 404);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
         }
     }
 
     public function show(int $id): void 
     {
         if ($result = $this->service->getItem($id)) {
-            PatternText::handleResponse($result['status'], $result['message'], $result['content'], 200);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
-            PatternText::handleResponse($result['status'], $result['message'], $result['content'], 404);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
         }
     }
 
@@ -49,9 +51,9 @@ class OrderItemController {
         }
 
         if ($result = $this->service->createItem($data)) {
-            PatternText::handleResponse($result['status'], $result['message'], $result['content'], 200);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
-            PatternText::handleResponse($result['status'], $result['message'], $result['content'], 404);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
         }
     }
 
@@ -64,18 +66,18 @@ class OrderItemController {
         }
 
         if ($result = $this->service->updateItemQuantity($id, (int)$data['quantity'])) {
-            PatternText::handleResponse($result['status'], $result['message'], $result['content'], 200);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
-            PatternText::handleResponse($result['status'], $result['message'], $result['content'], 404);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
         }
     }
 
     public function delete(int $id): void 
     {
         if ($result = $this->service->deleteItem($id)) {
-            PatternText::handleResponse($result['status'], $result['message'], $result['content'], 200);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
-            PatternText::handleResponse($result['status'], $result['message'], $result['content'], 404);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
         }
     }
 }

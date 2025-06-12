@@ -4,7 +4,7 @@ namespace App\Backend\Service;
 use App\Backend\Model\OrderItemModel;
 use App\Backend\Repository\OrderItemRepository;
 use App\Backend\Repository\ProductRepository;
-
+use App\Backend\Utils\Responses;
 use DomainException;
 use DateTime;
 use InvalidArgumentException;
@@ -12,6 +12,8 @@ use Exception;
 
 class OrderItemService {
     
+    use Responses;
+
     private $orderItemRepository;
     private $productRepository;
 
@@ -27,23 +29,14 @@ class OrderItemService {
     {
         try {
             $this->orderItemRepository->beginTransaction();
-
-            $reponse = $this->orderItemRepository->findWithProductDetails($orderId);
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['order_item']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
-            
+            $response = $this->orderItemRepository->findWithProductDetails($orderId);
             $this->orderItemRepository->commitTransaction();
+            
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
 
         } catch (Exception $e) {
             $this->orderItemRepository->rollBackTransaction();
@@ -56,20 +49,12 @@ class OrderItemService {
         try {
             $this->orderItemRepository->beginTransaction();
 
-            $reponse = $this->orderItemRepository->find($id);
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['order_item']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
+            $response = $this->orderItemRepository->find($id);
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
             }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
             
             $this->orderItemRepository->commitTransaction();
 

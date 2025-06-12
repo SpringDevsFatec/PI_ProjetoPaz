@@ -6,6 +6,7 @@ use App\Backend\Model\OrderModel;
 use App\Backend\Repository\SaleRepository;
 use App\Backend\Repository\OrderRepository;
 use App\Backend\Repository\UserRepository;
+use App\Backend\Utils\Responses;
 use Exception;
 use DomainException;
 use DateTimeInterface;
@@ -14,6 +15,8 @@ use InvalidArgumentException;
 
 class SaleService {
     
+    use Responses;
+
     private SaleRepository $saleRepository;
     private OrderRepository $orderRepository;
     private UserRepository $userRepository;
@@ -34,29 +37,21 @@ class SaleService {
         if (!$saleData) {
             throw new DomainException("Venda não encontrada");
         }
-        $sale = $this->hydrateSale($saleData);
+        //$sale = $this->hydrateSale($saleData);
         try {
-            $this->orderRepository->beginTransaction();
-
-            $reponse = $sale->toDetailedArray();
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['sale']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
+            $this->saleRepository->beginTransaction();
+            //$reponse = $sale->toDetailedArray();
+            $response = $saleData;
+            $this->saleRepository->commitTransaction();
             
-            $this->orderRepository->commitTransaction();
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
 
         } catch (Exception $e) {
-            $this->orderRepository->rollBackTransaction();
+            $this->saleRepository->rollBackTransaction();
             throw $e;
         }
     }
@@ -68,26 +63,17 @@ class SaleService {
         }
         try {
             $this->orderRepository->beginTransaction();
-
-            $reponse = $this->saleRepository->findByDateRange($startDate, $endDate, $sellerId);
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['sale']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
+            $response = $this->saleRepository->findByDateRange($startDate, $endDate, $sellerId);
+            $this->saleRepository->commitTransaction();
             
-            $this->orderRepository->commitTransaction();
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
 
         } catch (Exception $e) {
-            $this->orderRepository->rollBackTransaction();
+            $this->saleRepository->rollBackTransaction();
             throw $e;
         }
 }
@@ -96,26 +82,17 @@ class SaleService {
     {
         try {
             $this->orderRepository->beginTransaction();
-
-            $reponse = $this->saleRepository->findBySeller($sellerId, $status);
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['sale']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
+            $response = $this->saleRepository->findBySeller($sellerId, $status);
+            $this->saleRepository->commitTransaction();
             
-            $this->orderRepository->commitTransaction();
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
 
         } catch (Exception $e) {
-            $this->orderRepository->rollBackTransaction();
+            $this->saleRepository->rollBackTransaction();
             throw $e;
         }
     }
@@ -124,26 +101,17 @@ class SaleService {
     {
         try {
             $this->orderRepository->beginTransaction();
-
-            $reponse = $this->saleRepository->findByStatus($status);
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['sale']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
+            $response = $this->saleRepository->findByStatus($status);
+            $this->saleRepository->commitTransaction();
             
-            $this->orderRepository->commitTransaction();
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
 
         } catch (Exception $e) {
-            $this->orderRepository->rollBackTransaction();
+            $this->saleRepository->rollBackTransaction();
             throw $e;
         }
     }
@@ -152,26 +120,17 @@ class SaleService {
     {
         try {
             $this->orderRepository->beginTransaction();
-
-            $reponse = $this->saleRepository->findAll();
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['sale']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
+            $response = $this->saleRepository->findAll();
+            $this->saleRepository->commitTransaction();
             
-            $this->orderRepository->commitTransaction();
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
 
         } catch (Exception $e) {
-            $this->orderRepository->rollBackTransaction();
+            $this->saleRepository->rollBackTransaction();
             throw $e;
         }
     }
@@ -180,26 +139,17 @@ class SaleService {
     {
         try {
             $this->orderRepository->beginTransaction();
-
-            $reponse = $this->saleRepository->find($id);
-            if ($reponse['status'] == true) {
-                return [
-                    'status' => true,
-                    'message' => 'Conteúdo encontrado.',
-                    'content' => $reponse['sale']
-                ];
-            } else {
-                return [
-                    'status' => false,
-                    'message' => 'Nenhum conteúdo encontrado.',
-                    'content' => null
-                ];
-            }
+            $response = $this->saleRepository->find($id);
+            $this->saleRepository->commitTransaction();
             
-            $this->orderRepository->commitTransaction();
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
 
         } catch (Exception $e) {
-            $this->orderRepository->rollBackTransaction();
+            $this->saleRepository->rollBackTransaction();
             throw $e;
         }
     }

@@ -5,10 +5,13 @@ namespace App\Backend\Repository;
 use App\Backend\Model\OrderModel;
 use App\Backend\Config\Database;
 use App\Backend\Repository\OrderItemRepository;
+use App\Backend\Utils\Responses;
 use PDO;
 use PDOException;
 
 class OrderRepository {
+
+    use Responses;
 
     private PDO $conn;
     private $table = 'projeto_paz.order';
@@ -43,10 +46,9 @@ class OrderRepository {
             $orderRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
             // Busca os itens
             $orderRepository['items'] = $this->itemRepository->findWithProductDetails($id);
-            return ['status' => true, 'order' => $orderRepository];
-        
+            return $this->buildRepositoryResponse(true, $orderRepository);
         } else {
-            return ['status' => false, 'order' => null];
+            return $this->buildRepositoryResponse(false, null);
         }
     }
 
@@ -59,9 +61,9 @@ class OrderRepository {
 
         if ($stmt->rowCount() > 0) {
             $orderRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return ['status' => true, 'order' => $orderRepository];
+            return $this->buildRepositoryResponse(true, $orderRepository);
         } else {
-            return ['status' => true, 'order' => null];
+            return $this->buildRepositoryResponse(false, null);
         }
     }
 
@@ -74,9 +76,9 @@ class OrderRepository {
 
         if ($stmt->rowCount() > 0) {
             $orderRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return ['status' => true, 'order' => $orderRepository];
+            return $this->buildRepositoryResponse(true, $orderRepository);
         } else {
-            return ['status' => true, 'order' => null];
+            return $this->buildRepositoryResponse(false, null);
         }
     }
 
@@ -87,10 +89,10 @@ class OrderRepository {
         $stmt->execute();
 
         if ($stmt->rowCount() > 0) {
-            $orderItemRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return ['status' => true, 'order' => $orderItemRepository];
+            $orderRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return $this->buildRepositoryResponse(true, $orderRepository);
         } else {
-            return ['status' => true, 'order' => null];
+            return $this->buildRepositoryResponse(false, null);
         }
     }
 
@@ -103,9 +105,9 @@ class OrderRepository {
 
         if ($stmt->rowCount() > 0) {
             $orderRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
-            return ['status' => true, 'order' => $orderRepository];
+            return $this->buildRepositoryResponse(true, $orderRepository);
         } else {
-            return ['status' => true, 'order' => null];
+            return $this->buildRepositoryResponse(false, null);
         }
     }
 
