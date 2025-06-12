@@ -32,7 +32,7 @@ trait Responses {
      * @return array
      */
 
-    public function buildResponse( $status,  $message, $content) {
+    public static function buildResponse( $status,  $message, $content) {
         return [
             "status" => $status,
             "message" => $message,

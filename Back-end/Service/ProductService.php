@@ -2,24 +2,31 @@
 namespace App\Backend\Service;
 
 use App\Backend\Model\ProductModel;
+use App\Backend\Model\SupplierModel;
 use App\Backend\Repository\ProductRepository;
-use App\Backend\Repository\SupplierRepository;
+use App\Backend\Service\SupplierService;
+use App\Backend\Utils\ConvertBase64;
+use App\Backend\Utils\PatternText;
+use App\Backend\Utils\Responses;
 use Exception;
 use DateTime;
 use InvalidArgumentException;
 use DomainException;
 
 class ProductService {
+
+    // use Trait Responses;
+    use Responses;
     
     private $repository;
-    private $supplierRepository;
+    private $supplierService;
 
     public function __construct(
         ProductRepository $repository,
-        SupplierRepository $supplierRepository
+        SupplierService $supplierService
     ) {
         $this->repository = $repository;
-        $this->supplierRepository = $supplierRepository;
+        $this->supplierService = $supplierService;
     }
 
     public function searchProductsByName(string $searchTerm, int $limit = 10): array
@@ -201,34 +208,53 @@ class ProductService {
         }
     }
 
-    public function createProduct(array $data): ProductModel
+    public function createProduct( $data)
     {
-        $this->validateProductData($data);
+        //Patterned data
+        PatternText::validateProductData($data);
+        PatternText::processText($data);
 
-        if (!$this->supplierRepository->getSupplierById($data['supplier_id'])) {
-            throw new DomainException("Fornecedor não encontrado");
+        var_dump($_SERVER["HTTP_X_IMAGE_DATA"]);
+
+        //create SupplierModel
+        $supplier = new SupplierModel(null, $data['namesupplier'],$data['location'],null);
+        $ReponseSupplier = $this->supplierService->createSupplier($supplier);
+
+        //verify if supplier was created
+        if ($ReponseSupplier['status'] == true) {
+            if (isset($ReponseSupplier['content']['id'])) {
+                $data['supplier_id'] = $ReponseSupplier['content']['id'];
+            } else {
+            return $this->buildResponse(false, 'Id não retornado do Supplier! ', null);
+            }
+        }else {
+            return $this->buildResponse(false, 'erro ao criar Supplier', null);
         }
 
-        $ProductModel = new ProductModel(
-            name: $this->sanitizeString($data['name']),
-            costPrice: (float)$data['cost_price'],
-            salePrice: (float)$data['sale_price'],
-            category: $this->sanitizeString($data['category']),
-            description: $this->sanitizeString($data['description'] ?? ''),
-            isFavorite: (bool)($data['is_favorite'] ?? false),
-            isDonation: (bool)($data['is_donation'] ?? false),
-            id: null,
-            createdAt: new DateTime(),
-            updatedAt: new DateTime()
-        );
+        // get image by Header
 
-        $productId = $this->repository->save($ProductModel);
-        $ProductModel->setId($productId);
+        $image = $_SERVER['HTTP_X_IMAGE_DATA'];
+        if (empty($image) || $image === 'null' || $image === 'undefined' ||  $image === '') {
+            $image = null;
+        }
+
+        ConvertBase64::processBase64($image, 'Product');
+        
+        
+
+
+
+        var_dump($data);die;
+
+
+        // if (!$this->supplierRepository->getSupplierById($data['supplier_id'])) {
+        //     throw new DomainException("Fornecedor não encontrado");
+        // }
 
         return $ProductModel;
     }
 
-    public function updateProduct(int $id, array $data): ProductModel
+    public function updateProduct(int $id, array $data)
     {
         $existingData = $this->repository->find($id);
         if (!$existingData) {
@@ -249,14 +275,14 @@ class ProductService {
             $updateData['cost_price'] = 0;
         }
 
-        $ProductModel = $this->hydrateProduct($updateData);
-        $ProductModel->setUpdatedAt(new DateTime());
+        // $ProductModel = $updateData;
+        // //$ProductModel->setUpdatedAt(new DateTime());
 
-        if (!$this->repository->update($ProductModel)) {
-            throw new DomainException("Falha ao atualizar produto");
-        }
+        // if (!$this->repository->update($ProductModel)) {
+        //     throw new DomainException("Falha ao atualizar produto");
+        // }
 
-        return $ProductModel;
+        // return $ProductModel;
     }
 
     public function deleteProduct(int $id): void 
@@ -271,53 +297,29 @@ class ProductService {
         } 
     }
 
-    private function validateProductData(array $data): void
-    {
-        $requiredFields = ['name', 'cost_price', 'sale_price', 'category'];
-        foreach ($requiredFields as $field) {
-            if (!isset($data[$field])) {
-                throw new InvalidArgumentException("Campo obrigatório faltando: {$field}");
-            }
-        }
+    
 
-        if (strlen(trim($data['name'])) === 0) {
-            throw new InvalidArgumentException("Nome do produto não pode ser vazio");
-        }
-
-        if ($data['cost_price'] < 0) {
-            throw new InvalidArgumentException("Preço de custo não pode ser negativo");
-        }
-
-        if ($data['sale_price'] <= 0) {
-            throw new InvalidArgumentException("Preço de venda deve ser maior que zero");
-        }
-
-        if (!$data['is_donation'] && $data['sale_price'] < $data['cost_price']) {
-            throw new DomainException("Preço de venda não pode ser menor que o custo");
-        }
-    }
-
-     private function hydrateProduct(array $productData): ProductModel
-    {
-        return new ProductModel(
-            name: $productData['name'],
-            costPrice: (float)$productData['cost_price'],
-            salePrice: (float)$productData['sale_price'],
-            category: $productData['category'],
-            description: $productData['description'],
-            isFavorite: (bool)$productData['is_favorite'],
-            isDonation: (bool)$productData['is_donation'],
-            id: (int)$productData['id'],
-            createdAt: new DateTime($productData['created_at']),
-            updatedAt: new DateTime($productData['updated_at'])
-        );
-    }
+    //  private function hydrateProduct(array $productData): ProductModel
+    // {
+    //     return new ProductModel(
+    //         name: $productData['name'],
+    //         costPrice: (float)$productData['cost_price'],
+    //         salePrice: (float)$productData['sale_price'],
+    //         category: $productData['category'],
+    //         description: $productData['description'],
+    //         isFavorite: (bool)$productData['is_favorite'],
+    //         isDonation: (bool)$productData['is_donation'],
+    //         id: (int)$productData['id'],
+    //         createdAt: new DateTime($productData['created_at']),
+    //         updatedAt: new DateTime($productData['updated_at'])
+    //     );
+    // }
 
     /**
      * Cleans strings by removing extra spaces and HTML tags
      */
-    private function sanitizeString(string $input): string
-    {
-        return trim(strip_tags($input));
-    }
+//     private function sanitizeString(string $input): string
+//     {
+//         return trim(strip_tags($input));
+//     }
 }

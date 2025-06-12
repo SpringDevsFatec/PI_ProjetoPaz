@@ -2,26 +2,38 @@
 namespace App\Backend\Utils;
 
 use Exception;
+use App\Backend\Utils\Responses;
 
 class ConvertBase64 {
-
+    // Use the Responses trait to handle responses
+use Responses;
     public static function processBase64($data, $diretorio) {
         $basePath = __DIR__ . '/../../SrcServer/' . $diretorio;
 
-        if (isset($data->imageSrcBase64)) {
-            $data->imgurl = self::saveBase64File($data->imageSrcBase64, $basePath . '/Imgs/', 'jpg');
-        }
+        if (!empty($data)) {
+             // Decodifica o base64
+            $fileData = base64_decode($data, true);
+        
+            if ($fileData === false) {
+                $response = self::buildResponse(true, "Invalid base64 data", null);
+            }
+            var_dump($fileData);die;
 
-        if (isset($data->pdfBase64)) {
-            $data->pdfurl = self::saveBase64File($data->pdfBase64, $basePath . '/PDF/', 'pdf');
+            $response = self::buildResponse(true, "imagem decodificada", $fileData);
+        }else {
+            // If no data is provided, return an error response
+           $response = self::buildResponse(false, "No data provided for processing.", null);
+            die;
         }
-
-        return $data;
+        
+        return $response;
     }
 
     private static function saveBase64File($base64Data, $uploadDir, $extension) {
         // Decodifica o base64
         $fileData = base64_decode($base64Data, true);
+        var_dump($fileData);die;
+
         if ($fileData === false) {
             throw new Exception("Invalid base64 data");
         }

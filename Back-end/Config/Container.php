@@ -58,9 +58,13 @@ class Container
         );
 
         // Services
+          $this->instances[SupplierService::class] = new SupplierService(
+            $this->get(SupplierRepository::class)
+        );
+        
         $this->instances[ProductService::class] = new ProductService(
             $this->get(ProductRepository::class),
-            $this->get(SupplierRepository::class)
+            $this->get(SupplierService::class)
         );
 
         $this->instances[ProductImageService::class] = new ProductImageService(
@@ -87,9 +91,6 @@ class Container
 
         $this->instances[UserService::class] = new UserService(
             $this->get(UserRepository::class)
-        );
-        $this->instances[SupplierService::class] = new SupplierService(
-            $this->get(SupplierRepository::class)
         );
         
         // Controllers
