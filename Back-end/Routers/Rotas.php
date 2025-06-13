@@ -64,6 +64,7 @@ class Rotas {
                 '/supplier' => [SupplierController::class, 'createSupplier'],
             
                 // Product
+                '/product' => [ProductController::class, 'createProduct'],
             ],
             'PUT' => [
                 // User

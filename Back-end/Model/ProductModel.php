@@ -107,8 +107,16 @@ class ProductModel {
         $this->isDonation = $isDonation;
     }
 
+    public function setImgProduct($img_product){
+        $this->img_product = $img_product;
+    }
+
     public function setCreatedAt($createdAt) {
         $this->createdAt = $createdAt;
+    }
+
+    public function setSupplierId($supplierId) {
+        $this->supplierId = $supplierId;
     }
 
 

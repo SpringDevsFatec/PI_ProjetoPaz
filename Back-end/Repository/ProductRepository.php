@@ -5,6 +5,7 @@ namespace App\Backend\Repository;
 use App\Backend\Model\Product;
 use App\Backend\Config\Database;
 use App\Backend\Utils\Responses;
+use App\Backend\Model\ProductModel;
 use PDO;
 use PDOException;
 
@@ -148,30 +149,48 @@ class ProductRepository {
         }
     }
 
-    public function save(Product $product): int
+    public function createProduct(ProductModel $product)
     {
+        $name = $product->getName();
+        $cost_price = $product->getCostPrice();
+        $sale_price = $product->getSalePrice();
+        $category = $product->getCategory();
+        $description = $product->getDescription();
+        $is_favorite = $product->getFavorite();
+        $is_donation = $product->getDonation();
+        $status = $product->getStatus();
+        $supplier_id = $product->getSupplierId();   
+        $img_product = $product->getImgProduct();
+
         $query = "INSERT INTO {$this->table} 
                   (name, cost_price, sale_price, category, 
-                  description, is_favorite, is_donation, created_at, updated_at)
+                  description, is_favorite, donation, status,
+                  supplier_id, img_product)
                   VALUES 
                   (:name, :cost_price, :sale_price, :category, 
-                  :description, :is_favorite, :is_donation, :created_at, :updated_at)";
+                  :description, :is_favorite, :donation, :status,
+                  :supplier_id, :img_product)";
         try {
             $stmt = $this->conn->prepare($query);
-            $stmt->execute([
-                'name'=> $product->getName(),
-                'cost_price'=> $product->getCostPrice(),
-                'sale_price' => $product->getSalePrice(),
-                'category'=> $product->getCategory(),
-                'description' => $product->getDescription(),
-                'is_favorite' => (int)$product->isFavorite(),
-                'is_donation'=> (int)$product->isDonation(),
-                'created_at' => $product->getCreatedAt()->format('Y-m-d H:i:s'),
-                'updated_at' => $product->getUpdatedAt()->format('Y-m-d H:i:s')
-            ]);
+            $stmt->bindParam(":name", $name, PDO::PARAM_STR);
+            $stmt->bindParam(":cost_price", $cost_price);
+            $stmt->bindParam(":sale_price", $sale_price);
+            $stmt->bindParam(":category", $category, PDO::PARAM_STR);
+            $stmt->bindParam(":description", $description, PDO::PARAM_STR);
+            $stmt->bindParam(":is_favorite", $is_favorite, PDO::PARAM_INT);
+            $stmt->bindParam(":donation", $is_donation, PDO::PARAM_INT);
+            $stmt->bindParam(":status", $status, PDO::PARAM_INT);
+            $stmt->bindParam(":supplier_id", $supplier_id, PDO::PARAM_INT);
+            $stmt->bindParam(":img_product", $img_product, PDO::PARAM_STR);
+            $stmt->execute();
 
-            return (int)$this->conn->lastInsertId();
-
+        // Check if the product was created successfully
+        if ($stmt->rowCount() > 0) {
+            $product->setId($this->conn->lastInsertId());
+            return ['status' => true, 'content' => $product];
+        } else {
+            return ['status' => false, 'content' => null];
+        }
         } catch (PDOException $e) {
             throw new PDOException("Erro ao salvar produto: " . $e->getMessage());
         }

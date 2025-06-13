@@ -76,7 +76,7 @@ class ProductController {
         }
     }
 
-    public function create(): void
+    public function createProduct(): void
     {
         $data = json_decode(file_get_contents('php://input'), true);
         
