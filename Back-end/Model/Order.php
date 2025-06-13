@@ -29,7 +29,7 @@ class Order {
         'open' => 'Aberto',
         'pending' => 'Pendente',
         'paid' => 'Pago',
-        'cancelled' => 'Cancelado'
+        'canceled' => 'Cancelado'
     ];
 
     public function __construct(
