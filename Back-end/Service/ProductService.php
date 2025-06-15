@@ -246,41 +246,73 @@ class ProductService {
 
     }
 
-    public function updateProduct(int $id, array $data)
+    public function updateProduct($id, $data)
     {
-        $existingData = $this->repository->find($id);
-        if (!$existingData) {
-            throw new DomainException("Produto não encontrado");
+        // Validate data
+        PatternText::validateProductData($data);
+
+        // Standardize data
+        PatternText::processText($data);
+
+        // check if product exists
+        $product = new ProductModel();
+        $product->setId($id);
+        $product->setName($data['nameproduct']);
+        $product->setCostPrice($data['cost_price']);
+        $product->setSalePrice($data['sale_price']);
+        $product->setCategory($data['category']);
+        $product->setDescription($data['description'] ?? null);
+        $product->setIsFavorite(($data['is_favorite'] ?? 0));
+        $product->setIsDonation(($data['donation'] ?? 0));
+
+        $existingData = $this->repository->existsToUpdate($product);
+        if ($existingData['status'] === true) {
+            return $this->buildResponse(false, 'Produto não existe.', $existingData['content']);
         }
 
-        if (isset($data['cost_price']) && $data['cost_price'] < 0) {
-            throw new InvalidArgumentException("Preço de custo não pode ser negativo");
-        }
+        //update SupplierModel
+        $supplier = new SupplierModel($data['idSupplier'], $data['namesupplier'], $data['location'], null);
 
-        if (isset($data['sale_price']) && $data['sale_price'] <= 0) {
-            throw new InvalidArgumentException("Preço de venda deve ser maior que zero");
-        }
+        // send ProductModel to repository
+        $this->repository->beginTransaction();
 
-        $updateData = array_merge($existingData, $data);
+        $updatedProduct = $this->repository->update($product);
         
-        if (($updateData['is_donation'] ?? false)) {
-            $updateData['cost_price'] = 0;
+        if ($updatedProduct['status'] === true) {
+
+            $updatedSupplier = $this->supplierService->updateSupplier($supplier);
+            if ($updatedSupplier['status'] === false) {
+                return $this->buildResponse(false, 'Erro ao atualizar fornecedor.', null);
+            }
+            $this->repository->commitTransaction();
+        } else {
+            $this->repository->rollBackTransaction();
+            return $this->buildResponse(false, 'Erro ao Atualizar.', null);
         }
 
-        // $ProductModel = $updateData;
-        // //$ProductModel->setUpdatedAt(new DateTime());
-
-        // if (!$this->repository->update($ProductModel)) {
-        //     throw new DomainException("Falha ao atualizar produto");
-        // }
-
-        // return $ProductModel;
+        // Return array conform data waited
+        return $this->buildResponse(true, 'Atualizado com sucesso', [
+            'id' => $product->getId(),
+            'name' => $product->getName(),
+            'cost_price' => $product->getCostPrice(),
+            'sale_price' => $product->getSalePrice(),
+            'category' => $product->getCategory(),
+            'description' => $product->getDescription(),
+            'is_favorite' => $product->getFavorite(),
+            'is_donation' => $product->getDonation(),
+            'img_product' => $product->getImgProduct(),
+            'supplier' => [ 
+                "id" => $data['idSupplier'],
+                "name" => $data['namesupplier'],
+                "location" => $data['location']
+            ],
+        ]);
     }
 
     public function deleteProduct(int $id): void 
     {
-        $ProductModel = $this->repository->find($id);
-        if (!$ProductModel) {
+        $product = $this->repository->find($id);
+        if (!$product) {
             throw new DomainException("Produto não encontrado");
         }
 
@@ -288,30 +320,4 @@ class ProductService {
             throw new DomainException("Falha ao remover produto.");
         } 
     }
-
-    
-
-    //  private function hydrateProduct(array $productData): ProductModel
-    // {
-    //     return new ProductModel(
-    //         name: $productData['name'],
-    //         costPrice: (float)$productData['cost_price'],
-    //         salePrice: (float)$productData['sale_price'],
-    //         category: $productData['category'],
-    //         description: $productData['description'],
-    //         isFavorite: (bool)$productData['is_favorite'],
-    //         isDonation: (bool)$productData['is_donation'],
-    //         id: (int)$productData['id'],
-    //         createdAt: new DateTime($productData['created_at']),
-    //         updatedAt: new DateTime($productData['updated_at'])
-    //     );
-    // }
-
-    /**
-     * Cleans strings by removing extra spaces and HTML tags
-     */
-//     private function sanitizeString(string $input): string
-//     {
-//         return trim(strip_tags($input));
-//     }
 }

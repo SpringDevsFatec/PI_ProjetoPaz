@@ -92,7 +92,7 @@ class ProductController {
 
     }
 
-    public function update(int $id): void
+    public function updateProduct(int $id): void
     {
         $data = json_decode(file_get_contents('php://input'), true);
         

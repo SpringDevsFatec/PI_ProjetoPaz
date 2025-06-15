@@ -75,6 +75,7 @@ class Rotas {
                 '/supplier/{id}' => [SupplierController::class, 'updateSupplier'],
 
                 // Product
+                '/products/{id}' => [ProductController::class, 'updateProduct'],
             ],
             'DELETE' => [
                 // users

@@ -196,35 +196,62 @@ class ProductRepository {
         }
     }
 
-    public function update(Product $product): bool
-    {    
-        $query = "UPDATE {$this->table} 
-                  SET name = :name, 
-                      cost_price = :cost_price, 
+    public function update(ProductModel $product)
+    {
+        $id = $product->getId();
+        $name = $product->getName();
+        $cost_price = $product->getCostPrice();
+        $sale_price = $product->getSalePrice();
+        $category = $product->getCategory();
+        $description = $product->getDescription();
+        $is_favorite = $product->getFavorite();
+        $is_donation = $product->getDonation();
+        
+        $query = "UPDATE $this->table
+                  SET name = :name,
+                      cost_price = :cost_price,
                       sale_price = :sale_price,
                       category = :category,
                       description = :description,
-                      is_favorite = :is_favorite, 
-                      is_donation = :is_donation,
-                      updated_at = :updated_at
+                      is_favorite = :is_favorite,
+                      donation = :donation
                   WHERE id = :id";
         
         try {
             $stmt = $this->conn->prepare($query);
-            return $stmt->execute([
-                ':id' => $product->getId(),
-                ':name'=> $product->getName(),
-                ':cost_price'=> $product->getCostPrice(),
-                ':sale_price' => $product->getSalePrice(),
-                ':category'=> $product->getCategory(),
-                ':description' => $product->getDescription(),
-                ':is_favorite' => (int)$product->isFavorite(),
-                ':is_donation'=> (int)$product->isDonation(),
-                ':updated_at' => (new \DateTime)->format('Y-m-d H:i:s')
-            ]);
+            $stmt->bindParam(":id", $id, PDO::PARAM_INT);
+            $stmt->bindParam(":name", $name, PDO::PARAM_STR);
+            $stmt->bindParam(":cost_price", $cost_price);
+            $stmt->bindParam(":sale_price", $sale_price);
+            $stmt->bindParam(":category", $category, PDO::PARAM_STR);
+            $stmt->bindParam(":description", $description, PDO::PARAM_STR);
+            $stmt->bindParam(":is_favorite", $is_favorite, PDO::PARAM_INT);
+            $stmt->bindParam(":donation", $is_donation, PDO::PARAM_INT);
+            $stmt->execute();
 
+            // Check if the product was updated successfully
+            if ($stmt->rowCount() > 0) {
+                return $this->buildRepositoryResponse(true, $product);
+            }else {
+                return $this->buildRepositoryResponse(false, null);
+            }
         } catch (PDOException $e) {
             throw new PDOException("Erro ao atualizar produto: " . $e->getMessage());
+        }
+    }
+
+    public function existsToUpdate(ProductModel $product) {
+        $id = $product->getId();
+
+        $query = "SELECT * FROM $this->table WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":id", $id, PDO::PARAM_STR);
+        $stmt->execute();
+        if ($stmt->rowCount() > 0) {
+            $productRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            return $this->buildRepositoryResponse(false, $productRepository);
+        }else {
+            return $this->buildRepositoryResponse(true, null);
         }
     }
 
