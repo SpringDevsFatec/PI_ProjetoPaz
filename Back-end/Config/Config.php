@@ -1,4 +1,7 @@
 <?php
+
+use App\Backend\Utils\LoadEnv;
+
 return [
     'database' =>[
         'mysql'=>[
