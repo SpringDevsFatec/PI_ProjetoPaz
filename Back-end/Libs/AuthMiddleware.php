@@ -9,6 +9,10 @@ use Exception;
 
 class AuthMiddleware {
     
+    public function __construct() {
+        // get data from .env file
+        Token::Get_ENV();
+    }
     // Gera um novo token JWT
     public function createToken(array $payload): string {
         $issuedAt = time();
@@ -23,15 +27,13 @@ class AuthMiddleware {
         $payload['iat'] = $issuedAt;
         $payload['exp'] = $expire;
 
-        return JWT::encode($payload, Token::SECRET_KEY, 'HS256');
+        return JWT::encode($payload, Token::$SECRET_KEY, 'HS256');
     }
 
     // Valida um token diretamente
     public function validateToken(string $token) {
-
         try {   
-            $decoded = JWT::decode($token, new Key(Token::SECRET_KEY, 'HS256'));
-     
+            $decoded = JWT::decode($token, new Key(Token::$SECRET_KEY, 'HS256'));
             return $decoded;
         } catch (Exception $e) {
             return null;
@@ -40,7 +42,6 @@ class AuthMiddleware {
 
     // Valida token vindo do header Authorization
     public function openToken() {
-
         $authorizationHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
 
         if (!$authorizationHeader) {
@@ -67,8 +68,8 @@ class AuthMiddleware {
         return $decoded;
     }
 
-    // Método alternativo, pode ser unificado com openToken se desejar
     public function ValidaToken() {
         return $this->openToken();
     }
 }
+

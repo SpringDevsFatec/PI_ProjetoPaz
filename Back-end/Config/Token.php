@@ -1,13 +1,25 @@
 <?php
-
 namespace App\Backend\Config;
 
+use App\Backend\Utils\LoadEnv;
+
 class Token {
-    const SECRET_KEY = '38B060A751AC96384CD9327EB1B1E36A21FDB71114BE07434C0CC7BF63F6E1DA274EDEBFE76F65FBD51AD2F14898B95B';
-    const TOKEN_EXPIRATION = 3600;
-    const MAIL_HOST = '';
-    const SMTPAuth = '';
-    const MAIL_USERNAME = '';
-    const MAIL_PASSWORD = '';
-    const MAIL_PORT = '';
+    public static string $SECRET_KEY;
+    public static  $TOKEN_EXPIRATION;
+
+    public static function Get_ENV()
+    {
+        // Carrega as variáveis do .env para o $_ENV
+        LoadEnv::loadEnvIntoFiles();
+
+        // Agora faz a verificação depois de carregar
+        if (empty($_ENV['TOKEN_SECRET_KEY']) || empty($_ENV['TOKEN_EXPIRATION_TIME'])) {
+            throw new \Exception("Variáveis de ambiente TOKEN_SECRET_KEY ou TOKEN_EXPIRATION_TIME não estão definidas.");
+        }
+
+        // Atribui os valores às propriedades estáticas
+        self::$SECRET_KEY = $_ENV['TOKEN_SECRET_KEY'];
+        self::$TOKEN_EXPIRATION = $_ENV['TOKEN_EXPIRATION_TIME'];
+    }
+
 }
