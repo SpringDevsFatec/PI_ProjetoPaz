@@ -1,20 +1,17 @@
 <?php
 namespace App\Backend\Service;
 
-use App\Backend\Model\Product;
 use App\Backend\Model\ProductModel;
 use App\Backend\Model\SupplierModel;
 use App\Backend\Repository\ProductRepository;
 use App\Backend\Service\SupplierService;
-use App\Backend\Utils\ConvertBase64;
 use App\Backend\Utils\ImageUploader;
 use App\Backend\Utils\PatternText;
 use App\Backend\Utils\Responses;
 use Exception;
-use DateTime;
 use InvalidArgumentException;
 use DomainException;
-use GuzzleHttp\Psr7\UploadedFile;
+
 
 class ProductService {
     
@@ -38,7 +35,7 @@ class ProductService {
     public function searchProductsByName(string $searchTerm, int $limit = 10): array
     {
         if (empty(trim($searchTerm))) {
-            throw new InvalidArgumentException("Termo de pesquisa não pode ser vazio");
+            return $this->buildResponse(false, 'Termo de pesquisa não pode ser vazio.', null);
         }
 
         try {
@@ -47,7 +44,8 @@ class ProductService {
             $this->repository->commitTransaction();
             
             if ($response['status'] == true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+                $formattedProducts = array_map([$this, 'ResolveProduct'], $response['content']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $formattedProducts);
             }
 
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
@@ -71,7 +69,8 @@ class ProductService {
             $this->repository->commitTransaction();
             
             if ($response['status'] == true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+                $formattedProducts = array_map([$this, 'ResolveProduct'], $response['content']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $formattedProducts);
             }
 
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
@@ -89,7 +88,8 @@ class ProductService {
             $this->repository->commitTransaction();
             
             if ($response['status'] == true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+                $formattedProducts = array_map([$this, 'ResolveProduct'], $response['content']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $formattedProducts);
             }
 
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
@@ -107,7 +107,45 @@ class ProductService {
             $this->repository->commitTransaction();
             
             if ($response['status'] == true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+               $formattedProducts = array_map([$this, 'ResolveProduct'], $response['content']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $formattedProducts);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
+
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
+    }
+    public function getNotDonationProducts(): array { 
+        try {
+            $this->repository->beginTransaction();
+            $response = $this->repository->findNotDonations();
+            $this->repository->commitTransaction();
+            
+            if ($response['status'] == true) {
+               $formattedProducts = array_map([$this, 'ResolveProduct'], $response['content']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $formattedProducts);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
+
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
+    }
+
+    public function getNotFavoriteProducts(): array { 
+        try {
+            $this->repository->beginTransaction();
+            $response = $this->repository->findNotFavorites();
+            $this->repository->commitTransaction();
+            
+            if ($response['status'] == true) {
+                $formattedProducts = array_map([$this, 'ResolveProduct'], $response['content']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $formattedProducts);
             }
 
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
@@ -122,7 +160,7 @@ class ProductService {
     { 
         $productData = $this->repository->find($id);
         if (!$productData) {
-            throw new DomainException("Produto não encontrado");
+            $this->buildResponse(false, 'Produto não encontrado', null);
         }
         try {
             $this->repository->beginTransaction();
@@ -130,7 +168,10 @@ class ProductService {
             $this->repository->commitTransaction();
             
             if ($response['status'] == true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+                // Format the product data
+                $formattedProduct = $this->ResolveProduct($response['content']);
+                // Return the formatted product data
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $formattedProduct);
             }
 
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
@@ -149,7 +190,8 @@ class ProductService {
             $this->repository->commitTransaction();
             
             if ($response['status'] == true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+                $formattedProducts = array_map([$this, 'ResolveProduct'], $response['content']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $formattedProducts);
             }
 
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
@@ -165,10 +207,10 @@ class ProductService {
         try {
             $this->repository->beginTransaction();
             $response = $this->repository->findAll($orderBy, $order);
-            $this->repository->commitTransaction();
-            
+            $this->repository->commitTransaction();        
             if ($response['status'] == true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+                $formattedProducts = array_map([$this, 'ResolveProduct'], $response['content']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $formattedProducts);
             }
 
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
@@ -278,6 +320,7 @@ class ProductService {
         $product->setDescription($data['description'] ?? null);
         $product->setIsFavorite(($data['is_favorite'] ?? 0));
         $product->setIsDonation(($data['donation'] ?? 0));
+        $product->setStatus($data['status'] ?? 1);
 
         $existingData = $this->repository->existsToUpdate($product);
         if ($existingData['status'] === true) {
@@ -320,12 +363,49 @@ class ProductService {
             'is_favorite' => $product->getFavorite(),
             'is_donation' => $product->getDonation(),
             'img_product' => $product->getImgProduct(),
+            'status' => $product->getStatus(),
             'supplier' => [ 
                 "id" => $data['idSupplier'],
                 "name" => $data['namesupplier'],
                 "location" => $data['location']
             ],
         ]);
+    }
+
+    public function updateImgProduct($id, $data)
+    {
+        $response = $this->repository->find($id);
+        if ($response['status'] === false) {
+           return $this->buildResponse(false, 'Produto não existe.', null);
+        }
+
+        // Process the image
+        $reponseImg = ImageUploader::base64ToS3Url($data, 'Product');
+        if ($reponseImg['status'] === false) {
+            return $this->buildResponse(false, 'Erro ao processar imagem: ' . $reponseImg['message'], null);
+        }
+
+        $product = new ProductModel();
+        $product->setId($id);
+        $product->setImgProduct($reponseImg['content']);
+        $this->repository->beginTransaction();
+
+        try {
+            
+            $result = $this->repository->updateImage($product);
+
+            if ($result['status'] === true) {
+                $this->repository->commitTransaction();
+                return $this->buildResponse(true, 'Imagem atualizada com sucesso', $product->getImgProduct());
+            } else {
+                $this->repository->rollBackTransaction();
+                return $this->buildResponse(false, 'Erro ao atualizar Image.', null);
+            }
+
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function inactivateProduct($id)
@@ -356,4 +436,26 @@ class ProductService {
             throw $e;
         }
     }
+
+    private function ResolveProduct(array $product): array
+{
+    return [
+        'id' => (string) $product['idproduct'],
+        'name' => $product['nameproduct'],
+        'cost_price' => $product['cost_price'],
+        'sale_price' => $product['sale_price'],
+        'category' => $product['category'],
+        'description' => $product['description'],
+        'is_favorite' => (string) $product['is_favorite'],
+        'is_donation' => (string) $product['donation'],
+        'img_product' => $product['img_product'],
+        'status' => (string) $product['status'],
+        'supplier' => [
+            'id' => (int) $product['idsupplier'],
+            'name' => $product['namesupplier'],
+            'location' => $product['location'],
+        ],
+    ];
+}
+
 }
