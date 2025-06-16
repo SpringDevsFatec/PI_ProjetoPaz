@@ -47,7 +47,7 @@ trait Responses {
      * @param mixed $content The content to return.
      * @return array
      */
-    public function buildRepositoryResponse( $status, $content) {
+    public static function buildRepositoryResponse( $status, $content) {
         return [
             "status" => $status,
             "content" => $content
