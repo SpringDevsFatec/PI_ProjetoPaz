@@ -115,6 +115,25 @@ class ProductRepository {
         }
     }
 
+    public function findAllActive(string $orderBy = 'name', string $order = 'ASC'): array
+    {
+        $validOrders = ['name', 'category', 'sale_price', 'create_at'];
+        $orderBy = in_array($orderBy, $validOrders) ? $orderBy : 'name';
+        $order = strtoupper($order) === 'DESC' ? 'DESC' : 'ASC';
+ 
+        $query = "SELECT * FROM {$this->table} WHERE status = 1 ORDER BY {$orderBy} {$order}";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        if ($stmt->rowCount() > 0) {
+            $productRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return $this->buildRepositoryResponse(true, $productRepository);
+        }else {
+            return $this->buildRepositoryResponse(false, null);
+        }
+
+    }
+
     public function findAll(string $orderBy = 'name', string $order = 'ASC'): array
     {
         $validOrders = ['name', 'category', 'sale_price', 'create_at'];
@@ -136,7 +155,12 @@ class ProductRepository {
 
     public function find(int $id): ?array
     {
-        $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
+        $query = "SELECT p.name AS nameproduct, p.cost_price, p. sale_price, p.description, p.is_favorite, p.category, p.donation, p.img_product,
+                         s.name AS namesupplier, s.location
+                    FROM projeto_paz.product p
+                    JOIN projeto_paz.supplier s ON p.supplier_id = s.id
+                    WHERE p.id = :id
+                    LIMIT 1";
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
@@ -196,6 +220,7 @@ class ProductRepository {
         }
     }
 
+    // This method updates a product in the database
     public function update(ProductModel $product)
     {
         $id = $product->getId();
@@ -240,6 +265,7 @@ class ProductRepository {
         }
     }
 
+    // This method checks if a product exists in the database to update
     public function existsToUpdate(ProductModel $product) {
         $id = $product->getId();
 
@@ -255,19 +281,28 @@ class ProductRepository {
         }
     }
 
-    public function delete(int $id): bool
+    // This method updates the status of a product (active or inactive)
+    public function updateStatus(ProductModel $product)
     {
-        $query = "DELETE FROM {$this->table} WHERE id = :id";
+        $query = "UPDATE {$this->table} SET status = :status WHERE id = :id";
 
         try {
-            
             $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $id = $product->getId();
+            $status = $product->getStatus();
 
-            return $stmt->execute();
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->bindParam(':status', $status, PDO::PARAM_INT);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+                return $this->buildRepositoryResponse(true, $product);
+            }else {
+                return $this->buildRepositoryResponse(false, null);
+            }
 
         } catch (PDOException $e) {
-            throw new PDOException("Erro ao remover produto: " . $e->getMessage());
+            throw new PDOException("Erro ao atualizar status: " . $e->getMessage());
         }
     }
 }

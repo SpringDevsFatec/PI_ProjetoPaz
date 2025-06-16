@@ -55,6 +55,18 @@ class ProductController {
         }
     }
 
+    public function listAllActive(): void
+    {
+        $orderBy = $_GET['orderBy'] ?? 'name';
+        $order = $_GET['order'] ?? 'ASC';
+            
+        if ($result = $this->service->getAllProductsActives($orderBy, $order)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
+        }
+    }
+
     public function listAll(): void
     {
         $orderBy = $_GET['orderBy'] ?? 'name';
@@ -107,9 +119,9 @@ class ProductController {
         }
     }
 
-    public function delete(int $id): void
+    public function inactivateProduct($id)
     {
-        if ($result = $this->service->deleteProduct($id)) {
+        if ($result = $this->service->inactivateProduct($id)) {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 404);

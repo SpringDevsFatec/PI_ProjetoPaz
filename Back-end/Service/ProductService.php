@@ -1,6 +1,7 @@
 <?php
 namespace App\Backend\Service;
 
+use App\Backend\Model\Product;
 use App\Backend\Model\ProductModel;
 use App\Backend\Model\SupplierModel;
 use App\Backend\Repository\ProductRepository;
@@ -124,6 +125,25 @@ class ProductService {
         try {
             $this->repository->beginTransaction();
             $response = $productData;
+            $this->repository->commitTransaction();
+            
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
+
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
+    }
+
+    public function getAllProductsActives(string $orderBy = 'name', string $order = 'ASC'): array
+    {
+        try {
+            $this->repository->beginTransaction();
+            $response = $this->repository->findAllActive($orderBy, $order);
             $this->repository->commitTransaction();
             
             if ($response['status'] == true) {
@@ -276,18 +296,23 @@ class ProductService {
         // send ProductModel to repository
         $this->repository->beginTransaction();
 
-        $updatedProduct = $this->repository->update($product);
-        
-        if ($updatedProduct['status'] === true) {
+        try {
+            $updatedProduct = $this->repository->update($product);
+            
+            if ($updatedProduct['status'] === true) {
 
-            $updatedSupplier = $this->supplierService->updateSupplier($supplier);
-            if ($updatedSupplier['status'] === false) {
-                return $this->buildResponse(false, 'Erro ao atualizar fornecedor.', null);
+                $updatedSupplier = $this->supplierService->updateSupplier($supplier);
+                if ($updatedSupplier['status'] === false) {
+                    return $this->buildResponse(false, 'Erro ao atualizar fornecedor.', null);
+                }
+                $this->repository->commitTransaction();
+            } else {
+                $this->repository->rollBackTransaction();
+                return $this->buildResponse(false, 'Erro ao Atualizar.', null);
             }
-            $this->repository->commitTransaction();
-        } else {
+        } catch (Exception $e) {
             $this->repository->rollBackTransaction();
-            return $this->buildResponse(false, 'Erro ao Atualizar.', null);
+            return $this->buildResponse(false, $e->getMessage(), null);
         }
 
         // Return array conform data waited
@@ -309,15 +334,32 @@ class ProductService {
         ]);
     }
 
-    public function deleteProduct(int $id): void 
+    public function inactivateProduct($id)
     {
-        $product = $this->repository->find($id);
-        if (!$product) {
+        $response = $this->repository->find($id);
+        if ($response['status'] === false) {
             throw new DomainException("Produto não encontrado");
         }
 
-        if (!$this->repository->delete($id)) {
-            throw new DomainException("Falha ao remover produto.");
-        } 
+        $product = new ProductModel();
+        $product->setId($id);
+        $product->setStatus(0);
+        $this->repository->beginTransaction();
+
+        try {
+            $result = $this->repository->updateStatus($product);
+
+            if ($result['status'] === true) {
+                $this->repository->commitTransaction();
+                return $this->buildResponse(true, 'Status atualizado com sucesso', null);
+            } else {
+                $this->repository->rollBackTransaction();
+                return $this->buildResponse(false, 'Erro ao atualizar.', null);
+            }
+
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
     }
 }

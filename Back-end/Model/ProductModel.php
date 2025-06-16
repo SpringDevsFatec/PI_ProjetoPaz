@@ -119,6 +119,9 @@ class ProductModel {
         $this->supplierId = $supplierId;
     }
 
+    public function setStatus($status) {
+        $this->status = $status;
+    }
 
     public function calculateProfitMargin() : float
     {

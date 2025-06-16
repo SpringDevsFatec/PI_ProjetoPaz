@@ -23,6 +23,7 @@ class Rotas {
                 '/products/search' => [ProductController::class, 'searchByName'],
                 '/products/favorites' => [ProductController::class, 'listFavorites'],
                 '/products/donations' => [ProductController::class, 'listDonations'],
+                '/products/active' => [ProductController::class, 'listAllActive'],
                 // Rotas com parâmetros depois
                 '/products/category/{category}' => [ProductController::class, 'listByCategory'],
                 '/products/{id}' => [ProductController::class, 'show'],
@@ -76,13 +77,11 @@ class Rotas {
 
                 // Product
                 '/products/{id}' => [ProductController::class, 'updateProduct'],
+                '/products/inactivate/{id}' => [ProductController::class, 'inactivateProduct'],
             ],
             'DELETE' => [
                 // users
                 '/users/{id}' => [UserController::class, 'delete'],
-
-                // products
-                '/products/{id}' => [ProductController::class, 'delete'],
                 
                 // product-images
 
