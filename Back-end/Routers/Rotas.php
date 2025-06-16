@@ -22,7 +22,9 @@ class Rotas {
                 // Rotas específicas primeiro
                 '/products/search' => [ProductController::class, 'searchByName'],
                 '/products/favorites' => [ProductController::class, 'listFavorites'],
+                '/products/notfavorites' => [ProductController::class, 'listNotFavorites'],
                 '/products/donations' => [ProductController::class, 'listDonations'],
+                '/products/notdonations' => [ProductController::class, 'listNotDonations'],
                 '/products/active' => [ProductController::class, 'listAllActive'],
                 // Rotas com parâmetros depois
                 '/products/category/{category}' => [ProductController::class, 'listByCategory'],

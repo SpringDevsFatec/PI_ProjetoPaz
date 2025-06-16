@@ -45,10 +45,26 @@ class ProductController {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
         }
     }
+    public function listNotFavorites(): void
+    {
+        if ($result = $this->service->getNotFavoriteProducts()) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
+        }
+    }
 
     public function listDonations(): void
     {
         if ($result = $this->service->getDonationProducts()) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
+        }
+    }
+     public function listNotDonations(): void
+    {
+        if ($result = $this->service->getNotDonationProducts()) {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 404);

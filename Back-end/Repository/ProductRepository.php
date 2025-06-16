@@ -37,126 +37,228 @@ class ProductRepository {
     }
 
     public function searchByName(string $searchTerm, int $limit = 10): array
-    {
-        $query = "SELECT * FROM {$this->table} 
-                 WHERE LOWER(name) LIKE LOWER(:searchTerm) 
-                 LIMIT :limit";
+{
+    $query = "SELECT 
+                p.id AS idproduct,
+                p.name AS nameproduct,
+                p.cost_price,
+                p.sale_price,
+                p.description,
+                p.is_favorite,
+                p.category,
+                p.donation,
+                p.img_product,
+                p.status,
+                s.id AS idsupplier,
+                s.name AS namesupplier,
+                s.location
+            FROM {$this->table} p
+            JOIN projeto_paz.supplier s ON p.supplier_id = s.id
+            WHERE LOWER(p.name) LIKE LOWER(:searchTerm) AND p.status = 1
+            LIMIT :limit";
 
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindValue(':searchTerm', '%' . $searchTerm . '%', PDO::PARAM_STR);
-        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-        $stmt->execute();
-        
-        if ($stmt->rowCount() > 0) {
-            $productRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return $this->buildRepositoryResponse(true, $productRepository);
-        }else {
-            return $this->buildRepositoryResponse(false, null);
-        }
-    }
+    $stmt = $this->conn->prepare($query);
+    $stmt->bindValue(':searchTerm', '%' . $searchTerm . '%', PDO::PARAM_STR);
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return $this->buildRepositoryResponse(!empty($products), $products ?: null);
+}
+
 
     public function findByCategory(string $category): array
-    {
-        $query = "SELECT * FROM {$this->table} WHERE category = :category ORDER BY name";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(":category", $category, PDO::PARAM_STR);
-        $stmt->execute();
-        if ($stmt->rowCount() > 0) {
-            $productRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return $this->buildRepositoryResponse(true, $productRepository);
-        }else {
-            return $this->buildRepositoryResponse(false, null);
-        }
-    }
+{
+    $query = "SELECT 
+                p.id AS idproduct,
+                p.name AS nameproduct,
+                p.cost_price,
+                p.sale_price,
+                p.description,
+                p.is_favorite,
+                p.category,
+                p.donation,
+                p.img_product,
+                p.status,
+                s.id AS idsupplier,
+                s.name AS namesupplier,
+                s.location
+            FROM {$this->table} p
+            JOIN projeto_paz.supplier s ON p.supplier_id = s.id
+            WHERE p.category = :category AND p.status = 1
+            ORDER BY p.name";
+
+    $stmt = $this->conn->prepare($query);
+    $stmt->bindParam(':category', $category, PDO::PARAM_STR);
+    $stmt->execute();
+
+    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return $this->buildRepositoryResponse(!empty($products), $products ?: null);
+}
+
 
     private function findByFlag(string $flagName, bool $value): array
     {
-        $query = "SELECT * FROM {$this->table} 
-                 WHERE {$flagName} = :value 
-                 ORDER BY name";
+        $query = "SELECT 
+                    p.id AS idproduct,
+                    p.name AS nameproduct,
+                    p.cost_price,
+                    p.sale_price,
+                    p.description,
+                    p.is_favorite,
+                    p.category,
+                    p.donation,
+                    p.img_product,
+                    p.status,
+                    s.id AS idsupplier,
+                    s.name AS namesupplier,
+                    s.location
+                FROM {$this->table} p
+                JOIN projeto_paz.supplier s ON p.supplier_id = s.id
+                WHERE p.{$flagName} = :value
+                ORDER BY p.name";
 
         $stmt = $this->conn->prepare($query);
         $stmt->bindValue(':value', $value, PDO::PARAM_BOOL);
         $stmt->execute();
-        if ($stmt->rowCount() > 0) {
-            $productRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return $this->buildRepositoryResponse(true, $productRepository);
-        }else {
-            return $this->buildRepositoryResponse(false, null);
-        }
+
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->buildRepositoryResponse(!empty($products), $products ?: null);
     }
+
 
     public function findFavorites(): array 
     {
         return $this->findByFlag('is_favorite', true);
     }
 
-    public function findDonations(): array
+    public function findNotFavorites(): array 
+    {
+        return $this->findByFlag('is_favorite', false);
+    }
+
+    public function   findDonations(): array
     {
         return $this->findByFlag('donation', true);
+    }
+    public function   findNotDonations(): array
+    {
+        return $this->findByFlag('donation', false);
     }
 
     public function findBySalePriceRange(float $minPrice, float $maxPrice): array
     {
-        $query = "SELECT * FROM {$this->table} 
-                 WHERE sale_price BETWEEN :min_price AND :max_price
-                 ORDER BY sale_price, name";
-        
+        $query = "SELECT 
+                    p.id AS idproduct,
+                    p.name AS nameproduct,
+                    p.cost_price,
+                    p.sale_price,
+                    p.description,
+                    p.is_favorite,
+                    p.category,
+                    p.donation,
+                    p.img_product,
+                    s.id AS idsupplier,
+                    s.name AS namesupplier,
+                    s.location
+                FROM {$this->table} p
+                JOIN projeto_paz.supplier s ON p.supplier_id = s.id
+                WHERE p.sale_price BETWEEN :min_price AND :max_price
+                ORDER BY p.sale_price, p.name";
+
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(":min_price", $minPrice);
-        $stmt->bindParam(":max_price", $maxPrice);
+        $stmt->bindParam(':min_price', $minPrice);
+        $stmt->bindParam(':max_price', $maxPrice);
         $stmt->execute();
-        if ($stmt->rowCount() > 0) {
-            $productRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return $this->buildRepositoryResponse(true, $productRepository);
-        }else {
-            return $this->buildRepositoryResponse(false, null);
-        }
+
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->buildRepositoryResponse(!empty($products), $products ?: null);
     }
+
 
     public function findAllActive(string $orderBy = 'name', string $order = 'ASC'): array
-    {
-        $validOrders = ['name', 'category', 'sale_price', 'create_at'];
-        $orderBy = in_array($orderBy, $validOrders) ? $orderBy : 'name';
-        $order = strtoupper($order) === 'DESC' ? 'DESC' : 'ASC';
- 
-        $query = "SELECT * FROM {$this->table} WHERE status = 1 ORDER BY {$orderBy} {$order}";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        if ($stmt->rowCount() > 0) {
+{
+    $validOrders = [
+        'name' => 'p.name',
+        'category' => 'p.category',
+        'sale_price' => 'p.sale_price',
+        'create_at' => 'p.create_at'
+    ];
+    $orderByColumn = $validOrders[$orderBy] ?? 'p.name';
+    $order = strtoupper($order) === 'DESC' ? 'DESC' : 'ASC';
+
+    $query = "SELECT 
+                p.id AS idproduct,
+                p.name AS nameproduct,
+                p.cost_price,
+                p.sale_price,
+                p.description,
+                p.is_favorite,
+                p.category,
+                p.donation,
+                p.img_product,
+                p.status,
+                s.id AS idsupplier,
+                s.name AS namesupplier,
+                s.location
+            FROM {$this->table} p
+            JOIN projeto_paz.supplier s ON p.supplier_id = s.id
+            WHERE p.status = 1
+            ORDER BY {$orderByColumn} {$order}";
+
+    $stmt = $this->conn->prepare($query);
+    $stmt->execute();
+
+    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return $this->buildRepositoryResponse(!empty($products), $products ?: null);
+}
+
+   public function findAll(string $orderBy = 'name', string $order = 'ASC'): ?array
+{
+    $validOrders = [
+        'name' => 'p.name',
+        'category' => 'p.category',
+        'sale_price' => 'p.sale_price',
+        'create_at' => 'p.create_at'
+    ];
+    $orderByColumn = $validOrders[$orderBy] ?? 'p.name';
+    $order = strtoupper($order) === 'DESC' ? 'DESC' : 'ASC';
+
+    $query = "SELECT 
+                p.id AS idproduct, 
+                p.name AS nameproduct, 
+                p.cost_price, 
+                p.sale_price, 
+                p.description, 
+                p.is_favorite, 
+                p.category, 
+                p.donation, 
+                p.img_product,
+                p.status,
+                s.id AS idsupplier, 
+                s.name AS namesupplier, 
+                s.location 
+            FROM projeto_paz.product p 
+            JOIN projeto_paz.supplier s ON p.supplier_id = s.id
+            ORDER BY {$orderByColumn} {$order}";
+
+    $stmt = $this->conn->prepare($query);
+    $stmt->execute();
+
+     if ($stmt->rowCount() > 0) {
             $productRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
             return $this->buildRepositoryResponse(true, $productRepository);
         }else {
             return $this->buildRepositoryResponse(false, null);
         }
+}
 
-    }
 
-    public function findAll(string $orderBy = 'name', string $order = 'ASC'): array
-    {
-        $validOrders = ['name', 'category', 'sale_price', 'create_at'];
-        $orderBy = in_array($orderBy, $validOrders) ? $orderBy : 'name';
-        $order = strtoupper($order) === 'DESC' ? 'DESC' : 'ASC';
- 
-        $query = "SELECT * FROM {$this->table} ORDER BY {$orderBy} {$order}";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        if ($stmt->rowCount() > 0) {
-            $productRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return $this->buildRepositoryResponse(true, $productRepository);
-        }else {
-            return $this->buildRepositoryResponse(false, null);
-        }
-
-    }
 
     public function find(int $id): ?array
     {
-        $query = "SELECT p.name AS nameproduct, p.cost_price, p. sale_price, p.description, p.is_favorite, p.category, p.donation, p.img_product,
-                         s.name AS namesupplier, s.location
+        $query = "SELECT p.id AS idproduct, p.name AS nameproduct, p.cost_price, p. sale_price, p.description, p.is_favorite, p.category, p.donation, p.img_product, p.status,
+                        s.id AS idsupplier, s.name AS namesupplier, s.location
                     FROM projeto_paz.product p
                     JOIN projeto_paz.supplier s ON p.supplier_id = s.id
                     WHERE p.id = :id
