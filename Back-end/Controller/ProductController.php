@@ -135,6 +135,21 @@ class ProductController {
         }
     }
 
+    public function updateImgProduct(int $id): void
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new InvalidArgumentException('JSON inválido');
+        }
+        
+        if ($result = $this->service->updateImgProduct($id, $data)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
+        }
+    }
+
     public function inactivateProduct($id)
     {
         if ($result = $this->service->inactivateProduct($id)) {

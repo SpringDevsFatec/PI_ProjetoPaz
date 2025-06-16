@@ -80,6 +80,7 @@ class Rotas {
                 // Product
                 '/products/{id}' => [ProductController::class, 'updateProduct'],
                 '/products/inactivate/{id}' => [ProductController::class, 'inactivateProduct'],
+                '/products/img/{id}' => [ProductController::class, 'updateImgProduct'],
             ],
             'DELETE' => [
                 // users

@@ -1,20 +1,17 @@
 <?php
 namespace App\Backend\Service;
 
-use App\Backend\Model\Product;
 use App\Backend\Model\ProductModel;
 use App\Backend\Model\SupplierModel;
 use App\Backend\Repository\ProductRepository;
 use App\Backend\Service\SupplierService;
-use App\Backend\Utils\ConvertBase64;
 use App\Backend\Utils\ImageUploader;
 use App\Backend\Utils\PatternText;
 use App\Backend\Utils\Responses;
 use Exception;
-use DateTime;
 use InvalidArgumentException;
 use DomainException;
-use GuzzleHttp\Psr7\UploadedFile;
+
 
 class ProductService {
     
@@ -323,6 +320,7 @@ class ProductService {
         $product->setDescription($data['description'] ?? null);
         $product->setIsFavorite(($data['is_favorite'] ?? 0));
         $product->setIsDonation(($data['donation'] ?? 0));
+        $product->setStatus($data['status'] ?? 1);
 
         $existingData = $this->repository->existsToUpdate($product);
         if ($existingData['status'] === true) {
@@ -365,12 +363,49 @@ class ProductService {
             'is_favorite' => $product->getFavorite(),
             'is_donation' => $product->getDonation(),
             'img_product' => $product->getImgProduct(),
+            'status' => $product->getStatus(),
             'supplier' => [ 
                 "id" => $data['idSupplier'],
                 "name" => $data['namesupplier'],
                 "location" => $data['location']
             ],
         ]);
+    }
+
+    public function updateImgProduct($id, $data)
+    {
+        $response = $this->repository->find($id);
+        if ($response['status'] === false) {
+           return $this->buildResponse(false, 'Produto não existe.', null);
+        }
+
+        // Process the image
+        $reponseImg = ImageUploader::base64ToS3Url($data, 'Product');
+        if ($reponseImg['status'] === false) {
+            return $this->buildResponse(false, 'Erro ao processar imagem: ' . $reponseImg['message'], null);
+        }
+
+        $product = new ProductModel();
+        $product->setId($id);
+        $product->setImgProduct($reponseImg['content']);
+        $this->repository->beginTransaction();
+
+        try {
+            
+            $result = $this->repository->updateImage($product);
+
+            if ($result['status'] === true) {
+                $this->repository->commitTransaction();
+                return $this->buildResponse(true, 'Imagem atualizada com sucesso', $product->getImgProduct());
+            } else {
+                $this->repository->rollBackTransaction();
+                return $this->buildResponse(false, 'Erro ao atualizar Image.', null);
+            }
+
+        } catch (Exception $e) {
+            $this->repository->rollBackTransaction();
+            throw $e;
+        }
     }
 
     public function inactivateProduct($id)

@@ -333,6 +333,7 @@ class ProductRepository {
         $description = $product->getDescription();
         $is_favorite = $product->getFavorite();
         $is_donation = $product->getDonation();
+        $status = $product->getStatus();
         
         $query = "UPDATE $this->table
                   SET name = :name,
@@ -341,7 +342,8 @@ class ProductRepository {
                       category = :category,
                       description = :description,
                       is_favorite = :is_favorite,
-                      donation = :donation
+                      donation = :donation,
+                      status = :status
                   WHERE id = :id";
         
         try {
@@ -354,6 +356,7 @@ class ProductRepository {
             $stmt->bindParam(":description", $description, PDO::PARAM_STR);
             $stmt->bindParam(":is_favorite", $is_favorite, PDO::PARAM_INT);
             $stmt->bindParam(":donation", $is_donation, PDO::PARAM_INT);
+            $stmt->bindParam(":status", $status, PDO::PARAM_INT);
             $stmt->execute();
 
             // Check if the product was updated successfully
@@ -395,6 +398,34 @@ class ProductRepository {
 
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $stmt->bindParam(':status', $status, PDO::PARAM_INT);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+                return $this->buildRepositoryResponse(true, $product);
+            }else {
+                return $this->buildRepositoryResponse(false, null);
+            }
+
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao atualizar status: " . $e->getMessage());
+        }
+    }
+
+    // This method updates the status of a product (active or inactive)
+    public function updateImage(ProductModel $product):array
+    {
+        $id = $product->getId();
+        $img_product = $product->getImgProduct();
+
+        $query = "UPDATE {$this->table} SET img_product = :img_product WHERE id = :id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $id = $product->getId();
+            $status = $product->getStatus();
+
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->bindParam(':img_product', $img_product, PDO::PARAM_STR);
             $stmt->execute();
 
             if ($stmt->rowCount() > 0) {
