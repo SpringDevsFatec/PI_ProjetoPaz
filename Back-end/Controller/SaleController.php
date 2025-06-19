@@ -94,20 +94,17 @@ class SaleController {
         }
     }
 
-    public function create(): void
+    public function createSale(): void
     {
+        // this method needs of Token JWT to run
         $data = json_decode(file_get_contents('php://input'), true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new InvalidArgumentException('Formato JSON inválido');
+            $this->handleResponse(false, "Formato JSON inválido", null, 200);
         }
 
-        if (empty($data['seller_id'])) {
-            throw new InvalidArgumentException('ID do vendedor é obrigatório');
-        }
-
-        if ($result = $this->service->createSale((int)$data['seller_id'])) {
-            $this->handleResponse($result['status'], $result['message'], $result->toArray()['content'], 200);
+        if ($result = $this->service->createSale($data)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }
@@ -125,7 +122,7 @@ class SaleController {
         }
 
         if ($result = $this->service->addOrderToSale($saleId, (int)$data['order_id'])) {
-            $this->handleResponse($result['status'], $result['message'], $result->toArray()['content'], 200);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         } 
@@ -134,7 +131,7 @@ class SaleController {
     public function complete(int $id): void 
     {
         if ($result = $this->service->completeSale($id)) {
-            $this->handleResponse($result['status'], $result['message'], $result->toArray()['content'], 200);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }
@@ -143,7 +140,7 @@ class SaleController {
     public function cancel(int $id): void 
     {
         if ($result = $this->service->cancelSale($id)) {
-            $this->handleResponse($result['status'], $result['message'], $result->toArray()['content'], 200);
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
         }

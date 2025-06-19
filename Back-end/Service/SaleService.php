@@ -7,10 +7,14 @@ use App\Backend\Repository\SaleRepository;
 use App\Backend\Repository\OrderRepository;
 use App\Backend\Repository\UserRepository;
 use App\Backend\Utils\Responses;
+use App\Backend\Utils\PatternText;
+use App\Backend\Libs\AuthMiddleware;
+use App\Backend\Utils\CreateCodes;
 use Exception;
 use DomainException;
 use DateTimeInterface;
 use DateTime;
+use GuzzleHttp\Promise\Create;
 use InvalidArgumentException;
 
 class SaleService {
@@ -154,26 +158,31 @@ class SaleService {
         }
     }
 
-    public function createSale(int $sellerId): SaleModel 
+    public function createSale($data): array
     {
-        $seller = $this->userRepository->getContentId($sellerId);
-        if(!$seller) {
-            throw new DomainException("Vendedor não encontrado.");
+        $dataPadronizado = PatternText::processText($data);
+
+        $decodedToken = (new AuthMiddleware())->openToken();
+        $userId = $decodedToken->id;
+
+        $userExists = $this->userRepository->userExists($userId);
+        if ($userExists['status'] === false) {
+            return $this->buildResponse(false, 'User não encontrado.', $userExists['content']);
         }
         
-        if (!$this->saleRepository->findOpenBySeller($sellerId)) 
+        if (!$this->saleRepository->findOpenBySeller($userId)) 
         {
-            throw new InvalidArgumentException("Já existe uma venda aberta para este vendedor");
+            return $this->buildResponse(false, 'Já existe uma venda aberta para este vendedor', $userExists['content']);
         }
 
-        $sale = new SaleModel(
-            sellerId: $sellerId,
-            date: new DateTime(),
-            status: 'open'
-        );
-
+        $sale = new SaleModel();
+        $sale->setUserId($userId);
+        $sale->setCode(CreateCodes::createCodes("SA"));
+        $sale->setMethod($dataPadronizado->method);
+        $sale->setStatus('pending');
+        try {
+            $this->repository->beginTransaction();
         $saleId = $this->saleRepository->create($sale);
-        $sale->setId($saleId);
 
         return $sale;
     }
