@@ -28,10 +28,10 @@ INSERT INTO `sale` (`user_id`, `total_amount_sale`, `status`, `method`, `code`, 
 
 -- Inserindo pedidos
 INSERT INTO `order` (`sale_id`, `payment_method`, `code` , `status`, `total_amount_order`) VALUES
-(1, 'credito', 'PE123', 'completed', 42.35),
-(1, 'credito', 'PE124', 'completed', 42.35),
-(2, 'pix', 'PE125', 'pending', 49.90),
-(3, 'dinheiro', 'PE126','completed', 34.90);
+(1, 'credito', 'OR123', 'completed', 42.35),
+(1, 'credito', 'OR124', 'completed', 42.35),
+(2, 'pix', 'OR125', 'cancelled', 49.90),
+(3, 'dinheiro', 'OR126','completed', 34.90);
 
 -- Inserindo itens dos pedidos
 INSERT INTO `order_item` (`product_id`, `order_id`, `quantity`, `unit_price`) VALUES
