@@ -49,32 +49,41 @@ CREATE TABLE `user` (
   UNIQUE KEY `email_UNIQUE` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE `seller` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `commission_rate` decimal(5,2) DEFAULT 0,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `user_id_UNIQUE` (`user_id`),
-  CONSTRAINT `fk_seller_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+-- die table
+-- CREATE TABLE `seller` (
+--   `id` int NOT NULL AUTO_INCREMENT,
+--   `user_id` int NOT NULL,
+--   -- sale_id int NOT NULL, -- Relacionamento com a venda (opcional)
+--   -- `commission_rate` decimal(5,2) DEFAULT 0,
+--   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+--   PRIMARY KEY (`id`),
+--   UNIQUE KEY `user_id_UNIQUE` (`user_id`),
+--   CONSTRAINT `fk_seller_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `sale` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `seller_id` int NOT NULL,
-  `total_amount` decimal(10,2) NOT NULL,
+  `code` varchar(50) DEFAULT NULL, -- Código da venda (opcional)
+  `img_sale` text DEFAULT NULL, -- Imagem da venda (opcional) 
+  `total_amount_sale` decimal(10,2) NOT NULL, -- Valor total arrecadado de todos os pedidos
   `status` enum('pending','completed','cancelled') DEFAULT 'pending',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `user_id` int DEFAULT NULL, -- Relacionamento com o usuário (opcional)
   PRIMARY KEY (`id`),
-  KEY `seller_id_idx` (`seller_id`),
-  CONSTRAINT `fk_sale_seller` FOREIGN KEY (`seller_id`) REFERENCES `seller` (`id`)
+  KEY `user_id_idx` (`user_id`),
+  CONSTRAINT `fk_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) -- alterar para user_id 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `order` (
   `id` int NOT NULL AUTO_INCREMENT,
   `sale_id` int NOT NULL,
-  `payment_method` enum('credit','debit','cash','pix') DEFAULT NULL,
+  `code` varchar(50) DEFAULT NULL, 
+  `payment_method` enum('credito','debito','dinheiro','pix') DEFAULT NULL,
+  `status` varchar(20),
+  `total_amount_order` decimal(10,2) NOT NULL, -- Valor total do pedido (opcional)
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `sale_id_idx` (`sale_id`),
   CONSTRAINT `fk_order_sale` FOREIGN KEY (`sale_id`) REFERENCES `sale` (`id`)

@@ -19,22 +19,19 @@ INSERT INTO `user` (`name`, `email`, `password`) VALUES
 ('Carlos Oliveira', 'carlos@email.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
 ('Dev', 'dev@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W');
 
--- Inserindo vendedores
-INSERT INTO `seller` (`user_id`, `commission_rate`) VALUES
-(1, 5.00),
-(2, 7.50);
-
 -- Inserindo vendas
-INSERT INTO `sale` (`seller_id`, `total_amount`, `status`) VALUES
-(1, 84.70, 'completed'),
-(2, 49.90, 'completed'),
-(1, 34.90, 'pending');
+INSERT INTO `sale` (`user_id`, `total_amount_sale`, `status`, `code`, `img_sale`) VALUES
+(4, 84.70, 'completed', 'SALE123', 'https://exemplo.com/imagens/venda1.jpg'),
+(4, 49.90, 'pending', 'SALE124', 'https://exemplo.com/imagens/venda2.jpg'),
+(4, 49.90, 'completed', 'SALE125', 'https://exemplo.com/imagens/venda3.jpg'),
+(4, 34.90, 'completed', 'SALE126', 'https://exemplo.com/imagens/venda4.jpg');
 
 -- Inserindo pedidos
-INSERT INTO `order` (`sale_id`, `payment_method`) VALUES
-(1, 'credit'),
-(2, 'pix'),
-(3, 'cash');
+INSERT INTO `order` (`sale_id`, `payment_method`, `code` , `status`, `total_amount_order`) VALUES
+(1, 'credito', 'PE123', 'completed', 42.35),
+(1, 'credito', 'PE124', 'completed', 42.35),
+(2, 'pix', 'PE125', 'pending', 49.90),
+(3, 'dinheiro', 'PE126','completed', 34.90);
 
 -- Inserindo itens dos pedidos
 INSERT INTO `order_item` (`product_id`, `order_id`, `quantity`, `unit_price`) VALUES
