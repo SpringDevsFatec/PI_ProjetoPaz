@@ -46,7 +46,7 @@ class Rotas {
                 '/orders' => [OrderController::class, 'listAll'],
 
                 // Sale
-                //'/sales/{seller_id}/?{status}/seller' => [SaleController::class, 'listBySeller'],
+                '/sales/seller{id}' => [SaleController::class, 'listBySeller'],
                 '/sales/date' => [SaleController::class, 'listByDate'],
                 '/sales/status/{status}' => [SaleController::class, 'listSalesByStatus'],
                 '/sales/details/{id}' => [SaleController::class, 'show'],
@@ -68,6 +68,15 @@ class Rotas {
             
                 // Product
                 '/product' => [ProductController::class, 'createProduct'],
+            
+                // Sale
+                '/sales' => [SaleController::class, 'createSale'], 
+
+                // Order
+                '/orders' => [OrderController::class, 'createOrder'],
+                
+                // Order Item
+                '/order-items/{idOrder}' => [OrderItemController::class, 'createOrderItem'],
             ],
             'PUT' => [
                 // User
@@ -81,6 +90,13 @@ class Rotas {
                 '/products/{id}' => [ProductController::class, 'updateProduct'],
                 '/products/inactivate/{id}' => [ProductController::class, 'inactivateProduct'],
                 '/products/img/{id}' => [ProductController::class, 'updateImgProduct'],
+
+                // Sale
+                '/sales/completed/{id}' => [SaleController::class, 'completeSale'],
+                '/sales/cancelled/{id}' => [SaleController::class, 'cancelSale'],
+
+                // Order
+                '/orders/cancelled/{id}' => [SaleController::class, 'cancelOrder'],
             ],
             'DELETE' => [
                 // users

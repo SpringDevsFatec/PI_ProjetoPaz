@@ -20,11 +20,11 @@ INSERT INTO `user` (`name`, `email`, `password`) VALUES
 ('Dev', 'dev@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W');
 
 -- Inserindo vendas
-INSERT INTO `sale` (`user_id`, `total_amount_sale`, `status`, `code`, `img_sale`) VALUES
-(4, 84.70, 'completed', 'SALE123', 'https://exemplo.com/imagens/venda1.jpg'),
-(4, 49.90, 'pending', 'SALE124', 'https://exemplo.com/imagens/venda2.jpg'),
-(4, 49.90, 'completed', 'SALE125', 'https://exemplo.com/imagens/venda3.jpg'),
-(4, 34.90, 'completed', 'SALE126', 'https://exemplo.com/imagens/venda4.jpg');
+INSERT INTO `sale` (`user_id`, `total_amount_sale`, `status`, `method`, `code`, `img_sale`) VALUES
+(4, 84.70, 'completed', 'manual', 'SALE123', 'https://exemplo.com/imagens/venda1.jpg'),
+(4, 49.90, 'pending', 'manual', 'SALE124', 'https://exemplo.com/imagens/venda2.jpg'),
+(4, 49.90, 'completed', 'manual', 'SALE125', 'https://exemplo.com/imagens/venda3.jpg'),
+(4, 34.90, 'completed', 'auto', 'SALE126', 'https://exemplo.com/imagens/venda4.jpg');
 
 -- Inserindo pedidos
 INSERT INTO `order` (`sale_id`, `payment_method`, `code` , `status`, `total_amount_order`) VALUES

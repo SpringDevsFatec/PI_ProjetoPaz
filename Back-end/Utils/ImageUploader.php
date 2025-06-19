@@ -17,7 +17,7 @@ class ImageUploader
         AWSAuth::loadFromEnv();
     }
 
-    public static function base64ToS3Url(array $data): array
+    public static function base64ToS3Url(array $data, string $bucket): array
     {
         AWSAuth::loadFromEnv();
 
@@ -47,14 +47,14 @@ class ImageUploader
             return Responses::buildResponse(false, 'Falha ao escrever arquivo temporário.', null);
         }
 
-        $url = self::uploadToS3($filePath, $fileName, $mimeType);
+        $url = self::uploadToS3($filePath, $fileName, $mimeType, $bucket);
 
         @unlink($filePath);
 
         return self::buildResponse(true, 'Imagem salva com sucesso.', $url['content']);
     }
 
-    private static function uploadToS3(string $filePath, string $fileName, string $mimeType): array
+    private static function uploadToS3(string $filePath, string $fileName, string $mimeType, string $bucket): array
     {
         $s3 = new S3Client([
             'version'     => AWSAuth::$VERSION,
@@ -67,8 +67,16 @@ class ImageUploader
         ]);
 
         try {
+            if($bucket === 'Product'){
+                $bucket = AWSAuth::$BUCKET_PRODUCT;
+            } elseif ($bucket === 'Sale') {
+                $bucket = AWSAuth::$BUCKET_SALE;
+            } else {
+                throw new Exception('Bucket inválido especificado.');
+            }
+
             $result = $s3->putObject([
-                'Bucket'      => AWSAuth::$BUCKET_PRODUCT,
+                'Bucket'      => $bucket,
                 'Key'         => $fileName,
                 'SourceFile'  => $filePath,
                 'ACL'         => 'public-read',

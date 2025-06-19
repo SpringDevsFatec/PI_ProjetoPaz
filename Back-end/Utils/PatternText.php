@@ -23,6 +23,9 @@ class PatternText {
         if (isset($data->description)) {
             $data->description = ucfirst($data->description);
         }
+        if (isset($data->method)) {
+            $data->method = mb_strtolower($data->method);
+        }
         // ... another Pattners for other attributes
         return $data;
     }

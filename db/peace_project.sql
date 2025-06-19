@@ -67,6 +67,7 @@ CREATE TABLE `sale` (
   `img_sale` text DEFAULT NULL, -- Imagem da venda (opcional) 
   `total_amount_sale` decimal(10,2) NOT NULL, -- Valor total arrecadado de todos os pedidos
   `status` enum('pending','completed','cancelled') DEFAULT 'pending',
+  `method` enum('auto', 'manual') DEFAULT NULL, 
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `user_id` int DEFAULT NULL, -- Relacionamento com o usuário (opcional)
@@ -80,8 +81,8 @@ CREATE TABLE `order` (
   `sale_id` int NOT NULL,
   `code` varchar(50) DEFAULT NULL, 
   `payment_method` enum('credito','debito','dinheiro','pix') DEFAULT NULL,
-  `status` varchar(20),
-  `total_amount_order` decimal(10,2) NOT NULL, -- Valor total do pedido (opcional)
+  `status` enum('completed','cancelled') DEFAULT 'completed',
+  `total_amount_order` decimal(10,2) NOT NULL, 
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

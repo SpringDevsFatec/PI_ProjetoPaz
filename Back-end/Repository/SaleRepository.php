@@ -81,13 +81,29 @@ class SaleRepository {
     public function findOpenBySeller(int $sellerId): ?array
     {
         $query = "SELECT * FROM {$this->table}
-                 WHERE seller_id = :seller_id
-                 AND status = 'open'
+                 WHERE user_id = :user_id
+                 AND status = 'pending'
                  AND date = CURRENT_DATE
                  LIMIT 1";
 
         $stmt = $this->conn->prepare($query);
         $stmt->execute([':seller_id' => $sellerId]);
+        if ($stmt->rowCount() > 0) {
+            $saleRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            return $this->buildRepositoryResponse(true, $saleRepository);
+        } else {
+            return $this->buildRepositoryResponse(false, null);
+        }
+    }
+
+    public function findByCode(int $code): ?array
+    {
+        $query = "SELECT * FROM {$this->table}
+                 WHERE code = :code
+                 LIMIT 1";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([':code' => $code]);
         if ($stmt->rowCount() > 0) {
             $saleRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
             return $this->buildRepositoryResponse(true, $saleRepository);

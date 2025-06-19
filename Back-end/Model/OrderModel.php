@@ -1,152 +1,100 @@
-<?php 
+<?php
 
 namespace App\Backend\Model;
 
-use InvalidArgumentException;
-use DomainException;
-
 class OrderModel {
 
+    // Atributos
     private $id;
-    private $saleId;
+    private $sale_id;
+    private $code;
+    private $payment_method;
     private $status;
-    private $paymentMethod;
-    private $totalAmount;
-    private $createdAt;
+    private $total_amount_order;
+    private $created_at;
+    private $updated_at;
 
-    private $items = [];
-
-    const PAYMENT_METHODS = [
-        'cash' => 'Dinheiro',
-        'card' => 'Cartão',
-        'pix' => 'PIX'
-    ];
-
-    const STATUSES = [
-        'open' => 'Aberto',
-        'pending' => 'Pendente',
-        'paid' => 'Pago',
-        'canceled' => 'Cancelado'
-    ];
-
+    // Getters e Setters
     public function getId() {
         return $this->id;
     }
 
+    public function setId($id) {
+        $this->id = $id;
+    }
+
     public function getSaleId() {
-        return $this->saleId;
+        return $this->sale_id;
+    }
+
+    public function setSaleId($sale_id) {
+        $this->sale_id = $sale_id;
+    }
+
+    public function getCode() {
+        return $this->code;
+    }
+
+    public function setCode($code) {
+        $this->code = $code;
+    }
+
+    public function getPaymentMethod() {
+        return $this->payment_method;
+    }
+
+    public function setPaymentMethod($payment_method) {
+        $allowedMethods = ['credito', 'debito', 'dinheiro', 'pix'];
+        if (in_array($payment_method, $allowedMethods)) {
+            $this->payment_method = $payment_method;
+        } else {
+            throw new \InvalidArgumentException("Método de pagamento inválido: $payment_method");
+        }
     }
 
     public function getStatus() {
         return $this->status;
     }
 
-    public function getPaymentMethod() {
-        return $this->paymentMethod;
-    }
-
-    public function getTotalAmount() {
-        return $this->totalAmount;
-    }
-
-    public function getCreatedAt() {
-        return $this->createdAt;
-    }
-
-    public function setId(int $id) {
-        $this->id = $id;
-    }
-
-    public function setSaleId(?int $saleId) {
-        $this->saleId = $saleId;
-    }
-
-    public function setStatus(string $status) {
-        if (!array_key_exists($status, self::STATUSES)) {
-            throw new InvalidArgumentException("Status de pedido inválido: " . $status);
-        }
+    public function setStatus($status) {
         $this->status = $status;
     }
 
-    public function setPaymentMethod(string $paymentMethod) {
-        if (!array_key_exists($paymentMethod, self::PAYMENT_METHODS)) {
-            throw new InvalidArgumentException("Método de pagamento inválido: " . $paymentMethod);
-        }
-        $this->paymentMethod = $paymentMethod;
+    public function getTotalAmountOrder() {
+        return $this->total_amount_order;
     }
 
-    public function markAsPaid() {
-        if ($this->status === 'canceled') {
-            throw new DomainException("Pedido cancelado não pode ser marcado como pago");
-        }
-        $this->setStatus('paid');
+    public function setTotalAmountOrder($total_amount_order) {
+        $this->total_amount_order = $total_amount_order;
     }
 
-    public function cancel() {
-        if ($this->status === 'paid') {
-            throw new DomainException("Pedido pago deve ser reembolsado, não cancelado");
-        }
-        $this->setStatus('canceled');
+    public function getCreatedAt() {
+        return $this->created_at;
     }
 
-    public function assignToSale(int $saleId) {
-        if ($this->saleId !== null) {
-            throw new DomainException("Pedido já vinculado a uma venda");
-        }
-        $this->setSaleId($saleId);
+    public function setCreatedAt($created_at) {
+        $this->created_at = $created_at;
     }
 
-    public function addItem(OrderItem $item) 
-    {
-        if ($this->status !== 'open') {
-            throw new DomainException("Só é possível adicionar itens a pedidos abertos");
-        }
-        $this->items[] = $item;
-        $this->calculateTotal();
+    public function getUpdatedAt() {
+        return $this->updated_at;
     }
 
-    public function removeItem(OrderItem $itemId) 
-    {
-        if ($this->status !== 'open') {
-            throw new DomainException("Só é possível remover itens de pedidos abertos");
-        }
-
-        $this->items = array_filter($this->items, fn($item) => $item->getId() !== $itemId);
-        $this->calculateTotal();
+    public function setUpdatedAt($updated_at) {
+        $this->updated_at = $updated_at;
     }
 
-    public function calculateTotal()
-    {
-        $this->totalAmount = array_reduce(
-            $this->items,
-            fn(float $total, OrderItem $item) => $total + $item->getSubTotal(),
-            0.0
-        );
-    }
-
-    public function getItems() {
-        return $this->items;
-    }
-
-    public function updateFromArray(array $data) {
-        if (isset($data['payment_method'])) {
-            $this->setPaymentMethod($data['payment_method']);
-        }
-
-        if (isset($data['status'])) {
-            $this->setStatus($data['status']);
-        }
-    }
-    public function toArray() {
+    // Para serialização em JSON
+    public function jsonSerialize() {
         return [
             'id' => $this->id,
-            'sale_id' => $this->saleId,
+            'sale_id' => $this->sale_id,
+            'code' => $this->code,
+            'payment_method' => $this->payment_method,
             'status' => $this->status,
-            'status_label' => self::STATUSES[$this->status] ?? null,
-            'payment_method' => $this->paymentMethod,
-            'payment_method_label' => self::PAYMENT_METHODS[$this->paymentMethod] ?? null,
-            'total_amount' => $this->totalAmount,
-            'created_at' => $this->createdAt?->format('Y-m-d H:i:s')
+            'total_amount_order' => $this->total_amount_order,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at
         ];
     }
 }
