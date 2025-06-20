@@ -218,49 +218,69 @@ class SaleRepository {
         }
     }
 
-    public function update(SaleModel $sale): bool
-    {    
-        $query = "UPDATE {$this->table} 
-                  SET total = :total, 
-                      status = :status
-                  WHERE id = :id";
-        try {
-            $stmt = $this->conn->prepare($query);
-            return $stmt->execute([     
-            ':id' => $sale->getId(),
-            ':status' => $sale->getStatus(),
-            //':total' => $sale->getTotal()
-        ]);
-
-        } catch (PDOException $e) {
-            throw new PDOException("Erro ao atualizar venda: " . $e->getMessage());
-        }
-    }
-
-    public function completeSale(int $saleId): bool
+    public function completeSale(SaleModel $sale): array
     {
+        $id = $sale->getId();
+        $img_sale = $sale->getImgSale();
+        $status = $sale->getStatus();
+        $totalamountsale = $sale->getTotalAmountSale();
+
         try {
             $this->conn->beginTransaction();
 
-            $orderRepository = new OrderRepository($this->conn);
-            $orders = $orderRepository->findBySaleId($saleId);
-
-            $total = array_reduce($orders, fn($sum, $order) => $sum + $order['total_amount']);
-
             $query = "UPDATE {$this->table}
-                      SET staus = 'completed',
-                          total = :total
+                      SET status = :status,
+                          total_amount_sale = :total_amount_sale,
+                          img_sale = :img_sale
                       WHERE id = :id";
 
             $stmt = $this->conn->prepare($query);
-            $stmt->execute([':id' => $saleId, ':total' => $total]);
+            $stmt->execute(
+                [
+                    ':id' => $id,
+                    ':status' => $status,
+                    ':total_amount_sale' => $totalamountsale,
+                    ':img_sale' => $img_sale,
+                ]);
 
             $this->conn->commit();
-            return true;
+            return $this->buildRepositoryResponse(true, $sale);
 
         } catch (PDOException $e) {
             $this->conn->rollBack();
-            throw new PDOException("Erro ao finalizar venda: " . $e->getMessage());
+            return $this->buildRepositoryResponse(false, "Erro ao finalizar venda: " . $e->getMessage());
+        }
+    }
+
+    public function cancellSale(SaleModel $sale): array
+    {
+        $id = $sale->getId();
+        $status = $sale->getStatus();
+        $totalamountsale = $sale->getTotalAmountSale();
+
+        try {
+            $this->conn->beginTransaction();
+
+            $query = "UPDATE {$this->table}
+                      SET status = :status,
+                          total_amount_sale = :total_amount_sale
+                      WHERE id = :id";
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute(
+                [
+                    ':id' => $id,
+                    ':status' => $status,
+                    ':total_amount_sale' => $totalamountsale,
+
+                ]);
+
+            $this->conn->commit();
+            return $this->buildRepositoryResponse(true, $sale);
+
+        } catch (PDOException $e) {
+            $this->conn->rollBack();
+            return $this->buildRepositoryResponse(false, "Erro ao finalizar venda: " . $e->getMessage());
         }
     }
 
