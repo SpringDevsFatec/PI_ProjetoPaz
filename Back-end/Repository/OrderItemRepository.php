@@ -6,6 +6,7 @@ use App\Backend\Model\OrderItemModel;
 use App\Backend\Config\Database;
 use App\Backend\Utils\Responses;
 use PDO;
+use PDOException;
 
 class OrderItemRepository {
     
@@ -14,8 +15,8 @@ class OrderItemRepository {
 
     use Responses;
 
-    public function __construct() {
-        $this->conn = Database::getInstance();
+    public function __construct(PDO $conn = null) {
+        $this->conn = $conn ?: Database::getInstance();
     }
 
     public function beginTransaction() {
@@ -24,12 +25,10 @@ class OrderItemRepository {
         }
     }
 
-    // commit transaction
     public function commitTransaction() {
         $this->conn->commit();
     }
 
-    // roll back transaction
     public function rollBackTransaction() {
         $this->conn->rollBack();
     }
@@ -44,12 +43,9 @@ class OrderItemRepository {
         $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
         $stmt->execute();
         // Check if any order items were found
-        if ($stmt->rowCount() > 0) {
-            $orderItemRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return $this->buildRepositoryResponse(true, $orderItemRepository);
-        } else {
-            return $this->buildRepositoryResponse(false, null);
-        }
+        $orderItem = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->buildRepositoryResponse(!empty($orderItem), $orderItem ?: null);
+
     }
     
     public function find(int $id): ?array 
@@ -66,28 +62,39 @@ class OrderItemRepository {
         }
     }
 
-    public function save(OrderItemModel $orderItem)
+    public function createOrderItem(OrderItemModel $item, int $orderId): array
     {
-        $query = "INSERT INTO {$this->table}
-                  (order_id, product_id, quantity, unit_price, created_at)
-                  VALUES (:order_id, :product_id, :quantity, :unit_price, :created_at)";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute([
-            'product_id' => $orderItem->getProductId(), 
-            'order_id' => $orderItem->getOrderId(),
-            'quantity' => $orderItem->getQuantity(),
-            'unit_price' => $orderItem->getUnitPrice(),
-            'created_at' => $orderItem->getCreatedAt()->format('Y-m-d H:i:s')
-        ]);
+        $productId = $item->getProductId();
+        $quantity = $item->getQuantity();
+        $unitPrice = $item->getUnitPrice();
 
-        if ($stmt->rowCount() > 0) {
-            $orderItem->setId((int)$this->conn->lastInsertId());
-            return $this->buildRepositoryResponse(true, $orderItem);
-        } else {
-            return $this->buildRepositoryResponse(false, null);
-        }
+        $query = "INSERT INTO {$this->table}
+                  (product_id, order_id, quantity, unit_price)
+                  VALUES 
+                  (:product_id, :order_id, :quantity, :unit_price)";
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":product_id", $productId, PDO::PARAM_INT); 
+            $stmt->bindParam(":order_id", $orderId, PDO::PARAM_INT);
+            $stmt->bindParam(":quantity", $quantity, PDO::PARAM_INT);
+            $stmt->bindParam(":unit_price", $unitPrice);
+            $stmt->execute();
+            
+            if ($stmt->rowCount() > 0) {
+                $item->setId((int)$this->conn->lastInsertId());
+                return ['status' => true, 'content' => $item];
+            } else {
+                return ['status' => false, 'content' => null];
+            }
+
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao inserir item do pedido: " . $e->getMessage());
+        }        
     }
+    
+    /*
+    no update and delete method for OrderItem
+
     public function update(OrderItemModel $orderItem)
     {
         $query = "UPDATE {$this->table} 
@@ -133,4 +140,5 @@ class OrderItemRepository {
             return $this->buildRepositoryResponse(false, null);
         }
     }
+    */
 }

@@ -1,7 +1,7 @@
 <?php
 namespace App\Backend\Utils;
 
-use Exception;
+use DomainException;
 
 class PatternText {
     public static function processText($data) {
@@ -25,6 +25,9 @@ class PatternText {
         }
         if (isset($data->method)) {
             $data->method = mb_strtolower($data->method);
+        }
+        if (isset($data->payment_method)) {
+            $data->payment_method = mb_strtolower($data->payment_method);
         }
         // ... another Pattners for other attributes
         return $data;
@@ -65,26 +68,55 @@ class PatternText {
         $requiredFields = ['nameproduct', 'cost_price', 'sale_price', 'category', 'donation', 'is_favorite','namesupplier','location' ];
         foreach ($requiredFields as $field) {
             if (!isset($data[$field])) {
-               self::handleResponse(false, "Campo obrigatório faltando: {$field}", null, 400);
-               die;
+                self::handleResponse(false, "Campo obrigatório faltando: {$field}", null, 400);
+                die;
             }
         }
 
         if ($data['cost_price'] < 0) {
-             self::handleResponse(false, "Preço de custo não pode ser negativo", null, 400);
-               die;
+            self::handleResponse(false, "Preço de custo não pode ser negativo", null, 400);
+            die;
         }
 
         if ($data['sale_price'] <= 0) {
             self::handleResponse(false, "Preço de venda deve ser maior que zero", null, 400);
-               die;
+            die;
         }
 
         if ($data['donation'] <> 1 && $data['sale_price'] < $data['cost_price']) {
-           self::handleResponse(false, "Preço de venda não pode ser menor que o custo", null, 400);
-               die;
+            self::handleResponse(false, "Preço de venda não pode ser menor que o custo", null, 400);
+            die;
         }
     }
+
+    public static function validateOrderData(array $data): void
+{
+    if (!isset($data['payment_method'])) {
+        throw new DomainException("Campo obrigatório faltando: payment_method");
+    }
+
+    if (!in_array($data['payment_method'], ['credito', 'debito', 'dinheiro', 'pix'])) {
+        throw new DomainException("Método de pagamento inválido.");
+    }
+
+    if (!isset($data['itens']) || !is_array($data['itens']) || count($data['itens']) === 0) {
+        throw new DomainException("Nenhum item foi enviado para o pedido.");
+    }
+
+    foreach ($data['itens'] as $index => $item) {
+        if (!isset($item['product_id'], $item['quantity'], $item['unit_price'])) {
+            throw new DomainException("Item #{$index} está com campos obrigatórios ausentes.");
+        }
+
+        if ($item['quantity'] <= 0) {
+            throw new DomainException("Item #{$index} possui quantidade inválida.");
+        }
+
+        if ($item['unit_price'] < 0) {
+            throw new DomainException("Item #{$index} possui preço unitário inválido.");
+        }
+    }
+}
 
 // ...existing code...
 }

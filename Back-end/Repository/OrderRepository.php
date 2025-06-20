@@ -127,85 +127,71 @@ class OrderRepository {
         }
     }
 
-    public function save(OrderModel $order): bool 
+    public function createOrder(OrderModel $order)
     {
+        $saleId = $order->getSaleId();
+        $code = $order->getCode();
+        $paymentMethod = $order->getPaymentMethod();
+
         $query = "INSERT INTO {$this->table}
-                  (sale_id, status, payment_method, total_amount, created_at) 
-                  VALUES (:sale_id, :status, :payment_method, :total_amount, :created_at)";
-    
+                (sale_id, code, payment_method)
+                VALUES
+                (:sale_id, :code, :payment_method)";
+
         try {
             $stmt = $this->conn->prepare($query);
-            $stmt->execute([
-                //'saller_id' => $this->sallerId,
-                'sale_id' => $order->getSaleId(),
-                'status' => $order->getStatus(),
-                'payment_method' => $order->getPaymentMethod(),
-                'total_amount' => $order->getTotalAmount(),
-                'created_at' => $order->getCreatedAt()?->format('Y-m-d H:i:s')
-            ]);
+            $stmt->bindParam(":sale_id", $saleId, PDO::PARAM_INT);
+            $stmt->bindParam(":code", $code, PDO::PARAM_STR);
+            $stmt->bindParam(":payment_method", $paymentMethod, PDO::PARAM_STR);
+            $stmt->execute();
 
-            $orderId = (int)$this->conn->lastInsertId();
-            
-            foreach ($order->getItems() as $item) {
-                $item->setOrderId($orderId);
-                $this->itemRepository->save($item);
+            if ($stmt->rowCount() > 0) {
+                $orderId = (int)$this->conn->lastInsertId();
+                $order->setId($orderId);
+                return $this->buildRepositoryResponse(true, $order);
+            } else {
+                return $this->buildRepositoryResponse(false, null);
             }
-            
-            return $orderId;
         } catch (PDOException $e) {
             throw new PDOException("Erro ao salvar pedido: " . $e->getMessage());
         }
     }
 
-    public function update(OrderModel $order): bool 
+    public function updateTotalAmount(OrderModel $order)
     {
-        $query = "UPDATE {$this->table} 
-                  SET status = :status, 
-                      payment_method = :payment_method
-                  WHERE id = :id";
+        $query = "UPDATE {$this->table} SET total_amount_order = :total WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindValue(':total', $order->getTotalAmountOrder());
+        $stmt->bindValue(':id', $order->getId());
+        return $stmt->execute();
+    }
+
+
+    public function updateStatus(OrderModel $order) 
+    {
+        $query = "UPDATE {$this->table} SET status = :status WHERE id = :id";
         
         try {
             $stmt = $this->conn->prepare($query);
-            return $stmt->execute([
-                ':id' => $order->getId(),
-                ':status' => $order->getStatus(),
-                ':payment_method' => $order->getPaymentMethod()
-            ]);
+            $id = $order->getId();
+            $status = $order->getStatus();
+
+            $stmt->bindParam(":id", $id, PDO::PARAM_INT);
+            $stmt->bindParam(":status", $status, PDO::PARAM_STR);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+                return $this->buildRepositoryResponse(true, $order);
+            }else {
+                return $this->buildRepositoryResponse(false, null);
+            }
+            
         } catch (PDOException $e) {
-            throw new PDOException("Erro ao atualizar o pedido: " . $e->getMessage());
+            throw new PDOException("Erro ao atualizar pedido: " . $e->getMessage());
         }
     }
 
-    /**
-     * Atualiza a venda associada a vários pedidos
-     */
-    public function assignToSale(array $orderIds, int $saleId): bool
-    {
-        try {
-            $this->conn->beginTransaction();
-            
-            $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
-            $query = "UPDATE {$this->table} 
-                      SET sale_id = ?
-                      WHERE id IN ($placeholders)";
-            
-            $params = array_merge(
-                $saleId,
-                $orderIds
-            );
-            
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute($params);
-            
-            $this->conn->commit();
-            return true;
-            
-        } catch (PDOException $e) {
-            $this->conn->rollBack();
-            throw new PDOException("Erro ao vincular pedidos à venda: " . $e->getMessage());
-        }
-    }
-
+    /*
     public function delete(int $id): bool
     {
         try {
@@ -238,4 +224,5 @@ class OrderRepository {
             throw new PDOException("Erro ao remover pedidos da venda: " . $e->getMessage());
         }
     }
+    */
 }

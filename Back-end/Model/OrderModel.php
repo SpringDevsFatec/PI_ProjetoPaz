@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Backend\Model;
+use App\Backend\Model\OrderItemModel;
 
 class OrderModel {
 
@@ -13,6 +14,7 @@ class OrderModel {
     private $total_amount_order;
     private $created_at;
     private $updated_at;
+    private $items = [];
 
     // Getters e Setters
     public function getId() {
@@ -82,6 +84,23 @@ class OrderModel {
 
     public function setUpdatedAt($updated_at) {
         $this->updated_at = $updated_at;
+    }
+
+    public function addItem(OrderItemModel $item) {
+        $this->items[] = $item;
+        $this->calculateTotal();
+    }
+
+    public function calculateTotal() {
+        $this->total_amount_order = array_reduce(
+            $this->items,
+            fn(float $total, OrderItemModel $item) => $total + $item->getUnitPrice() * $item->getQuantity(),
+            0.0
+        );
+    }
+
+    public function getItems() {
+        return $this->items;
     }
 
     // Para serialização em JSON

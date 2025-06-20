@@ -53,7 +53,7 @@ class OrderController {
         }
     }
 
-    public function create(): void
+    public function createOrder($saleId): void
     {
         $data = json_decode(file_get_contents('php://input'), true);
         
@@ -61,63 +61,16 @@ class OrderController {
             throw new InvalidArgumentException('JSON inválido');
         }
 
-        $requiredFields = ['sale_id', 'payment_method'];
-        foreach ($requiredFields as $field) {
-            if (empty($data[$field])) {
-                throw new InvalidArgumentException("Campo obrigatório faltando: {$field}");
-            }
-        }
-
-        if ($result = $this->service->createOrder(
-            (int)$data['sale_id'],
-            (string)$data['payment_method']
-        )) {
-            $this->handleResponse($result['status'], $result['message'], $result->toArray()['content'], 200);
+        if ($result = $this->service->createOrder($saleId, $data)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
         }
     }
 
-    public function addItem(int $orderId): void
+    public function cancelOrder(int $id): void
     {
-        $data = json_decode(file_get_contents('php://input'), true);
-        
-        $requiredFields = ['product_id', 'quantity'];
-        foreach ($requiredFields as $field) {
-            if (empty($data[$field])) {
-                throw new InvalidArgumentException("Campo obrigatório faltando: {$field}");
-            }
-        }
-
-        if ($result = $this->service->addItemToOrder(
-            $orderId,
-            (int)$data['product_id'],
-            (int)$data['quantity']
-        )) {
-            $this->handleResponse($result['status'], $result['message'], $result->toArray()['content'], 200);
-        } else {
-            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
-        }
-    }
-
-    public function updateOrder(int $id, array $data): void 
-    {
-        $data = json_decode(file_get_contents('php://input', true));
-
-        if (!isset($data['status'])) {
-            throw new InvalidArgumentException('Status não informado');
-        }
-
-        if ($result = $this->service->updateOrderStatus($id, (string)$data['status'])) {
-            $this->handleResponse($result['status'], $result['message'], $result->toArray()['content'], 200);
-        } else {
-            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
-        }
-    }
-
-    public function delete(int $id): void 
-    {
-        if ($result = $this->service->deleteOrder($id)) {
+        if ($result = $this->service->cancelOrder($id)) {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 404);

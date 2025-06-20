@@ -6,8 +6,6 @@ use App\Backend\Repository\OrderItemRepository;
 use App\Backend\Repository\ProductRepository;
 use App\Backend\Utils\Responses;
 use DomainException;
-use DateTime;
-use InvalidArgumentException;
 use Exception;
 
 class OrderItemService {
@@ -64,33 +62,35 @@ class OrderItemService {
         }
     }
 
-    public function createItem(array $data): OrderItemModel 
+    public function createItem(OrderItemModel $data, int $orderId): array
     {
-        if (empty($data['product_id']) || empty($data['order_id']) || empty($data['quantity'])) 
-        {
-            throw new InvalidArgumentException("Dados incompletos.");
+        $productId = $data->getProductId();
+        $quantity = $data->getQuantity();
+        $unitPrice = $data->getUnitPrice();
+        
+        if (!isset($productId) || !isset($quantity) || !isset($unitPrice)) {
+            return $this->buildResponse(false, 'Dados incompletos.', null);
         }
 
-        $product = $this->productRepository->find($data['product_id']);
-        if(!$product) {
+        $product = $this->productRepository->find($productId);
+        if (!$product) {
             throw new DomainException("Produto não encontrado.");
         }
 
-        $orderItem = new OrderItemModel(
-            productId: (int)$data['product_id'],
-            orderId: (int)$data['order_id'],
-            quantity: (int)$data['quantity'],
-            unitPrice: (float)$data['unit_price'],
-            id: null,
-            createdAt: new DateTime()
-        );
-
-        $itemId = $this->orderItemRepository->save($orderItem);
-        $orderItem->setId($itemId);
-
-        return $orderItem;
+        try {
+            $response = $this->orderItemRepository->createOrderItem($data, $orderId);
+            if ($response['status']) {
+                return $this->buildResponse(true, 'Item criado com sucesso', $response['content']);
+            } else {
+                return $this->buildResponse(false, 'Falha ao criar item.', null);
+            }
+        } catch (Exception $e) {
+            throw new DomainException("Erro ao criar item de pedido: " . $e->getMessage());
+        }
     }
 
+    /*
+    no update and delete method for OrderItem
     public function updateItemQuantity(int $itemId, int $newQuantity): OrderItemModel 
     {
         if ($newQuantity <= 0) {
@@ -125,4 +125,5 @@ class OrderItemService {
             throw new DomainException("Falha ao deletar item.");
         } 
     }
+    */
 }
