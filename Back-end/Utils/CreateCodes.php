@@ -12,7 +12,7 @@ class CreateCodes
 
     public static function createCodes(string $sufixo): array
     {
-        var_dump("ta chegando :" . $sufixo);
+ 
         // validate sufixo
         if (!in_array($sufixo, ['SA', 'OR'])) {
             return self::buildResponse(false, 'Sufixo inválido. Use SA ou OR.', null);

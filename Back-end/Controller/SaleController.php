@@ -85,14 +85,6 @@ class SaleController {
         }
     }
 
-    public function show(int $id): void 
-    {
-        if ($result = $this->service->getSaleDetails($id)) {
-            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
-        } else {
-            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
-        }
-    }
 
     public function createSale(): void
     {

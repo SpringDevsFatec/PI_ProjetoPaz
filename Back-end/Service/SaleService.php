@@ -35,30 +35,6 @@ class SaleService {
         $this->userRepository = $userRepository;
     }
 
-    public function getSaleDetails(int $saleId): array
-    {
-        $saleData = $this->saleRepository->findWithOrders($saleId);
-        if (!$saleData) {
-            throw new DomainException("Venda não encontrada");
-        }
-        //$sale = $this->hydrateSale($saleData);
-        try {
-            $this->saleRepository->beginTransaction();
-            //$reponse = $sale->toDetailedArray();
-            $response = $saleData;
-            $this->saleRepository->commitTransaction();
-            
-            if ($response['status'] == true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
-            }
-
-            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
-
-        } catch (Exception $e) {
-            $this->saleRepository->rollBackTransaction();
-            throw $e;
-        }
-    }
 
     public function getSalesByPeriod(DateTimeInterface $startDate, DateTimeInterface $endDate, ?int $sellerId = null): array 
     {
@@ -71,7 +47,8 @@ class SaleService {
             $this->saleRepository->commitTransaction();
             
             if ($response['status'] == true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+                $content = array_map([$this, 'ResolveSale'], $response['content']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $content);
             }
 
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
@@ -90,7 +67,8 @@ class SaleService {
             $this->saleRepository->commitTransaction();
             
             if ($response['status'] == true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+                $content = array_map([$this, 'ResolveSale'], $response['content']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $content);
             }
 
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
@@ -101,6 +79,7 @@ class SaleService {
         }
     }
 
+
     public function getByStatus(string $status): array 
     {
         try {
@@ -109,8 +88,10 @@ class SaleService {
             $this->saleRepository->commitTransaction();
             
             if ($response['status'] == true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+                $content = array_map([$this, 'ResolveSale'], $response['content']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $content);
             }
+
 
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
 
@@ -128,8 +109,10 @@ class SaleService {
             $this->saleRepository->commitTransaction();
             
             if ($response['status'] == true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+                $content = array_map([$this, 'ResolveSale'], $response['content']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $content);
             }
+
 
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
 
@@ -147,7 +130,8 @@ class SaleService {
             $this->saleRepository->commitTransaction();
             
             if ($response['status'] == true) {
-                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+                $content = $this->ResolveSale($response['content']);
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $content);
             }
 
             return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
@@ -165,7 +149,7 @@ class SaleService {
         $decodedToken = (new AuthMiddleware())->openToken();
         $userId = $decodedToken->id;
 
-        $userExists = $this->userRepository->userExists($userId);
+        $userExists = $this->userRepository->getContentId($userId);
         if ($userExists['status'] === false) {
             return $this->buildResponse(false, 'User não encontrado.', $userExists['content']);
         }
@@ -175,28 +159,67 @@ class SaleService {
             return $this->buildResponse(false, 'Já existe uma venda aberta para este vendedor', $userExists['content']);
         }
 
+        //create code for sale
+        $code = CreateCodes::createCodes('SA');
+
         $sale = new SaleModel();
         $sale->setUserId($userId);
-        $sale->setCode(CreateCodes::createCodes("SA"));
-        $sale->setMethod($dataPadronizado->method);
+        $sale->setCode($code['content']);
+        $sale->setMethod($dataPadronizado['method']);
         $sale->setStatus('pending');
+        $sale->setTotalAmountSale(0.00);
 
         try {
         $this->saleRepository->beginTransaction();
-        $response = $this->saleRepository->createSale($sale);
-            
-        if ($response['status'] === true) {
-            $sale->setId($response);
-            return $this->buildResponse(true, 'Venda criada com sucesso.', $sale);
-        }    
-        $this->saleRepository->commitTransaction();
 
-        return $this->buildResponse(false, 'Erro ao criar Venda.', null);
+        $response = $this->saleRepository->createSale($sale);    
+        if ($response['status'] === true) {
+            $sale->setId($response['content']);
+            $this->saleRepository->commitTransaction();
+            return $this->buildResponse(true, 'Venda criada com sucesso.', [
+                'id' => $sale->getId(),
+                'code' => $sale->getCode(),
+                'method' => $sale->getMethod(),
+                'imgSale' => $sale->getImgSale(),
+                'status' => $sale->getStatus(),
+                'totalAmountSale' => $sale->getTotalAmountSale(),
+                'createdAt' => $sale->getCreatedAt(),
+            ]
+        
+        
+        );
+        }    
+
+        return $this->buildResponse(false, $response['content'], null);
         } catch (Exception $e) {
             $this->saleRepository->rollBackTransaction();
             throw $e;
         }
     }
+
+    private function ResolveSale(array $sale): array
+{
+    return [
+        'id' => (int) $sale['id'],
+        'code' => $sale['code'],
+        'method' => $sale['method'] ?? null,
+        'status' => $sale['status'],
+        'total_amount_sale' => $sale['total_amount_sale'],
+        'created_at' => $sale['created_at'],
+        'user' => [
+            'id' => (int) $sale['user_id'],
+            'name' => $sale['user_name'],
+            'email' => $sale['user_email'],
+            'created_at' => $sale['user_created_at'],
+        ]
+    ];
+}
+
+
+
+
+
+
     // public function addOrderToSale(int $saleId, int $orderId): SaleModel
     // {
     //     $saleData = $this->saleRepository->findWithOrders($saleId);

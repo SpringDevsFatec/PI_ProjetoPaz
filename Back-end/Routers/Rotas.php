@@ -46,7 +46,7 @@ class Rotas {
                 '/orders' => [OrderController::class, 'listAll'],
 
                 // Sale
-                '/sales/seller{id}' => [SaleController::class, 'listBySeller'],
+                '/sales/seller/{id}' => [SaleController::class, 'listBySeller'],
                 '/sales/date' => [SaleController::class, 'listByDate'],
                 '/sales/status/{status}' => [SaleController::class, 'listSalesByStatus'],
                 '/sales/details/{id}' => [SaleController::class, 'show'],
