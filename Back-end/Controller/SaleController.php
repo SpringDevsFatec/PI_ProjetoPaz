@@ -102,27 +102,10 @@ class SaleController {
         }
     }
 
-    public function addOrder(int $saleId): void
+    public function completeSale(int $id): void 
     {
         $data = json_decode(file_get_contents('php://input'), true);
-        
-        $requiredFields = ['sale_id', 'status', 'payment_method', 'total_amount'];
-        foreach ($requiredFields as $field) {
-            if (empty($data[$field])) {
-                throw new InvalidArgumentException("Campo obrigatório faltando: {$field}");
-            }
-        }
-
-        if ($result = $this->service->addOrderToSale($saleId, (int)$data['order_id'])) {
-            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
-        } else {
-            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
-        } 
-    }
-
-    public function complete(int $id): void 
-    {
-        if ($result = $this->service->completeSale($id)) {
+        if ($result = $this->service->completeSale($id, $data)) {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
@@ -138,12 +121,4 @@ class SaleController {
         }
     }
 
-    public function delete(int $id): void 
-    {
-        if ($result = $this->service->deleteSale($id)) {
-            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
-        } else {
-            $this->handleResponse($result['status'], $result['message'], $result['content'], 401);
-        }
-    }
 }
