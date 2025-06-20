@@ -2,13 +2,15 @@
 namespace App\Backend\Service;
 
 use App\Backend\Model\OrderModel;
-use App\Backend\Model\OrderItem;
+use App\Backend\Model\OrderItemModel;
+use App\Backend\Service\OrderItemService;
 use App\Backend\Repository\OrderRepository;
 use App\Backend\Repository\SaleRepository;
 use App\Backend\Repository\ProductRepository;
+use App\Backend\Utils\PatternText;
 use App\Backend\Utils\Responses;
+use App\Backend\Utils\CreateCodes;
 use DomainException;
-use DateTime;
 use InvalidArgumentException;
 use Exception;
 
@@ -19,15 +21,18 @@ class OrderService {
     private OrderRepository $orderRepository;
     private SaleRepository $saleRepository;
     private ProductRepository $productRepository;
+    private OrderItemService $orderItemService;
 
     public function __construct(
         OrderRepository $orderRepository,
         SaleRepository $saleRepository,
-        ProductRepository $productRepository
+        ProductRepository $productRepository,
+        OrderItemService $orderItemService
     ) {
         $this->orderRepository = $orderRepository;
         $this->saleRepository = $saleRepository;
         $this->productRepository = $productRepository;
+        $this->orderItemService = $orderItemService;
     }
 
     public function getWithItems(int $id): array
@@ -106,34 +111,104 @@ class OrderService {
         }
     }
 
-    public function createOrder(int $saleId, string $paymentMethod): OrderModel
+    public function createOrder(int $saleId, $data)
     {
-        if (empty($paymentMethod))
-        {
-            throw new InvalidArgumentException("Dados incompletos.");
-        }
+        PatternText::validateOrderData($data);
+        PatternText::processText($data);
 
         $sale = $this->saleRepository->find($saleId);
         if(!$sale) {
             throw new DomainException("Venda não encontrada.");
         }
 
-        $order = new OrderModel(
-            saleId: $saleId,
-            status: 'open',
-            paymentMethod: $paymentMethod,
-            totalAmount: 0.0,
-            id: null,
-            createdAt: new DateTime(),
-            updatedAt: new DateTime()
-        );
+        $order = new OrderModel();
+        $order->setSaleId($saleId);
+        $order->setCode(CreateCodes::createCodes("OR"));
+        $order->setPaymentMethod($data['payment_method']);
 
-        $orderId = $this->orderRepository->save($order);
-        $order->setId($orderId);
+        try {
+            $this->orderRepository->beginTransaction();
+            $ResponseOrder = $this->orderRepository->createOrder($order);
+            $order->setId($ResponseOrder['content']->getId());
 
-        return $order;
+            if ($ResponseOrder['status'] == false) {
+                return $this->buildResponse(false, 'Erro ao criar Pedido', null);
+            }
+
+            if (!isset($ResponseOrder['content']['id'])) {
+                return $this->buildResponse(false, 'Id não retornado do Pedido! ', null);
+            }
+            
+            $data['itens']['order_id'] = $ResponseOrder['content']['id'];
+            
+            if (empty($data['items'])) {
+                return $this->buildResponse(false, 'Nenhum item adicionado ao pedido.', null);
+            }
+
+            foreach ($data['itens'] as $itemData) {
+                $item = new OrderItemModel(
+                    null,
+                    $itemData['product_id'],
+                    $order,
+                    $itemData['quantity'],
+                    $itemData['unit_price'],
+                    null,
+                );
+                $item = $this->orderItemService->createItem($itemData, $order->getId());
+                $order->addItem($item['content']);
+            }
+            
+            $this->orderRepository->commitTransaction();
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
+
+        return $this->buildResponse(true, 'Pedido criado com sucesso', [
+            'id' => $order->getId(),
+            'sale_id' => $order->getSaleId(),
+            'code' => $order->getCode(),
+            'payment_method' => $order->getPaymentMethod(),
+            'status' => $order->getStatus(),
+            'total_amount_order' => $order->getTotalAmountOrder(),
+            'created_at' => $order->getCreatedAt(),
+            'itens' => [
+                $order->getItems()
+            ],
+        ]);
     }
 
+    public function cancelOrder(int $id)
+    {
+        $response = $this->orderRepository->find($id);
+        if (!$response) {
+            throw new DomainException("Pedido não encontrado");
+        }
+        
+        $order = new OrderModel();
+        $order->setId($id);
+        $order->setStatus('cancelled');
+        $this->orderRepository->beginTransaction();
+
+        try {
+            $result = $this->orderRepository->updateStatus($order);
+
+            if ($result['status'] === true) {
+                $this->orderRepository->commitTransaction();
+                return $this->buildResponse(true, 'Status atualizado com sucesso', null);
+            } else {
+                $this->orderRepository->rollBackTransaction();
+                return $this->buildResponse(false, 'Erro ao atualizar.', null);
+            }
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
+    }
+
+    /*
     public function addItemToOrder(int $orderId, int $productId, int $quantity): OrderModel
     {
         $orderData = $this->orderRepository->find($orderId);
@@ -165,31 +240,6 @@ class OrderService {
         return $order;
     }
 
-    public function updateOrderStatus(int $orderId, string $status): OrderModel
-    {
-        $orderData = $this->orderRepository->findWithItems($orderId);
-        if (!$orderData) {
-            throw new DomainException("Pedido não encontrado");
-        }
-        
-        $order = $this->hydrateOrder($orderData);
-        
-        switch ($status) {
-            case 'paid':
-                $order->markAsPaid();
-                break;
-            case 'canceled':
-                $order->cancel();
-                break;
-            default:
-                throw new InvalidArgumentException("Status inválido");
-        }
-        
-        $this->orderRepository->update($order);
-        
-        return $order;
-    }
-
     public function deleteOrder(int $orderId): void 
     {
         $order = $this->orderRepository->find($orderId);
@@ -206,6 +256,7 @@ class OrderService {
         } 
     }
 
+    
     private function hydrateOrder(array $orderData): OrderModel
     {
         $order = new OrderModel(
@@ -235,4 +286,5 @@ class OrderService {
         
         return $order;
     }
+    */
 }
