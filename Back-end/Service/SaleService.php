@@ -266,17 +266,55 @@ class SaleService {
 
     public function cancelSale(int $saleId) : array 
     {
-        $saleData = $this->saleRepository->findWithOrders($saleId);
-        if (!$saleData) {
-            throw new DomainException("Venda não encontrada");
+        // verify if SaleExists
+        $saleData = $this->saleRepository->find($saleId);
+        if ($saleData == false) {
+        return $this->buildResponse(false, 'Sale não encontrada', null);
+        }
+        $sale = $saleData['content'];
+
+        //get total Amount 
+        try {
+          $ordersbyId = $this->orderRepository->findBySaleId($saleId);
+          $totalsaleamount = $this->CalculateTotalAmountbySale($ordersbyId);
+        } catch (\Throwable $th) {
+            return $this->buildResponse(false, 'Erro na busca de Orders '. $th, null);
         }
 
-        $sale = $this->hydrateSale($saleData);
-        $sale->cancel();
+        //create Sale Model
+        $saleupdate = new SaleModel();
+        $saleupdate->setId($saleId);
+        $saleupdate->setStatus('cancelled');
+        $saleupdate->setTotalAmountSale($totalsaleamount);
 
-        $this->saleRepository->update($sale);
+        try {
+            
+            $response = $this->saleRepository->cancellSale($saleupdate);
 
-        return $sale;
+            if ($response['status'] == true) {
+               return $this->buildResponse(true,'Venda Cancelada com Sucesso!', [    
+                'id' => $response['content']->getId(), 
+                'code' => $sale['code'],
+                'method' => $sale['method'],
+                'imgSale' => $sale['img_sale'],
+                'status' => $response['content']->getStatus(),
+                'totalAmountSale' => $response['content']->getTotalAmountSale(),
+                'created_at' => $sale['created_at'],
+                'updated_at' => $sale['updated_at'],
+                'user' => [
+                    'id' => $sale['user_id'],
+                    'name' => $sale['user_name'],
+                    'email' => $sale['user_email']
+                ]
+            ]
+            );
+            
+        }
+
+            return $this->buildResponse(false, $response['content'], null);
+        } catch (DomainException $e) {
+            throw new DomainException("Não foi possível concluir a venda: " . $e->getMessage());
+        }
     }
 
     private function ResolveSale(array $sale): array

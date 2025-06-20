@@ -218,25 +218,6 @@ class SaleRepository {
         }
     }
 
-    public function update(SaleModel $sale): bool
-    {    
-        $query = "UPDATE {$this->table} 
-                  SET total = :total, 
-                      status = :status
-                  WHERE id = :id";
-        try {
-            $stmt = $this->conn->prepare($query);
-            return $stmt->execute([     
-            ':id' => $sale->getId(),
-            ':status' => $sale->getStatus(),
-            //':total' => $sale->getTotal()
-        ]);
-
-        } catch (PDOException $e) {
-            throw new PDOException("Erro ao atualizar venda: " . $e->getMessage());
-        }
-    }
-
     public function completeSale(SaleModel $sale): array
     {
         $id = $sale->getId();
@@ -260,6 +241,38 @@ class SaleRepository {
                     ':status' => $status,
                     ':total_amount_sale' => $totalamountsale,
                     ':img_sale' => $img_sale,
+                ]);
+
+            $this->conn->commit();
+            return $this->buildRepositoryResponse(true, $sale);
+
+        } catch (PDOException $e) {
+            $this->conn->rollBack();
+            return $this->buildRepositoryResponse(false, "Erro ao finalizar venda: " . $e->getMessage());
+        }
+    }
+
+    public function cancellSale(SaleModel $sale): array
+    {
+        $id = $sale->getId();
+        $status = $sale->getStatus();
+        $totalamountsale = $sale->getTotalAmountSale();
+
+        try {
+            $this->conn->beginTransaction();
+
+            $query = "UPDATE {$this->table}
+                      SET status = :status,
+                          total_amount_sale = :total_amount_sale
+                      WHERE id = :id";
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute(
+                [
+                    ':id' => $id,
+                    ':status' => $status,
+                    ':total_amount_sale' => $totalamountsale,
+
                 ]);
 
             $this->conn->commit();

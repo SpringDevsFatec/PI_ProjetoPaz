@@ -112,7 +112,7 @@ class SaleController {
         }
     }
 
-    public function cancel(int $id): void 
+    public function cancelSale(int $id): void 
     {
         if ($result = $this->service->cancelSale($id)) {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
