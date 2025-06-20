@@ -281,22 +281,32 @@ class SaleService {
             return $this->buildResponse(false, 'Erro na busca de Orders '. $th, null);
         }
 
+        try {
+         $cancelOrders = $this->checkAndCancelOrders($ordersbyId, $saleId);
+         if ($cancelOrders['status'] == false) {
+            $this->buildResponse(false, $cancelOrders['message'], null);
+         }
+        } catch (\Throwable $th) {
+            return $this->buildResponse(false, 'Erro ao cancelar pedidos da venda: '. $th, null);
+        }
+
         //create Sale Model
         $saleupdate = new SaleModel();
         $saleupdate->setId($saleId);
+        $saleupdate->setImgSale('Venda Cancelada sem geração de comprovante!');
         $saleupdate->setStatus('cancelled');
         $saleupdate->setTotalAmountSale($totalsaleamount);
-
+        
         try {
             
-            $response = $this->saleRepository->cancellSale($saleupdate);
+            $response = $this->saleRepository->completeSale($saleupdate);
 
             if ($response['status'] == true) {
                return $this->buildResponse(true,'Venda Cancelada com Sucesso!', [    
                 'id' => $response['content']->getId(), 
                 'code' => $sale['code'],
                 'method' => $sale['method'],
-                'imgSale' => $sale['img_sale'],
+                'imgSale' => $response['content']->getImgSale(),
                 'status' => $response['content']->getStatus(),
                 'totalAmountSale' => $response['content']->getTotalAmountSale(),
                 'created_at' => $sale['created_at'],
@@ -358,6 +368,20 @@ class SaleService {
         return $somaTotal;
     }
 
+    private function checkAndCancelOrders(array $orders, int $saleId): array
+{
+    if (empty($orders['content'])) {
+        return $this->buildResponse(true, "Sale não há pedidos para cancelar!", null);
+    }
+
+    $cancelResult = $this->orderRepository->cancellOrders($saleId);
+
+    if ($cancelResult['status'] === true) {
+        return $this->buildResponse(true, "Todos os pedidos da venda cancelados", null);
+    }
+
+    return $this->buildResponse(false, "Erro ao cancelar pedidos da venda", null);
+}
 
 
 

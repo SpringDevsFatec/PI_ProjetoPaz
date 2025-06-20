@@ -4,6 +4,7 @@ namespace App\Backend\Repository;
 
 use App\Backend\Model\OrderModel;
 use App\Backend\Config\Database;
+use App\Backend\Model\SaleModel;
 use App\Backend\Repository\OrderItemRepository;
 use App\Backend\Utils\Responses;
 use PDO;
@@ -190,6 +191,32 @@ class OrderRepository {
             throw new PDOException("Erro ao atualizar pedido: " . $e->getMessage());
         }
     }
+
+     public function cancellOrders($sale_id) 
+    {
+        $id = $sale_id;
+        $status = 'cancelled';
+      
+        $query = "UPDATE {$this->table} SET status = :status WHERE sale_id = :sale_id";
+        
+        try {
+            $stmt = $this->conn->prepare($query);
+
+            $stmt->bindParam(":sale_id", $id, PDO::PARAM_INT);
+            $stmt->bindParam(":status", $status, PDO::PARAM_STR);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+                return $this->buildRepositoryResponse(true, $sale_id);
+            }else {
+                return $this->buildRepositoryResponse(false, null);
+            }
+            
+        } catch (PDOException $e) {
+            throw new PDOException("Erro ao atualizar pedido: " . $e->getMessage());
+        }
+    }
+
 
     /*
     public function delete(int $id): bool

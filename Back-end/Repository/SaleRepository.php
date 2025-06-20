@@ -284,24 +284,4 @@ class SaleRepository {
         }
     }
 
-    public function delete(int $id): bool 
-    {
-        try {
-            $this->conn->beginTransaction();
-
-            $orderRepository = new OrderRepository($this->conn);
-            $orderRepository->deleteBySale($id);
-
-            $query = "DELETE FROM {$this->table} WHERE id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute([':id' => $id]);
-            
-            $this->conn->commit();
-            return true;
-        
-        } catch (PDOException $e) {
-            $this->conn->rollBack();
-            throw new PDOException("Erro ao deletar venda: " . $e->getMessage());
-        }    
-    }
 }
