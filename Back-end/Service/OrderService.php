@@ -11,7 +11,6 @@ use App\Backend\Utils\PatternText;
 use App\Backend\Utils\Responses;
 use App\Backend\Utils\CreateCodes;
 use DomainException;
-use InvalidArgumentException;
 use Exception;
 
 class OrderService {
@@ -117,72 +116,83 @@ class OrderService {
         PatternText::processText($data);
 
         $sale = $this->saleRepository->find($saleId);
-        if(!$sale) {
+        if (!$sale) {
             throw new DomainException("Venda não encontrada.");
         }
 
+        $code = CreateCodes::createCodes('OR');
+
         $order = new OrderModel();
         $order->setSaleId($saleId);
-        $order->setCode(CreateCodes::createCodes("OR"));
+        $order->setCode($code['content']);
         $order->setPaymentMethod($data['payment_method']);
 
         try {
             $this->orderRepository->beginTransaction();
-            $ResponseOrder = $this->orderRepository->createOrder($order);
-            $order->setId($ResponseOrder['content']->getId());
 
-            if ($ResponseOrder['status'] == false) {
+            $responseOrder = $this->orderRepository->createOrder($order);
+            if (!$responseOrder['status']) {
                 return $this->buildResponse(false, 'Erro ao criar Pedido', null);
             }
 
-            if (!isset($ResponseOrder['content']['id'])) {
-                return $this->buildResponse(false, 'Id não retornado do Pedido! ', null);
+            $orderId = $responseOrder['content']->getId();
+            if (!$orderId) {
+                return $this->buildResponse(false, 'Id não retornado do Pedido!', null);
             }
-            
-            $data['itens']['order_id'] = $ResponseOrder['content']['id'];
-            
-            if (empty($data['items'])) {
+
+            $order->setId($orderId);
+
+            if (empty($data['itens'])) {
                 return $this->buildResponse(false, 'Nenhum item adicionado ao pedido.', null);
             }
 
+            $itensCriados = [];
+
             foreach ($data['itens'] as $itemData) {
-                $item = new OrderItemModel(
-                    null,
-                    $itemData['product_id'],
-                    $order,
-                    $itemData['quantity'],
-                    $itemData['unit_price'],
-                    null,
-                );
-                $item = $this->orderItemService->createItem($itemData, $order->getId());
-                $order->addItem($item['content']);
+                $item = new OrderItemModel();
+                $item->setProductId($itemData['product_id']);
+                $item->setOrderId($order);
+                $item->setQuantity($itemData['quantity']);
+                $item->setUnitPrice($itemData['unit_price']);
+
+                $itemResponse = $this->orderItemService->createItem($item, $orderId);
+                if (!$itemResponse['status']) {
+                    throw new DomainException("Erro ao criar item: {$itemData['product_id']}");
+                }
+
+                $order->addItem($itemResponse['content']);
+
+                $itensCriados[] = [
+                    'id' => $itemResponse['content']->getId(),
+                    'product_id' => $itemData['product_id'],
+                    'order_id' => $order->getId(),
+                    'quantity' => $itemData['quantity'],
+                    'unit_price' => $itemData['unit_price'],
+                ];
             }
-            
+            $this->orderRepository->updateTotalAmount($order);
+
             $this->orderRepository->commitTransaction();
+
+            return $this->buildResponse(true, 'Pedido criado com sucesso', [
+                'id' => $order->getId(),
+                'sale_id' => $order->getSaleId(),
+                'code' => $order->getCode(),
+                'payment_method' => $order->getPaymentMethod(),
+                'total_amount_order' => $order->getTotalAmountOrder(),
+                'itens' => $itensCriados,
+            ]);
 
         } catch (Exception $e) {
             $this->orderRepository->rollBackTransaction();
             throw $e;
         }
-
-        return $this->buildResponse(true, 'Pedido criado com sucesso', [
-            'id' => $order->getId(),
-            'sale_id' => $order->getSaleId(),
-            'code' => $order->getCode(),
-            'payment_method' => $order->getPaymentMethod(),
-            'status' => $order->getStatus(),
-            'total_amount_order' => $order->getTotalAmountOrder(),
-            'created_at' => $order->getCreatedAt(),
-            'itens' => [
-                $order->getItems()
-            ],
-        ]);
     }
 
     public function cancelOrder(int $id)
     {
         $response = $this->orderRepository->find($id);
-        if (!$response) {
+        if ($response['status'] === false) {
             throw new DomainException("Pedido não encontrado");
         }
         

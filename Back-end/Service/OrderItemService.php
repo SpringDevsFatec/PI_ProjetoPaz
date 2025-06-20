@@ -72,17 +72,15 @@ class OrderItemService {
             return $this->buildResponse(false, 'Dados incompletos.', null);
         }
 
-        $product = $this->productRepository->find($data['itens']['product_id']);
-        if(!$product) {
+        $product = $this->productRepository->find($productId);
+        if (!$product) {
             throw new DomainException("Produto não encontrado.");
         }
 
         try {
-            $newItemId = $this->orderItemRepository->createOrderItem($data, $orderId);
-            
-            if ($newItemId) {
-                $newItem = $this->orderItemRepository->find($newItemId['content']['id']);
-                return $this->buildResponse(true, 'Item criado com sucesso', $newItem);
+            $response = $this->orderItemRepository->createOrderItem($data, $orderId);
+            if ($response['status']) {
+                return $this->buildResponse(true, 'Item criado com sucesso', $response['content']);
             } else {
                 return $this->buildResponse(false, 'Falha ao criar item.', null);
             }

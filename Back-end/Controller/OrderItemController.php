@@ -35,46 +35,14 @@ class OrderItemController {
         }
     }
 
-    public function create(): void
+    public function createOrderItem($orderId): void
     {
-        $data = json_decode(file_get_contents('php://input', true));
-
+        $data = json_decode(file_get_contents('php://input'), true);
+        
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new InvalidArgumentException('JSON inválido');
         }
-
-        $requiredFields = ['product_id', 'order_id', 'quantity'];
-        foreach ($requiredFields as $field) {
-            if (!isset($data[$field])) {
-                throw new InvalidArgumentException("Campo obrigatório faltando: {$field}");
-            }
-        }
-
-        if ($result = $this->service->createItem($data)) {
-            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
-        } else {
-            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
-        }
-    }
-
-    public function updateQuantity(int $id): void 
-    {
-        $data = json_decode(file_get_contents('php://input', true));
-
-        if (!isset($data['quantity'])) {
-            throw new InvalidArgumentException('Quantidade não informada');
-        }
-
-        if ($result = $this->service->updateItemQuantity($id, (int)$data['quantity'])) {
-            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
-        } else {
-            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
-        }
-    }
-
-    public function delete(int $id): void 
-    {
-        if ($result = $this->service->deleteItem($id)) {
+        if ($result = $this->service->createItem($data, $orderId)) {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 404);

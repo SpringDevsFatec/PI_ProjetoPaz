@@ -2,7 +2,6 @@
 
 namespace App\Backend\Config;
 
-use App\Backend\Model\Product;
 use App\Backend\Repository\ProductRepository;
 use App\Backend\Repository\ProductImageRepository;
 use App\Backend\Repository\SupplierRepository;
@@ -80,7 +79,8 @@ class Container
         $this->instances[OrderService::class] = new OrderService(
             $this->get(OrderRepository::class),
             $this->get(SaleRepository::class),
-            $this->get(ProductRepository::class)
+            $this->get(ProductRepository::class),
+            $this->get(OrderItemService::class)
         );
 
         $this->instances[SaleService::class] = new SaleService(

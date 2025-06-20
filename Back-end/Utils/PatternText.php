@@ -1,7 +1,7 @@
 <?php
 namespace App\Backend\Utils;
 
-use Exception;
+use DomainException;
 
 class PatternText {
     public static function processText($data) {
@@ -90,24 +90,33 @@ class PatternText {
     }
 
     public static function validateOrderData(array $data): void
-    {
-        $requiredFields = ['payment_method', 'unit_price', 'quantity'];
-        foreach ($requiredFields as $field) {
-            if (!isset($data[$field])) {
-                self::handleResponse(false, "Campo obrigatório faltando: {$field}", null, 400);
-                die;
-            }
-        }
-        if (!in_array($data['payment_method'], ['credito', 'debito', 'dinheiro', 'pix'])) {
-            self::handleResponse(false, "Método de pagamento inválido", null, 400);
-            die;
+{
+    if (!isset($data['payment_method'])) {
+        throw new DomainException("Campo obrigatório faltando: payment_method");
+    }
+
+    if (!in_array($data['payment_method'], ['credito', 'debito', 'dinheiro', 'pix'])) {
+        throw new DomainException("Método de pagamento inválido.");
+    }
+
+    if (!isset($data['itens']) || !is_array($data['itens']) || count($data['itens']) === 0) {
+        throw new DomainException("Nenhum item foi enviado para o pedido.");
+    }
+
+    foreach ($data['itens'] as $index => $item) {
+        if (!isset($item['product_id'], $item['quantity'], $item['unit_price'])) {
+            throw new DomainException("Item #{$index} está com campos obrigatórios ausentes.");
         }
 
-        if ($data['quantity'] < 0) {
-            self::handleResponse(false, "Quantitidade não pode ser negativa", null, 400);
-            die;
+        if ($item['quantity'] <= 0) {
+            throw new DomainException("Item #{$index} possui quantidade inválida.");
+        }
+
+        if ($item['unit_price'] < 0) {
+            throw new DomainException("Item #{$index} possui preço unitário inválido.");
         }
     }
+}
 
 // ...existing code...
 }

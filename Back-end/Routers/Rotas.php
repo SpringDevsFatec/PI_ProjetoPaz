@@ -73,10 +73,10 @@ class Rotas {
                 '/sales' => [SaleController::class, 'createSale'], 
 
                 // Order
-                '/orders' => [OrderController::class, 'createOrder'],
+                '/orders/{saleId}' => [OrderController::class, 'createOrder'],
                 
                 // Order Item
-                '/order-items/{idOrder}' => [OrderItemController::class, 'createOrderItem'],
+                '/order-items/{orderId}' => [OrderItemController::class, 'createOrderItem'],
             ],
             'PUT' => [
                 // User
@@ -96,7 +96,7 @@ class Rotas {
                 '/sales/cancelled/{id}' => [SaleController::class, 'cancelSale'],
 
                 // Order
-                '/orders/cancelled/{id}' => [SaleController::class, 'cancelOrder'],
+                '/orders/cancelled/{id}' => [OrderController::class, 'cancelOrder'],
             ],
             'DELETE' => [
                 // users

@@ -15,8 +15,8 @@ class OrderItemRepository {
 
     use Responses;
 
-    public function __construct() {
-        $this->conn = Database::getInstance();
+    public function __construct(PDO $conn = null) {
+        $this->conn = $conn ?: Database::getInstance();
     }
 
     public function beginTransaction() {
@@ -64,7 +64,6 @@ class OrderItemRepository {
 
     public function createOrderItem(OrderItemModel $item, int $orderId): array
     {
-        $orderId = $item->getOrderId();
         $productId = $item->getProductId();
         $quantity = $item->getQuantity();
         $unitPrice = $item->getUnitPrice();
@@ -80,9 +79,13 @@ class OrderItemRepository {
             $stmt->bindParam(":quantity", $quantity, PDO::PARAM_INT);
             $stmt->bindParam(":unit_price", $unitPrice);
             $stmt->execute();
-
-            $item->setId((int)$this->conn->lastInsertId());
-            return $this->buildRepositoryResponse(!empty($item), $item ?: null);
+            
+            if ($stmt->rowCount() > 0) {
+                $item->setId((int)$this->conn->lastInsertId());
+                return ['status' => true, 'content' => $item];
+            } else {
+                return ['status' => false, 'content' => null];
+            }
 
         } catch (PDOException $e) {
             throw new PDOException("Erro ao inserir item do pedido: " . $e->getMessage());

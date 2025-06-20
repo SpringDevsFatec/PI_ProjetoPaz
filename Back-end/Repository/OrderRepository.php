@@ -116,12 +116,12 @@ class OrderRepository {
         $saleId = $order->getSaleId();
         $code = $order->getCode();
         $paymentMethod = $order->getPaymentMethod();
-        
+
         $query = "INSERT INTO {$this->table}
-                  (sale_id, code, payment_method)
-                  VALUES
-                  (:sale_id, :code, :payment_method)";
-    
+                (sale_id, code, payment_method)
+                VALUES
+                (:sale_id, :code, :payment_method)";
+
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(":sale_id", $saleId, PDO::PARAM_INT);
@@ -131,31 +131,35 @@ class OrderRepository {
 
             if ($stmt->rowCount() > 0) {
                 $orderId = (int)$this->conn->lastInsertId();
+                $order->setId($orderId);
                 return $this->buildRepositoryResponse(true, $order);
-            }else {
+            } else {
                 return $this->buildRepositoryResponse(false, null);
-            }
-            
-            foreach ($order->getItems() as $item) {
-                $item->setOrderId($orderId);
-                $this->itemRepository->createOrderItem($item, $orderId);
             }
         } catch (PDOException $e) {
             throw new PDOException("Erro ao salvar pedido: " . $e->getMessage());
         }
     }
 
+    public function updateTotalAmount(OrderModel $order)
+    {
+        $query = "UPDATE {$this->table} SET total_amount_order = :total WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindValue(':total', $order->getTotalAmountOrder());
+        $stmt->bindValue(':id', $order->getId());
+        return $stmt->execute();
+    }
+
+
     public function updateStatus(OrderModel $order) 
     {
-        $id = $order->getId();
-        $status = $order->getStatus();
-
-        $query = "UPDATE {$this->table} 
-                  SET status = :status
-                  WHERE id = :id";
+        $query = "UPDATE {$this->table} SET status = :status WHERE id = :id";
         
         try {
             $stmt = $this->conn->prepare($query);
+            $id = $order->getId();
+            $status = $order->getStatus();
+
             $stmt->bindParam(":id", $id, PDO::PARAM_INT);
             $stmt->bindParam(":status", $status, PDO::PARAM_STR);
             $stmt->execute();
