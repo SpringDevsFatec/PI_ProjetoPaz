@@ -96,7 +96,7 @@ class SaleRepository {
         }
     }
 
-    public function findByCode(int $code): ?array
+    public function findByCode(string $code): ?array
     {
         $query = "SELECT * FROM {$this->table}
                  WHERE code = :code
@@ -165,7 +165,7 @@ class SaleRepository {
         }
     }
 
-    public function create(SaleModel $sale): int
+    public function createSale(SaleModel $sale): int
     {  
         $query = "INSERT INTO {$this->table} 
                   (seller_id, date, status, created_at) 

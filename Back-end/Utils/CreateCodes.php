@@ -12,6 +12,7 @@ class CreateCodes
 
     public static function createCodes(string $sufixo): array
     {
+        var_dump("ta chegando :" . $sufixo);
         // validate sufixo
         if (!in_array($sufixo, ['SA', 'OR'])) {
             return self::buildResponse(false, 'Sufixo inválido. Use SA ou OR.', null);
@@ -46,7 +47,7 @@ class CreateCodes
             $result = $repository->findByCode($code);
         } elseif ($sufixo === 'OR') {
             $repository = new OrderRepository();
-           // $result = $repository->findByCode($code);
+            $result = $repository->findByCode($code);
         } else {
             return true; // segurança: se sufixo inválido, força existir
         }

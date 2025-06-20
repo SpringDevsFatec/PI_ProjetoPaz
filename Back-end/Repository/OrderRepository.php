@@ -52,6 +52,22 @@ class OrderRepository {
         }
     }
 
+    public function findByCode(string $code): ?array
+    {
+        $query = "SELECT * FROM {$this->table}
+                 WHERE code = :code
+                 LIMIT 1";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([':code' => $code]);
+        if ($stmt->rowCount() > 0) {
+            $saleRepository = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            return $this->buildRepositoryResponse(true, $saleRepository);
+        } else {
+            return $this->buildRepositoryResponse(false, null);
+        }
+    }
+
     public function findByPaymentMethod(string $paymentMethod): array 
     {
         $query = "SELECT * FROM {$this->table} WHERE payment_method= :payment_method";

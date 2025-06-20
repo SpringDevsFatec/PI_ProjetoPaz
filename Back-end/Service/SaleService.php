@@ -180,130 +180,140 @@ class SaleService {
         $sale->setCode(CreateCodes::createCodes("SA"));
         $sale->setMethod($dataPadronizado->method);
         $sale->setStatus('pending');
+
         try {
-            $this->repository->beginTransaction();
-        $saleId = $this->saleRepository->create($sale);
+        $this->saleRepository->beginTransaction();
+        $response = $this->saleRepository->createSale($sale);
+            
+        if ($response['status'] === true) {
+            $sale->setId($response);
+            return $this->buildResponse(true, 'Venda criada com sucesso.', $sale);
+        }    
+        $this->saleRepository->commitTransaction();
 
-        return $sale;
-    }
-
-    public function addOrderToSale(int $saleId, int $orderId): SaleModel
-    {
-        $saleData = $this->saleRepository->findWithOrders($saleId);
-        if (!$saleData) {
-            throw new DomainException("Venda não encontrada");
-        }
-
-        $orderData = $this->orderRepository->find($orderId);
-        if (!$orderData) {
-            throw new DomainException("Pedido não encontrado");
-        }
-
-        $sale = $this->hydrateSale($saleData);
-        
-        $order = $this->hydrateOrder($orderData);
-        
-        if ($sale->getStatus() !== 'open') {
-            throw new DomainException("Só é possível adicionar pedidos a vendas abertas");
-        }
-
-        if ($order->getStatus() !== 'paid') {
-            throw new DomainException("Só é possível adicionar pedidos pagos");
-        }
-        
-        $sale->addOrder($order);
-        $this->saleRepository->update($sale);
-        
-        return $sale;
-    }
-
-    private function hydrateOrder(array $orderData): OrderModel
-    {
-        return new OrderModel(
-            saleId: $orderData['sale_id'],
-            status: $orderData['status'],
-            paymentMethod: $orderData['payment_method'],
-            totalAmount: $orderData['total_amount'],
-            id: $orderData['id'],
-            createdAt: new DateTime($orderData['created_at'])
-        );
-    }
-
-    public function completeSale(int $saleId): SaleModel 
-    {
-        $saleData = $this->saleRepository->findWithOrders($saleId);
-        if (!$saleData) {
-            throw new DomainException("Venda não encontrada");
-        }
-        
-        $sale = $this->hydrateSale($saleData);
-        
-        try {
-            $sale->complete();
-            $this->saleRepository->completeSale($saleId, $sale->getTotal());
-
-            return $sale;
-
-        } catch (DomainException $e) {
-            throw new DomainException("Não foi possível concluir a venda: " . $e->getMessage());
+        return $this->buildResponse(false, 'Erro ao criar Venda.', null);
+        } catch (Exception $e) {
+            $this->saleRepository->rollBackTransaction();
+            throw $e;
         }
     }
+    // public function addOrderToSale(int $saleId, int $orderId): SaleModel
+    // {
+    //     $saleData = $this->saleRepository->findWithOrders($saleId);
+    //     if (!$saleData) {
+    //         throw new DomainException("Venda não encontrada");
+    //     }
 
-    public function cancelSale(int $saleId) : SaleModel 
-    {
-        $saleData = $this->saleRepository->findWithOrders($saleId);
-        if (!$saleData) {
-            throw new DomainException("Venda não encontrada");
-        }
+    //     $orderData = $this->orderRepository->find($orderId);
+    //     if (!$orderData) {
+    //         throw new DomainException("Pedido não encontrado");
+    //     }
 
-        $sale = $this->hydrateSale($saleData);
-        $sale->cancel();
-
-        $this->saleRepository->update($sale);
-
-        return $sale;
-    }
-
-    public function deleteSale(int $id): void
-    {
-        $sale = $this->saleRepository->find($id);
-        if (!$sale) {
-            throw new DomainException("Pedido não encontrado");
-        }
+    //     $sale = $this->hydrateSale($saleData);
         
-        if ($sale['status'] === 'paid') {
-            throw new DomainException("Pedidos pagos não podem ser removidos");
-        }
+    //     $order = $this->hydrateOrder($orderData);
         
-        if (!$this->saleRepository->delete($id)) {
-            throw new DomainException("Falha ao remover pedido");
-        } 
-    }
+    //     if ($sale->getStatus() !== 'open') {
+    //         throw new DomainException("Só é possível adicionar pedidos a vendas abertas");
+    //     }
 
-    private function hydrateSale(array $saleData): SaleModel
-    {
-        $sale = new SaleModel(
-            sellerId: $saleData['seller_id'],
-            date: new DateTime($saleData['date']),
-            status: $saleData['status'],
-            id: $saleData['id'],
-            createdAt: new DateTime($saleData['created_at'])
-        );
+    //     if ($order->getStatus() !== 'paid') {
+    //         throw new DomainException("Só é possível adicionar pedidos pagos");
+    //     }
         
-        if (!empty($saleData['orders'])) {
-            foreach ($saleData['orders'] as $orderData) {
-                $order = new OrderModel(
-                    paymentMethod: $orderData['payment_method'],
-                    totalAmount: $orderData['total_amount'],
-                    status: $orderData['status'],
-                    id: $orderData['id'],
-                    saleId: $orderData['sale_id'],
-                    createdAt: new DateTime($orderData['created_at'])
-                );
-                $sale->addOrder($order);
-            }
-        }
+    //     $sale->addOrder($order);
+    //     $this->saleRepository->update($sale);
         
-        return $sale;
-    }
+    //     return $sale;
+    // }
+
+    // private function hydrateOrder(array $orderData): OrderModel
+    // {
+    //     return new OrderModel(
+    //         saleId: $orderData['sale_id'],
+    //         status: $orderData['status'],
+    //         paymentMethod: $orderData['payment_method'],
+    //         totalAmount: $orderData['total_amount'],
+    //         id: $orderData['id'],
+    //         createdAt: new DateTime($orderData['created_at'])
+    //     );
+    // }
+
+    // public function completeSale(int $saleId): SaleModel 
+    // {
+    //     $saleData = $this->saleRepository->findWithOrders($saleId);
+    //     if (!$saleData) {
+    //         throw new DomainException("Venda não encontrada");
+    //     }
+        
+    //     $sale = $this->hydrateSale($saleData);
+        
+    //     try {
+    //         $sale->complete();
+    //         $this->saleRepository->completeSale($saleId, $sale->getTotal());
+
+    //         return $sale;
+
+    //     } catch (DomainException $e) {
+    //         throw new DomainException("Não foi possível concluir a venda: " . $e->getMessage());
+    //     }
+    // }
+
+    // public function cancelSale(int $saleId) : SaleModel 
+    // {
+    //     $saleData = $this->saleRepository->findWithOrders($saleId);
+    //     if (!$saleData) {
+    //         throw new DomainException("Venda não encontrada");
+    //     }
+
+    //     $sale = $this->hydrateSale($saleData);
+    //     $sale->cancel();
+
+    //     $this->saleRepository->update($sale);
+
+    //     return $sale;
+    // }
+
+    // public function deleteSale(int $id): void
+    // {
+    //     $sale = $this->saleRepository->find($id);
+    //     if (!$sale) {
+    //         throw new DomainException("Pedido não encontrado");
+    //     }
+        
+    //     if ($sale['status'] === 'paid') {
+    //         throw new DomainException("Pedidos pagos não podem ser removidos");
+    //     }
+        
+    //     if (!$this->saleRepository->delete($id)) {
+    //         throw new DomainException("Falha ao remover pedido");
+    //     } 
+    // }
+
+    // private function hydrateSale(array $saleData): SaleModel
+    // {
+    //     $sale = new SaleModel(
+    //         sellerId: $saleData['seller_id'],
+    //         date: new DateTime($saleData['date']),
+    //         status: $saleData['status'],
+    //         id: $saleData['id'],
+    //         createdAt: new DateTime($saleData['created_at'])
+    //     );
+        
+    //     if (!empty($saleData['orders'])) {
+    //         foreach ($saleData['orders'] as $orderData) {
+    //             $order = new OrderModel(
+    //                 paymentMethod: $orderData['payment_method'],
+    //                 totalAmount: $orderData['total_amount'],
+    //                 status: $orderData['status'],
+    //                 id: $orderData['id'],
+    //                 saleId: $orderData['sale_id'],
+    //                 createdAt: new DateTime($orderData['created_at'])
+    //             );
+    //             $sale->addOrder($order);
+    //         }
+    //     }
+        
+    //     return $sale;
+    // }
 }
