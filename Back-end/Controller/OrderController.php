@@ -35,9 +35,28 @@ class OrderController {
         }
     }
 
+    public function listByPaymentMethodAndSaleId(string $paymentMethod, int $saleId): void 
+    {
+        if ($result = $this->service->getByPaymentMethodAndSaleId($paymentMethod, $saleId)) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
+        }
+    }
+
+
     public function listAll(): void 
     {
         if ($result = $this->service->getAll()) {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
+        } else {
+            $this->handleResponse($result['status'], $result['message'], $result['content'], 404);
+        }
+    }
+
+     public function listOrdersBySale(int $saleId): void 
+    {
+        if ($result = $this->service->getOrderBySaleId($saleId)) {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 200);
         } else {
             $this->handleResponse($result['status'], $result['message'], $result['content'], 404);

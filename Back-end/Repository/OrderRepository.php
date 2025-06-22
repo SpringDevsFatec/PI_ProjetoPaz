@@ -71,7 +71,7 @@ class OrderRepository {
 
     public function findByPaymentMethod(string $paymentMethod): array 
     {
-        $query = "SELECT * FROM {$this->table} WHERE payment_method= :payment_method";
+        $query = "SELECT * FROM {$this->table} WHERE payment_method= :payment_method ORDER BY created_at DESC LIMIT 20";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':payment_method', $paymentMethod, PDO::PARAM_STR);
         $stmt->execute();
@@ -84,9 +84,25 @@ class OrderRepository {
         }
     }
 
+    public function findByPaymentMethodAndSaleId(string $paymentMethod, int $saleId): array 
+    {
+        $query = "SELECT * FROM {$this->table} WHERE payment_method= :payment_method AND sale_id = :sale_id ORDER BY created_at DESC LIMIT 20";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':payment_method', $paymentMethod, PDO::PARAM_STR);
+        $stmt->bindParam(':sale_id', $saleId, PDO::PARAM_STR);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            $orderRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return $this->buildRepositoryResponse(true, $orderRepository);
+        } else {
+            return $this->buildRepositoryResponse(false, null);
+        }
+    }
+
     public function findBySaleId(int $saleId): array 
     {
-        $query = "SELECT * FROM {$this->table} WHERE sale_id = :sale_id";
+        $query = "SELECT * FROM {$this->table} WHERE sale_id = :sale_id ORDER BY created_at DESC ";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':sale_id', $saleId, PDO::PARAM_INT);
         $stmt->execute();
@@ -101,17 +117,18 @@ class OrderRepository {
 
     public function findAll(): array
     {
-        $query = "SELECT * FROM {$this->table}";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
+        try {
+            $query = "SELECT * FROM {$this->table} ORDER BY created_at DESC LIMIT 20";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+            $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        if ($stmt->rowCount() > 0) {
-            $orderRepository = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return $this->buildRepositoryResponse(true, $orderRepository);
-        } else {
-            return $this->buildRepositoryResponse(false, null);
+            return $this->buildResponse(true, "Pedidos encontrados com sucesso.", $orders);
+        } catch (PDOException $e) {
+            return $this->buildResponse(false, "Erro ao buscar pedidos: " . $e->getMessage(), null);
         }
     }
+
 
     public function find(int $id): ?array
     {

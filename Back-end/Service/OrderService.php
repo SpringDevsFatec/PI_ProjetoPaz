@@ -72,6 +72,25 @@ class OrderService {
         }
     }
 
+    public function getByPaymentMethodAndSaleId(string $paymentMethod, int $saleId): array
+    {
+        try {
+            $this->orderRepository->beginTransaction();
+            $response = $this->orderRepository->findByPaymentMethodAndSaleId($paymentMethod, $saleId);
+            $this->orderRepository->commitTransaction();
+            
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Não a Nenhum Pedido com este metodo dentro dessa venda!.', null);
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
+    }
+
     public function getAll(): array
     {
         try {
@@ -109,6 +128,26 @@ class OrderService {
             throw $e;
         }
     }
+
+       public function getOrderBySaleId(int $saleId): array
+    {
+        try {
+            $this->orderRepository->beginTransaction();
+            $response = $this->orderRepository->findBySaleId($saleId);
+            $this->orderRepository->commitTransaction();
+            
+            if ($response['status'] == true) {
+                return $this->buildResponse(true, 'Conteúdo encontrado.', $response['content']);
+            }
+
+            return $this->buildResponse(false, 'Nenhum conteúdo encontrado.', null);
+
+        } catch (Exception $e) {
+            $this->orderRepository->rollBackTransaction();
+            throw $e;
+        }
+    }
+    
 
     public function createOrder(int $saleId, $data)
     {
@@ -193,12 +232,14 @@ class OrderService {
         $order->setStatus('cancelled');
         $this->orderRepository->beginTransaction();
 
+        // get response from find() and add new status
+      $response['content']['status'] = $order->getStatus();
         try {
             $result = $this->orderRepository->updateStatus($order);
 
             if ($result['status'] === true) {
                 $this->orderRepository->commitTransaction();
-                return $this->buildResponse(true, 'Status atualizado com sucesso', null);
+                return $this->buildResponse(true, 'Status atualizado com sucesso', $response);
             } else {
                 $this->orderRepository->rollBackTransaction();
                 return $this->buildResponse(false, 'Erro ao atualizar.', null);

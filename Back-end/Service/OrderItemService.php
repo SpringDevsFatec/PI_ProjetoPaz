@@ -41,7 +41,7 @@ class OrderItemService {
             throw $e;
         }
     }
-    
+
     public function getItem(int $id): ?array
     {
         try {
