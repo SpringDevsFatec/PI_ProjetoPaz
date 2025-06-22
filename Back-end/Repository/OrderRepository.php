@@ -133,17 +133,21 @@ class OrderRepository {
         $saleId = $order->getSaleId();
         $code = $order->getCode();
         $paymentMethod = $order->getPaymentMethod();
+        $totalAmount = $order->getTotalAmountOrder();
+        $status = $order->getStatus();
 
         $query = "INSERT INTO {$this->table}
-                (sale_id, code, payment_method)
+                (sale_id, code, payment_method, total_amount_order, status)
                 VALUES
-                (:sale_id, :code, :payment_method)";
+                (:sale_id, :code, :payment_method, :total_amount_order, :status)";
 
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(":sale_id", $saleId, PDO::PARAM_INT);
             $stmt->bindParam(":code", $code, PDO::PARAM_STR);
             $stmt->bindParam(":payment_method", $paymentMethod, PDO::PARAM_STR);
+            $stmt->bindParam(":total_amount_order", $totalAmount, PDO::PARAM_STR);
+            $stmt->bindParam(":status", $status, PDO::PARAM_STR);
             $stmt->execute();
 
             if ($stmt->rowCount() > 0) {

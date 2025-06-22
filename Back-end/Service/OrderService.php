@@ -117,16 +117,23 @@ class OrderService {
 
         $sale = $this->saleRepository->find($saleId);
         if (!$sale) {
-            throw new DomainException("Venda não encontrada.");
+            return $this->buildResponse(false, 'Venda não encontrada.', null);
         }
 
+        // Sum TotalOrder by $data(json['itens']) from Front-End
+        $totalAmount = $this->countTotalAmountOrder($data['itens']);
+    
+        // generate Trigger
         $code = CreateCodes::createCodes('OR');
 
+        // Create Model Order
         $order = new OrderModel();
         $order->setSaleId($saleId);
         $order->setCode($code['content']);
+        $order->setStatus('completed');
         $order->setPaymentMethod($data['payment_method']);
-
+        $order->setTotalAmountOrder($totalAmount);
+        
         try {
             $this->orderRepository->beginTransaction();
 
@@ -148,29 +155,14 @@ class OrderService {
 
             $itensCriados = [];
 
-            foreach ($data['itens'] as $itemData) {
-                $item = new OrderItemModel();
-                $item->setProductId($itemData['product_id']);
-                $item->setOrderId($order);
-                $item->setQuantity($itemData['quantity']);
-                $item->setUnitPrice($itemData['unit_price']);
+            $itensCreated = $this->createItensOrders($data, $order, $orderId);
 
-                $itemResponse = $this->orderItemService->createItem($item, $orderId);
-                if (!$itemResponse['status']) {
-                    throw new DomainException("Erro ao criar item: {$itemData['product_id']}");
-                }
-
-                $order->addItem($itemResponse['content']);
-
-                $itensCriados[] = [
-                    'id' => $itemResponse['content']->getId(),
-                    'product_id' => $itemData['product_id'],
-                    'order_id' => $order->getId(),
-                    'quantity' => $itemData['quantity'],
-                    'unit_price' => $itemData['unit_price'],
-                ];
+            if ($itensCreated['status'] === false) {
+                return $itensCriados; // response created for buildResponse into the method
             }
-            $this->orderRepository->updateTotalAmount($order);
+
+            $itensCriados = $itensCreated['content'];
+
 
             $this->orderRepository->commitTransaction();
 
@@ -193,7 +185,7 @@ class OrderService {
     {
         $response = $this->orderRepository->find($id);
         if ($response['status'] === false) {
-            throw new DomainException("Pedido não encontrado");
+            return $this->buildResponse(false, 'Pedido não encontrado', null);
         }
         
         $order = new OrderModel();
@@ -217,6 +209,52 @@ class OrderService {
             throw $e;
         }
     }
+
+    private function countTotalAmountOrder(array $orders): float
+    {
+        $total = 0.0;
+
+        foreach ($orders as $order) {
+            // Garante que o unit_price é numérico antes de somar
+            if (isset($order['unit_price']) && is_numeric($order['unit_price'])) {
+                $total += floatval($order['unit_price']);
+            }
+        }
+
+        return $total;
+    }
+
+    private function createItensOrders(array $data, OrderModel $order, int $orderId): array
+    {
+        $itensCriados = [];
+
+        foreach ($data['itens'] as $itemData) {
+            $item = new OrderItemModel();
+            $item->setProductId($itemData['product_id']);
+            $item->setOrderId($order);
+            $item->setQuantity($itemData['quantity']);
+            $item->setUnitPrice($itemData['unit_price']);
+
+            $itemResponse = $this->orderItemService->createItem($item, $orderId);
+            if (!$itemResponse['status']) {
+                return $this->buildResponse(false, "Erro ao criar item: {$itemData['product_id']}", null);
+            }
+
+            $order->addItem($itemResponse['content']);
+
+            $itensCriados[] = [
+                'id' => $itemResponse['content']->getId(),
+                'product_id' => $itemData['product_id'],
+                'order_id' => $order->getId(),
+                'quantity' => $itemData['quantity'],
+                'unit_price' => $itemData['unit_price'],
+            ];
+        }
+
+        return $this->buildResponse(true, 'Itens do Pedido Criados com sucesso!', $itensCriados);
+    }
+
+
 
     /*
     public function addItemToOrder(int $orderId, int $productId, int $quantity): OrderModel
