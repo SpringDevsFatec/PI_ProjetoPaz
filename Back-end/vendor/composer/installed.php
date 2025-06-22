@@ -3,7 +3,7 @@
         'name' => 'app/backend',
         'pretty_version' => 'dev-develop',
         'version' => 'dev-develop',
-        'reference' => '133535d6ed85ad350a3da166d3cd0a3ed3ae91b6',
+        'reference' => '593f5bcd6d7b7310dc723aabbc8e2ff037b59251',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'app/backend' => array(
             'pretty_version' => 'dev-develop',
             'version' => 'dev-develop',
-            'reference' => '133535d6ed85ad350a3da166d3cd0a3ed3ae91b6',
+            'reference' => '593f5bcd6d7b7310dc723aabbc8e2ff037b59251',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

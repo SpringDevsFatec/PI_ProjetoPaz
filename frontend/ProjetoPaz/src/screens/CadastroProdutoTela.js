@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, ScrollView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import api from '../services/api';
 
 const CadastroProdutoTela = ({ navigation }) => {
   // Estados do formulário
@@ -11,11 +13,65 @@ const CadastroProdutoTela = ({ navigation }) => {
   const [tipo, setTipo] = useState('');
   const [fornecedor, setFornecedor] = useState('');
   const [isFavorito, setIsFavorito] = useState(false);
-
-  // Função para alternar favorito
-  const toggleFavorito = () => {
+  const [imagem, setImagem] = useState(null);
+  const [imagemBase64, setImagemBase64] = useState('');
+    const handleToggleFavorito = () => {
     setIsFavorito(!isFavorito);
   };
+
+  // Solicitar permissão para acessar a galeria/câmera
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permissão necessária', 'Precisamos da permissão para acessar suas fotos!');
+        }
+      }
+    })();
+  }, []);
+
+  // Função para selecionar imagem da galeria
+const pickImage = async () => {
+  try {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All, // ← Corrigido aqui
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled) { // ← 'cancelled' mudou para 'canceled' em versões mais novas
+      setImagem(result.assets[0].uri);
+      setImagemBase64(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    }
+  } catch (error) {
+    console.error('Erro ao selecionar imagem:', error);
+    Alert.alert('Erro', 'Não foi possível selecionar a imagem');
+  }
+};
+
+// Função para tirar foto (atualizada)
+const takePhoto = async () => {
+  try {
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaType.Images, // ← Corrigido aqui
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled) { // ← Atualizado aqui
+      setImagem(result.assets[0].uri);
+      setImagemBase64(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    }
+  } catch (error) {
+    console.error('Erro ao tirar foto:', error);
+    Alert.alert('Erro', 'Não foi possível tirar a foto');
+  }
+};
 
   // Função para editar imagem
   const editarImagem = () => {
@@ -25,11 +81,19 @@ const CadastroProdutoTela = ({ navigation }) => {
       [
         {
           text: 'Tirar Foto',
-          onPress: () => console.log('Tirar foto selecionado'),
+          onPress: takePhoto,
         },
         {
           text: 'Escolher da Galeria',
-          onPress: () => console.log('Galeria selecionada'),
+          onPress: pickImage,
+        },
+        {
+          text: 'Remover Imagem',
+          onPress: () => {
+            setImagem(null);
+            setImagemBase64('');
+          },
+          style: 'destructive',
         },
         {
           text: 'Cancelar',
@@ -41,27 +105,42 @@ const CadastroProdutoTela = ({ navigation }) => {
   };
 
   // Função para cadastrar produto
-  const cadastrarProduto = () => {
+  const cadastrarProduto = async () => {
     if (!nome || !preco || !categoria || !tipo) {
       Alert.alert('Atenção', 'Preencha todos os campos obrigatórios');
       return;
     }
 
     const produto = {
-      nome,
-      preco,
-      categoria,
-      tipo,
-      fornecedor,
-      isFavorito,
-      dataCadastro: new Date().toLocaleDateString(),
+      nameproduct: nome,
+      sale_price: preco,
+      category: categoria,
+      donation: tipo === 'Doação' ? '1' : '0',
+      namesupplier: fornecedor,
+      is_favorite: isFavorito ? '1' : '0',
+      status: '1',
+      cost_price: '0',
+      description: 'Produto cadastrado via app',
+      location: 'Local não especificado',
+      image: imagemBase64, // Usamos a imagem em base64 aqui
     };
 
-    console.log('Produto cadastrado:', produto);
-    Alert.alert('Sucesso', 'Produto cadastrado com sucesso!');
-    navigation.goBack();
+    try {
+      const response = await api.post('/product', produto);
+      
+      if (response.status === 200 || response.status === 201) {
+        Alert.alert('Sucesso', 'Produto cadastrado com sucesso!');
+        navigation.goBack();
+      } else {
+        Alert.alert('Erro', 'Ocorreu um erro ao cadastrar o produto');
+      }
+    } catch (error) {
+      console.error('Erro ao cadastrar produto:', error);
+      Alert.alert('Erro', error.response?.data?.message || 'Falha ao conectar com o servidor');
+    }
   };
 
+  // Restante do componente permanece o mesmo...
   return (
     <LinearGradient colors={['#FFFFFF', '#F5F5F5', '#E0E0E0']} style={styles.container}>
       {/* Cabeçalho */}
@@ -133,29 +212,40 @@ const CadastroProdutoTela = ({ navigation }) => {
           onChangeText={setFornecedor}
         />
 
-        {/* Imagem */}
-        <Text style={styles.label}>Imagem do Produto</Text>
-        <View style={styles.imageUploadContainer}>
-          <Ionicons name="cloud-upload-outline" size={40} color="#888" />
-          <Text style={styles.uploadText}>Clique para adicionar imagem</Text>
-          
-          {/* Ícone de editar */}
-          <TouchableOpacity style={styles.editIcon} onPress={editarImagem}>
-            <MaterialIcons name="edit" size={18} color="#555" />
-          </TouchableOpacity>
-        </View>
+      {/* Imagem */}
+      <Text style={styles.label}>Imagem do Produto</Text>
+      <View style={styles.imageUploadContainer}>
+        {imagem ? (
+          <Image 
+            source={{ uri: imagem }} 
+            style={{ width: '100%', height: '100%', borderRadius: 8 }} 
+            resizeMode="cover"
+          />
+        ) : (
+          <>
+            <Ionicons name="cloud-upload-outline" size={40} color="#888" />
+            <Text style={styles.uploadText}>Clique para adicionar imagem</Text>
+          </>
+        )}
+        
+        {/* Ícone de editar */}
+        <TouchableOpacity style={styles.editIcon} onPress={editarImagem}>
+          <MaterialIcons name={imagem ? "edit" : "add-a-photo"} size={18} color="#555" />
+        </TouchableOpacity>
+      </View>
 
-        {/* Favorito */}
-        <View style={styles.favoritoContainer}>
-          <Text style={styles.label}>Marcar como favorito?</Text>
-          <TouchableOpacity onPress={toggleFavorito}>
-            <Ionicons 
-              name={isFavorito ? "heart" : "heart-outline"} 
-              size={28} 
-              color={isFavorito ? "#FF6B6B" : "#666"} 
-            />
-          </TouchableOpacity>
-        </View>
+
+      {/* Favorito */}
+      <View style={styles.favoritoContainer}>
+        <Text style={styles.label}>Marcar como favorito?</Text>
+        <TouchableOpacity onPress={handleToggleFavorito}>
+          <Ionicons 
+            name={isFavorito ? "heart" : "heart-outline"} 
+            size={28} 
+            color={isFavorito ? "#FF6B6B" : "#666"} 
+          />
+        </TouchableOpacity>
+      </View>
 
         {/* Botão de Cadastro */}
         <TouchableOpacity style={styles.cadastrarButton} onPress={cadastrarProduto}>
