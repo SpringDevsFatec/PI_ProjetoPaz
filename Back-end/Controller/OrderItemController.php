@@ -26,6 +26,7 @@ class OrderItemController {
         }
     }
 
+
     public function show(int $id): void 
     {
         if ($result = $this->service->getItem($id)) {
