@@ -59,14 +59,16 @@ const EditarProdutoTela = ({ route, navigation }) => {
           category: data.category || '',
           donation: data.is_donation?.toString() || '0',
           namesupplier: data.supplier?.name || '',
-          location: data.location || '',
+          location: data.supplier?.location || '',
           description: data.description || '',
           is_favorite: data.is_favorite?.toString() || '0',
           status: data.status?.toString() || '1',
           image: data.img_product || null,
           imageBase64: data.img_product || '',
-          idsupplier: data.supplier?.id || ''
+          idSupplier: data.supplier?.id || ''
         });
+
+        console.log("Dados com produto criado:   " , produto);
 
       } catch (error) {
         Alert.alert('Erro', 'Não foi possível carregar os dados do produto');
@@ -174,7 +176,7 @@ const EditarProdutoTela = ({ route, navigation }) => {
         location: produto.location,
         is_favorite: produto.is_favorite,
         status: produto.status,
-        idsupplier: produto.idsupplier
+        idSupplier: produto.idSupplier
       };
 
       await api.put(`/products/${produtoId}`, produtoData);
