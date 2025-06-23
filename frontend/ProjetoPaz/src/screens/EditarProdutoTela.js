@@ -24,9 +24,12 @@ const EditarProdutoTela = ({ route, navigation }) => {
   const [produto, setProduto] = useState({
     nameproduct: '',
     sale_price: '',
+    cost_price: '',
     category: '',
     donation: '0',
     namesupplier: '',
+    location: '',
+    description: '',
     is_favorite: '0',
     status: '1',
     image: null,
@@ -51,9 +54,12 @@ const EditarProdutoTela = ({ route, navigation }) => {
         setProduto({
           nameproduct: data.name || '',
           sale_price: data.sale_price?.toString() || '',
+          cost_price: data.cost_price?.toString() || '',
           category: data.category || '',
           donation: data.is_donation?.toString() || '0',
           namesupplier: data.supplier?.name || '',
+          location: data.location || '',
+          description: data.description || '',
           is_favorite: data.is_favorite?.toString() || '0',
           status: data.status?.toString() || '1',
           image: data.img_product || null,
@@ -146,7 +152,7 @@ const EditarProdutoTela = ({ route, navigation }) => {
 
   // Função para salvar alterações
   const salvarAlteracoes = async () => {
-    if (!produto.nameproduct || !produto.sale_price || !produto.category) {
+    if (!produto.nameproduct || !produto.sale_price || !produto.cost_price || !produto.category) {
       Alert.alert('Atenção', 'Preencha todos os campos obrigatórios');
       return;
     }
@@ -158,9 +164,12 @@ const EditarProdutoTela = ({ route, navigation }) => {
       const produtoData = {
         nameproduct: produto.nameproduct,
         sale_price: produto.sale_price,
+        cost_price: produto.cost_price,
         category: produto.category,
+        description: produto.description,
         donation: produto.donation,
         namesupplier: produto.namesupplier,
+        location: produto.location,
         is_favorite: produto.is_favorite,
         status: produto.status
       };
@@ -234,12 +243,29 @@ const EditarProdutoTela = ({ route, navigation }) => {
           keyboardType="numeric"
         />
 
+        {/* Preço de Custo */}
+        <Text style={styles.label}>Preço de Custo *</Text>
+        <TextInput 
+          style={styles.input} 
+          value={produto.cost_price}
+          onChangeText={(text) => setProduto({...produto, cost_price: text})}
+          keyboardType="numeric"
+        />
+
         {/* Categoria */}
         <Text style={styles.label}>Categoria *</Text>
         <TextInput 
           style={styles.input} 
           value={produto.category}
           onChangeText={(text) => setProduto({...produto, category: text})}
+        />
+
+        <Text style={styles.label}>Descrição</Text>
+        <TextInput 
+          style={[styles.input, {height: 80}]} 
+          value={produto.description}
+          onChangeText={(text) => setProduto({...produto, description: text})}
+          multiline
         />
 
         {/* Tipo */}
@@ -268,6 +294,15 @@ const EditarProdutoTela = ({ route, navigation }) => {
           style={styles.input} 
           value={produto.namesupplier}
           onChangeText={(text) => setProduto({...produto, namesupplier: text})}
+        />
+
+        {/* Localização */}
+        <Text style={styles.label}>Localização *</Text>
+        <TextInput 
+          style={styles.input} 
+          value={produto.location}
+          onChangeText={(text) => setProduto({...produto, location: text})}
+          placeholder="Ex: Paróquia de St Terezinha"
         />
 
         {/* Imagem */}

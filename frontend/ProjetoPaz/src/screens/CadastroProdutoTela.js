@@ -15,6 +15,9 @@ const CadastroProdutoTela = ({ navigation }) => {
   const [isFavorito, setIsFavorito] = useState(false);
   const [imagem, setImagem] = useState(null);
   const [imagemBase64, setImagemBase64] = useState('');
+  const [precoCusto, setPrecoCusto] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [localizacao, setLocalizacao] = useState('');
     const handleToggleFavorito = () => {
     setIsFavorito(!isFavorito);
   };
@@ -113,16 +116,16 @@ const takePhoto = async () => {
 
     const produto = {
       nameproduct: nome,
+      cost_price: precoCusto || '0', // Adicionado
       sale_price: preco,
+      description: descricao || 'Produto cadastrado via app', // Atualizado
+      is_favorite: isFavorito ? '1' : '0',
       category: categoria,
       donation: tipo === 'Doação' ? '1' : '0',
-      namesupplier: fornecedor,
-      is_favorite: isFavorito ? '1' : '0',
       status: '1',
-      cost_price: '0',
-      description: 'Produto cadastrado via app',
-      location: 'Local não especificado',
-      image: imagemBase64, // Usamos a imagem em base64 aqui
+      namesupplier: fornecedor || 'Não especificado', // Atualizado
+      location: localizacao || 'Local não especificado', // Adicionado
+      image: imagemBase64,
     };
 
     try {
@@ -140,7 +143,6 @@ const takePhoto = async () => {
     }
   };
 
-  // Restante do componente permanece o mesmo...
   return (
     <LinearGradient colors={['#FFFFFF', '#F5F5F5', '#E0E0E0']} style={styles.container}>
       {/* Cabeçalho */}
@@ -211,6 +213,38 @@ const takePhoto = async () => {
           value={fornecedor}
           onChangeText={setFornecedor}
         />
+
+        {/* Preço de Custo */}
+        <Text style={styles.label}>Preço de Custo</Text>
+        <TextInput 
+          style={styles.input} 
+          placeholder="R$ 0,00" 
+          placeholderTextColor="#666"
+          keyboardType="numeric"
+          value={precoCusto}
+          onChangeText={setPrecoCusto}
+        />
+
+        {/* Descrição */}
+        <Text style={styles.label}>Descrição</Text>
+        <TextInput 
+          style={[styles.input, { height: 80, textAlignVertical: 'top' }]} 
+          placeholder="Descrição do produto" 
+          placeholderTextColor="#666"
+          multiline
+          value={descricao}
+          onChangeText={setDescricao}
+        />
+
+        {/* Localização */}
+        <Text style={styles.label}>Localização</Text>
+        <TextInput 
+          style={styles.input} 
+          placeholder="Onde o produto está disponível" 
+          placeholderTextColor="#666"
+          value={localizacao}
+          onChangeText={setLocalizacao}
+/>
 
       {/* Imagem */}
       <Text style={styles.label}>Imagem do Produto</Text>
@@ -377,6 +411,18 @@ const styles = StyleSheet.create({
     marginRight: 10,
     fontSize: 16,
   },
+  descricaoInput: {
+  backgroundColor: 'rgba(255,255,255,0.9)',
+  borderRadius: 8,
+  paddingHorizontal: 15,
+  height: 80,
+  fontSize: 14,
+  marginBottom: 15,
+  borderWidth: 1,
+  borderColor: '#ccc',
+  color: '#333',
+  textAlignVertical: 'top',
+},
 });
 
 export default CadastroProdutoTela;
