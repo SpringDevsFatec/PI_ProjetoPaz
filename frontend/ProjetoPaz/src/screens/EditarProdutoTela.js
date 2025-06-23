@@ -33,7 +33,8 @@ const EditarProdutoTela = ({ route, navigation }) => {
     is_favorite: '0',
     status: '1',
     image: null,
-    imageBase64: ''
+    imageBase64: '',
+    idSupplier: ''
   });
 
   // Solicitar permissões e carregar produto
@@ -63,7 +64,8 @@ const EditarProdutoTela = ({ route, navigation }) => {
           is_favorite: data.is_favorite?.toString() || '0',
           status: data.status?.toString() || '1',
           image: data.img_product || null,
-          imageBase64: data.img_product || ''
+          imageBase64: data.img_product || '',
+          idsupplier: data.supplier?.id || ''
         });
 
       } catch (error) {
@@ -171,7 +173,8 @@ const EditarProdutoTela = ({ route, navigation }) => {
         namesupplier: produto.namesupplier,
         location: produto.location,
         is_favorite: produto.is_favorite,
-        status: produto.status
+        status: produto.status,
+        idsupplier: produto.idsupplier
       };
 
       await api.put(`/products/${produtoId}`, produtoData);
