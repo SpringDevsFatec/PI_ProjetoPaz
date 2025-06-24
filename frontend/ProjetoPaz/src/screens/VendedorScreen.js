@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,15 @@ import {
   StyleSheet,
   Image,
   ScrollView,
+  Modal,
+  Alert,
   FlatList
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const Autoatendimento = ({ route, navigation }) => {
+const VendedorScreen = ({ route, navigation }) => {
+  // Recebe os produtos selecionados da tela anterior
   const { selectedProducts } = route.params || { selectedProducts: [] };
   
   // Estados
@@ -56,13 +59,41 @@ const Autoatendimento = ({ route, navigation }) => {
   // Finaliza a compra
   const handleFinalizarCompra = () => {
     if (!formaPagamento) {
-      alert('Selecione uma forma de pagamento');
+      Alert.alert('Atenção', 'Selecione uma forma de pagamento');
       return;
     }
-    alert(`Venda finalizada!\nTotal: R$ ${calcularTotal()}\nForma de pagamento: ${formaPagamento}`);
-    setCarrinho({});
-    setCarrinhoVisivel(false);
-    navigation.goBack();
+    Alert.alert(
+      'Venda Finalizada',
+      `Total: R$ ${calcularTotal()}\nForma de pagamento: ${formaPagamento}`,
+      [
+        { 
+          text: 'OK', 
+          onPress: () => {
+            setCarrinho({});
+            setCarrinhoVisivel(false);
+            navigation.goBack();
+          }
+        }
+      ]
+    );
+  };
+
+  // Cancela a venda
+  const handleCancelarVenda = () => {
+    Alert.alert(
+      'Cancelar Venda',
+      'Tem certeza que deseja cancelar esta venda?',
+      [
+        { text: 'Não', style: 'cancel' },
+        { 
+          text: 'Sim', 
+          onPress: () => {
+            setCarrinho({});
+            navigation.goBack();
+          }
+        }
+      ]
+    );
   };
 
   // Alterna seleção do produto
@@ -114,13 +145,14 @@ const Autoatendimento = ({ route, navigation }) => {
     <LinearGradient colors={['#FFFFFF', '#F5F5F5', '#E0E0E0']} style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Image source={require('../../assets/images/logopaz.png')} style={styles.logo} />
-          <TouchableOpacity onPress={() => navigation.navigate('FinalizarVenda')}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Feather name="arrow-left" size={24} color="black" />
+          </TouchableOpacity>
+          <Text style={styles.title}>Venda</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('ProfileScreen')}>
             <Feather name="user" size={24} color="black" />
           </TouchableOpacity>
         </View>
-
-        <Text style={styles.title}>Autoatendimento</Text>
 
         <View style={styles.searchContainer}>
           <Feather name="search" size={18} color="#999" />
@@ -144,29 +176,38 @@ const Autoatendimento = ({ route, navigation }) => {
           contentContainerStyle={styles.produtoGrid}
         />
 
-        <TouchableOpacity 
-          style={styles.adicionarButton}
-          onPress={() => {
-            // Adiciona apenas os produtos selecionados ao carrinho
-            const newCart = {...carrinho};
-            products
-              .filter(product => selectedItems.includes(product.id))
-              .forEach(product => {
-                newCart[product.name] = (newCart[product.name] || 0) + 1;
-              });
-            setCarrinho(newCart);
-            setCarrinhoVisivel(true);
-          }}
-          disabled={selectedItems.length === 0}
-        >
-          <Text style={styles.adicionarButtonText}>Adicionar ao Carrinho</Text>
-        </TouchableOpacity>
+        <View style={styles.botoesAcaoContainer}>
+          <TouchableOpacity 
+            style={[styles.botaoAcao, styles.botaoCancelar]}
+            onPress={handleCancelarVenda}
+          >
+            <Text style={styles.textoBotaoAcao}>Cancelar Venda</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.botaoAcao, styles.botaoAdicionar]}
+            onPress={() => {
+              // Adiciona apenas os produtos selecionados ao carrinho
+              const newCart = {...carrinho};
+              products
+                .filter(product => selectedItems.includes(product.id))
+                .forEach(product => {
+                  newCart[product.name] = (newCart[product.name] || 0) + 1;
+                });
+              setCarrinho(newCart);
+              setCarrinhoVisivel(true);
+            }}
+            disabled={selectedItems.length === 0}
+          >
+            <Text style={styles.textoBotaoAcao}>Adicionar ao Carrinho</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
       {/* Carrinho flutuante */}
       {carrinhoVisivel && !carrinhoMinimizado && (
         <View style={styles.carrinhoFlutuante}>
-            <Text style={styles.carrinhoTitulo}>Carrinho</Text>
+          <Text style={styles.carrinhoTitulo}>Carrinho</Text>
           
           {Object.entries(carrinho).map(([nome, quantidade]) => {
             const product = selectedProducts.find(p => p.name === nome);
@@ -249,7 +290,7 @@ const Autoatendimento = ({ route, navigation }) => {
             onPress={handleFinalizarCompra}
             disabled={Object.keys(carrinho).length === 0}
           >
-            <Text style={styles.finalizarButtonText}>Finalizar Compra</Text>
+            <Text style={styles.finalizarButtonText}>Finalizar Venda</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -293,15 +334,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  logo: { 
-    width: 50, 
-    height: 50, 
-    resizeMode: 'contain' 
-  },
   title: { 
     fontSize: 24, 
     fontWeight: 'bold', 
-    marginBottom: 20,
+    color: '#333',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
     color: '#333',
   },
   searchContainer: {
@@ -343,10 +384,21 @@ produtoCard: {
   borderColor: '#ccc',
   position: 'relative',
 },
-  produtoImagemTexto: { 
-    marginBottom: 10, 
-    color: '#888',
-    fontSize: 14,
+  selectedProduct: {
+    borderColor: '#4CAF50',
+    borderWidth: 2,
+  },
+  productImage: {
+    width: 60,
+    height: 60,
+    alignSelf: 'center',
+    marginBottom: 10,
+  },
+  noImageText: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 10,
   },
   produtoNome: {
     fontWeight: 'bold',
@@ -355,11 +407,21 @@ produtoCard: {
     fontSize: 16,
     color: '#333',
   },
+  produtoCategoria: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+  },
   precoTexto: { 
     marginBottom: 10,
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
+  },
+  checkIcon: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
   },
   carrinhoFlutuante: {
     position: 'absolute',
@@ -511,97 +573,31 @@ produtoCard: {
     fontSize: 12,
     fontWeight: 'bold',
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    padding: 25,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  modalTitulo: { 
-    fontSize: 20, 
-    fontWeight: 'bold', 
-    marginBottom: 20,
-    color: '#333',
-  },
-  modalLabel: { 
-    marginTop: 10, 
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#555',
-  },
-  categoriaItem: {
+  botoesAcaoContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  categoriaTexto: {
-    marginLeft: 10,
-    fontSize: 16,
-    color: '#333',
-  },
-  switchRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginTop: 15,
-    paddingVertical: 8,
-  },
-  switchLabel: {
-    fontSize: 16,
-    color: '#333',
-  },
-  botaoFechar: {
-    backgroundColor: '#333',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
     marginTop: 20,
+    marginBottom: 30,
   },
-  botaoFecharTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-    adicionarButton: {
-    backgroundColor: '#28a745',
+  botaoAcao: {
+    width: '48%',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20,
+    justifyContent: 'center',
   },
-  adicionarButtonText: {
+  botaoCancelar: {
+    backgroundColor: '#dc3545',
+  },
+  botaoAdicionar: {
+    backgroundColor: '#28a745',
+  },
+  textoBotaoAcao: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
   },
-  productImage: {
-  width: 60,
-  height: 60,
-  alignSelf: 'center',
-  marginBottom: 10,
-},
-noImageText: {
-  fontSize: 12,
-  color: '#999',
-  textAlign: 'center',
-  marginBottom: 10,
-},
-selectedProduct: {
-  borderColor: '#4CAF50',
-  borderWidth: 2,
-},
-checkIcon: {
-  position: 'absolute',
-  top: 5,
-  right: 5,
-},
 });
 
-export default Autoatendimento
+export default VendedorScreen;

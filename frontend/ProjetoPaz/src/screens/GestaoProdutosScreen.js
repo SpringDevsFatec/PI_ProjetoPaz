@@ -54,6 +54,13 @@ const GestaoProdutosScreen = ({ navigation }) => {
     navigation.navigate('Pedido');
   };
 
+const handleEditProdutoPress = (produto) => {
+  navigation.navigate('EditarProduto', { 
+    produtoId: produto.id,  // Certifique-se que está passando o ID correto
+    produto: produto       // Passa o objeto completo se necessário
+  });
+};
+
   // Funções para navegação do carrossel de produtos
   const nextProduto = () => {
     if (produtos.length > 0) {
@@ -107,19 +114,22 @@ const GestaoProdutosScreen = ({ navigation }) => {
     );
   };
 
-  const renderProdutoInfo = (item) => {
-    if (!item) return null;
-    
-    return (
-      <View style={styles.produtoContainer}>
-        <View style={styles.imagemWrapper}>
-          {renderImagem(item)}
-        </View>
-        <Text style={styles.produtoNome} numberOfLines={2}>{item.name}</Text>
-        <Text style={styles.produtoPreco}>R$ {item.sale_price}</Text>
-      </View>
-    );
-  };
+      const renderProdutoInfo = (item) => {
+        if (!item) return null;
+        
+        return (
+          <View style={styles.produtoContainer}>
+            <TouchableOpacity 
+              onPress={() => handleEditProdutoPress(item)}
+              style={styles.imagemWrapper}
+            >
+              {renderImagem(item)}
+            </TouchableOpacity>
+            <Text style={styles.produtoNome} numberOfLines={2}>{item.name}</Text>
+            <Text style={styles.produtoPreco}>R$ {item.sale_price}</Text>
+          </View>
+        );
+      };
 
   if (loading) {
     return (
@@ -349,7 +359,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 150,
+    minHeight: 200, // Mudei de height para minHeight
     backgroundColor: 'rgba(255,255,255,0.8)',
   },
   uploadCard: {
@@ -360,18 +370,20 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    maxHeight: 140, // Adicionei limite máximo
   },
   // Novo estilo para wrapper da imagem com ajuste automático e responsivo
   imagemWrapper: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
     borderRadius: 8,
-    overflow: 'hidden',
+    overflow: 'hidden', // Isso é essencial para cortar o que ultrapassar
     backgroundColor: '#f0f0f0',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#e0e0e0',
+    marginBottom: 8, // Espaço para o texto
   },
   produtoImagem: {
     width: '100%',

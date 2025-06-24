@@ -11,6 +11,9 @@ import CadastroProdutoTela from '../screens/CadastroProdutoTela';
 import EditarProdutoTela from '../screens/EditarProdutoTela';
 import Autoatendimento from '../screens/Autoatendimento';
 import VerPedidos from '../screens/VerPedidos';
+import VendedorScreen from '../screens/VendedorScreen';
+import FinalizarVendaScreen from '../screens/FinalizarVenda';
+import Vendas from '../screens/Vendas';
 
 const Stack = createStackNavigator();
 
@@ -50,7 +53,7 @@ export default function AppNavigator() {
         name="GestaoProdutos" 
         component={GestaoProdutosScreen}
         options={{ 
-          title: 'Gestão de Produtos',
+          title: 'Gestão do Sistema',
           headerStyle: { backgroundColor: '#333' },
           headerTintColor: '#fff',
         }}
@@ -114,6 +117,34 @@ export default function AppNavigator() {
         component={VerPedidos}
         options={{ 
           title: 'Ver Pedidos',
+          headerStyle: { backgroundColor: '#333' },
+          headerTintColor: '#fff',
+        }}
+      />
+
+      <Stack.Screen 
+        name="Vendedor" 
+        component={VendedorScreen}
+        options={{ 
+          title: 'Vender Produtos',
+          headerStyle: { backgroundColor: '#333' },
+          headerTintColor: '#fff',
+        }}
+      />
+      <Stack.Screen 
+        name="FinalizarVenda" 
+        component={FinalizarVendaScreen}
+        options={{ 
+          title: 'Finalizar Venda',
+          headerStyle: { backgroundColor: '#333' },
+          headerTintColor: '#fff',
+        }}
+      />
+      <Stack.Screen 
+        name="Vendas" 
+        component={Vendas}
+        options={{ 
+          title: 'Visualziar Pedido da Venda',
           headerStyle: { backgroundColor: '#333' },
           headerTintColor: '#fff',
         }}
