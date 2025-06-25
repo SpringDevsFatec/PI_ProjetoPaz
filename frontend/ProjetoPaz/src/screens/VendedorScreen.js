@@ -100,6 +100,14 @@ const VendedorScreen = ({ route, navigation }) => {
     ], { cancelable: true });
   };
 
+  const calcularTotal = () => {
+    return Object.entries(carrinho).reduce((total, [item, quantidade]) => {
+      const product = products.find(p => p.name === item);
+      const precoItem = product?.preco || 0;
+      return total + precoItem * quantidade;
+    }, 0).toFixed(2);
+  };
+
   const handleCancelarVenda = async () => {
     try {
       setLoading(true);
