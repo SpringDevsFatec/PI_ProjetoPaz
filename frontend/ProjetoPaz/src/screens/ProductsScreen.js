@@ -11,6 +11,8 @@ const ProductsScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [selectedProducts, setSelectedProducts] = useState([]);
+  const [isSaleActive, setIsSaleActive] = useState(false);
+  const [currentSaleId, setCurrentSaleId] = useState(null);
   const [filterVisible, setFilterVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
@@ -30,7 +32,6 @@ const ProductsScreen = ({ navigation }) => {
         const productsResponse = await api.get('/products/active');
         const produtos = extractProdutos(productsResponse);
         setProducts(produtos);
-
         const uniqueCategories = [...new Set(produtos.map(p => p.category))];
         setCategories(uniqueCategories);
       } catch (error) {
@@ -40,7 +41,6 @@ const ProductsScreen = ({ navigation }) => {
         setLoading(false);
       }
     };
-
     fetchInitialData();
   }, []);
 
@@ -49,16 +49,10 @@ const ProductsScreen = ({ navigation }) => {
       try {
         setLoading(true);
         let endpoint = '/products/active';
-
-        if (onlyFavorites) {
-          endpoint = '/products/favorites';
-        } else if (selectedCategory) {
-          endpoint = `/products/category/${selectedCategory}`;
-        }
-
+        if (onlyFavorites) endpoint = '/products/favorites';
+        else if (selectedCategory) endpoint = `/products/category/${selectedCategory}`;
         const response = await api.get(endpoint);
-        const produtosFiltrados = extractProdutos(response);
-        setProducts(produtosFiltrados);
+        setProducts(extractProdutos(response));
       } catch (error) {
         Alert.alert('Erro', 'Falha ao aplicar filtros');
         console.error(error);
@@ -66,7 +60,6 @@ const ProductsScreen = ({ navigation }) => {
         setLoading(false);
       }
     };
-
     fetchFilteredProducts();
   }, [selectedCategory, onlyFavorites]);
 
@@ -75,13 +68,11 @@ const ProductsScreen = ({ navigation }) => {
       const timer = setTimeout(async () => {
         try {
           const response = await api.get(`/products/search?q=${searchText}`);
-          const produtosBuscados = extractProdutos(response);
-          setProducts(produtosBuscados);
+          setProducts(extractProdutos(response));
         } catch (error) {
           console.error('Busca falhou:', error);
         }
       }, 500);
-
       return () => clearTimeout(timer);
     }
   }, [searchText]);
@@ -95,31 +86,45 @@ const ProductsScreen = ({ navigation }) => {
 
   const handleProductSelect = (product) => {
     setSelectedProducts(prev => {
-      const existingIndex = prev.findIndex(p => p.id === product.id);
-      if (existingIndex >= 0) {
-        return prev.filter(p => p.id !== product.id);
-      } else {
-        return [...prev, product];
-      }
+      const exists = prev.find(p => p.id === product.id);
+      return exists ? prev.filter(p => p.id !== product.id) : [...prev, product];
     });
   };
 
-  const handleStartSale = (isSelfService = false) => {
-    if (selectedProducts.length === 0) {
-      Alert.alert('Atenção', 'Selecione pelo menos um produto para iniciar a venda');
-      return;
+  const handleStartSale = async (isSelfService = false) => {
+    try {
+      if (!selectedProducts.length) {
+        Alert.alert('Atenção', 'Selecione pelo menos um produto para iniciar a venda');
+        return;
+      }
+      setLoading(true);
+      const response = await api.post('/sales', { method: "manual" });
+      const newSale = response.data;
+      if (newSale?.content?.id) {
+        const saleId = newSale.content.id;
+        setCurrentSaleId(saleId);
+        setIsSaleActive(true);
+        navigation.navigate(isSelfService ? 'AutoAtendimento' : 'Vendedor', {
+          selectedProducts: selectedProducts.map(product => ({
+            id: product.id,
+            name: product.name,
+            preco: parseFloat(product.sale_price),
+            categoria: product.category,
+            img_product: product.img_product
+          })),
+          saleId
+        });
+        Alert.alert('Venda Iniciada', `Venda #${saleId} iniciada.`);
+      } else {
+        Alert.alert('Erro', 'Não foi possível obter o ID da venda.');
+        console.error('ID da venda não encontrado:', newSale);
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível iniciar a venda.');
+      console.error('Erro ao iniciar venda:', error);
+    } finally {
+      setLoading(false);
     }
-
-    // Navega para a tela apropriada com os produtos selecionados
-    navigation.navigate(isSelfService ? 'AutoAtendimento' : 'Vendedor', {
-      selectedProducts: selectedProducts.map(product => ({
-        id: product.id,
-        name: product.name,
-        preco: parseFloat(product.sale_price),
-        categoria: product.category,
-        img_product: product.img_product
-      }))
-    });
   };
 
   const handleEditProduct = (productId) => {
@@ -134,55 +139,45 @@ const ProductsScreen = ({ navigation }) => {
   };
 
   const calculateTotal = () => {
-    return selectedProducts.reduce((total, product) => {
-      return total + parseFloat(product.sale_price);
-    }, 0).toFixed(2);
+    return selectedProducts.reduce((total, product) => total + parseFloat(product.sale_price), 0).toFixed(2);
   };
 
-  const renderProductItem = ({ item }) => (
-    <TouchableOpacity
-      style={[
-        styles.productItem,
-        selectedProducts.some(p => p.id === item.id) && styles.selectedProduct
-      ]}
-      onPress={() => handleProductSelect(item)}
-    >
-      {item.is_favorite === '1' && (
-        <Ionicons name="heart" size={16} color="#FF6B6B" style={styles.favoriteIcon} />
-      )}
-
-      {item.img_product ? (
-        <Image
-          source={{ uri: item.img_product }}
-          style={styles.productImage}
-          resizeMode="contain"
+  const renderProductItem = ({ item }) => {
+    const isSelected = selectedProducts.some(p => p.id === item.id);
+    return (
+      <TouchableOpacity
+        style={[styles.productItem, isSelected && styles.selectedProduct]}
+        onPress={() => handleProductSelect(item)}
+      >
+        {item.is_favorite === '1' && (
+          <Ionicons name="heart" size={16} color="#FF6B6B" style={styles.favoriteIcon} />
+        )}
+        {item.img_product ? (
+          <Image source={{ uri: item.img_product }} style={styles.productImage} resizeMode="contain" />
+        ) : (
+          <Text style={styles.noImageText}>Sem imagem</Text>
+        )}
+        <Text style={styles.productName}>{item.name}</Text>
+        <Text style={styles.productPrice}>R$ {parseFloat(item.sale_price).toFixed(2)}</Text>
+        <Text style={styles.productCategory}>{item.category}</Text>
+        <MaterialIcons
+          name="edit"
+          size={18}
+          color="#555"
+          style={styles.editIcon}
+          onPress={(e) => {
+            e.stopPropagation();
+            handleEditProduct(item.id);
+          }}
         />
-      ) : (
-        <Text style={styles.noImageText}>Sem imagem</Text>
-      )}
+        {isSelected && (
+          <Ionicons name="checkmark-circle" size={24} color="#4CAF50" style={styles.checkIcon} />
+        )}
+      </TouchableOpacity>
+    );
+  };
 
-      <Text style={styles.productName}>{item.name}</Text>
-      <Text style={styles.productPrice}>R$ {parseFloat(item.sale_price).toFixed(2)}</Text>
-      <Text style={styles.productCategory}>{item.category}</Text>
-
-      <MaterialIcons
-        name="edit"
-        size={18}
-        color="#555"
-        style={styles.editIcon}
-        onPress={(e) => {
-          e.stopPropagation();
-          handleEditProduct(item.id);
-        }}
-      />
-
-      {selectedProducts.some(p => p.id === item.id) && (
-        <Ionicons name="checkmark-circle" size={24} color="#4CAF50" style={styles.checkIcon} />
-      )}
-    </TouchableOpacity>
-  );
-
-  if (loading && products.length === 0) {
+  if (loading && !products.length) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#333" />
@@ -195,7 +190,6 @@ const ProductsScreen = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>Produtos</Text>
         <Text style={styles.subtitle}>Seus Produtos</Text>
-        
         <View style={styles.searchContainer}>
           <TextInput
             placeholder="Buscar produtos..."
@@ -203,10 +197,7 @@ const ProductsScreen = ({ navigation }) => {
             value={searchText}
             onChangeText={setSearchText}
           />
-          <TouchableOpacity 
-            style={styles.filterButton}
-            onPress={() => setFilterVisible(true)}
-          >
+          <TouchableOpacity style={styles.filterButton} onPress={() => setFilterVisible(true)}>
             <Feather name="filter" size={20} color="#333" />
           </TouchableOpacity>
         </View>
@@ -227,7 +218,7 @@ const ProductsScreen = ({ navigation }) => {
         <TouchableOpacity
           style={styles.saleButton}
           onPress={() => handleStartSale(false)}
-          disabled={selectedProducts.length === 0 || loading}
+          disabled={!selectedProducts.length || loading}
         >
           <Text style={styles.saleButtonText}>Iniciar Venda</Text>
         </TouchableOpacity>
@@ -235,7 +226,7 @@ const ProductsScreen = ({ navigation }) => {
         <TouchableOpacity
           style={styles.selfServiceButton}
           onPress={() => handleStartSale(true)}
-          disabled={selectedProducts.length === 0 || loading}
+          disabled={!selectedProducts.length || loading}
         >
           <Text style={styles.selfServiceButtonText}>Iniciar Autoatendimento</Text>
         </TouchableOpacity>
@@ -248,7 +239,6 @@ const ProductsScreen = ({ navigation }) => {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Modal de Filtros */}
       <Modal
         visible={filterVisible}
         animationType="slide"
@@ -259,10 +249,7 @@ const ProductsScreen = ({ navigation }) => {
           <View style={styles.modalContent}>
             <Text style={styles.filterTitle}>Filtros</Text>
 
-            <TouchableOpacity
-              style={styles.clearFiltersButton}
-              onPress={resetFilters}
-            >
+            <TouchableOpacity style={styles.clearFiltersButton} onPress={resetFilters}>
               <Text style={styles.clearFiltersText}>Limpar Filtros</Text>
             </TouchableOpacity>
 
@@ -276,38 +263,25 @@ const ProductsScreen = ({ navigation }) => {
                 <Text style={[
                   styles.filterItemText,
                   selectedCategory === category && styles.selectedFilterItemText
-                ]}>
-                  {category}
-                </Text>
+                ]}>{category}</Text>
               </TouchableOpacity>
             ))}
 
             <View style={styles.checkboxContainer}>
               <TouchableOpacity onPress={() => setOnlyFavorites(!onlyFavorites)}>
-                <Feather
-                  name={onlyFavorites ? 'check-square' : 'square'}
-                  size={24}
-                  color="#333"
-                />
+                <Feather name={onlyFavorites ? 'check-square' : 'square'} size={24} color="#333" />
               </TouchableOpacity>
               <Text style={styles.checkboxLabel}>Apenas favoritos</Text>
             </View>
 
             <View style={styles.checkboxContainer}>
               <TouchableOpacity onPress={() => setSortByPrice(!sortByPrice)}>
-                <Feather
-                  name={sortByPrice ? 'check-square' : 'square'}
-                  size={24}
-                  color="#333"
-                />
+                <Feather name={sortByPrice ? 'check-square' : 'square'} size={24} color="#333" />
               </TouchableOpacity>
               <Text style={styles.checkboxLabel}>Ordenar por preço</Text>
             </View>
 
-            <TouchableOpacity
-              style={styles.applyButton}
-              onPress={() => setFilterVisible(false)}
-            >
+            <TouchableOpacity style={styles.applyButton} onPress={() => setFilterVisible(false)}>
               <Text style={styles.applyButtonText}>Aplicar Filtros</Text>
             </TouchableOpacity>
           </View>

@@ -367,6 +367,9 @@ export default function VendasScreen({ navigation }) {
                   <Text style={styles.cardData}>
                     Data: {formatarData(venda.created_at)}
                   </Text>
+                  <Text style={styles.cardData}>
+                    Metodo: {(venda.method)}
+                  </Text>
                   <Text style={styles.cardTotal}>
                     Total: {formatarValor(venda.total_amount_sale)}
                   </Text>

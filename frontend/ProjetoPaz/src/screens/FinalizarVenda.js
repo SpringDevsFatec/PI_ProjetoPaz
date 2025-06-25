@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -9,25 +9,51 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import api from '../services/api';
 
-const FinalizarVendaScreen = () => {
+const FinalizarVendaScreen = ({ route }) => {
   const navigation = useNavigation();
+  const { saleId } = route.params || {};
 
-  const handleCancelarVenda = () => {
-    // Lógica para cancelar venda
-    navigation.goBack();
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleCancelarVenda = async () => {
+    try {
+      setLoading(true);
+      const response = await api.put(`/sales/cancelled/${saleId}`);
+      if (response.data.status && response.data.content) {
+        navigation.goBack();
+      } else {
+        setError(response.data.message || 'Não foi possível cancelar a venda');
+      }
+    } catch (err) {
+      console.error('Erro ao cancelar venda:', err);
+      setError(err.message || 'Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleFinalizarVenda = () => {
-    // Lógica para finalizar venda
-    navigation.navigate('Vendas');
+  const handleFinalizarVenda = async () => {
+    try {
+      setLoading(true);
+      const response = await api.put(`/sales/completed/${saleId}`);
+      if (response.data.status && response.data.content) {
+        navigation.navigate('Vendas');
+      } else {
+        setError(response.data.message || 'Não foi possível concluir a venda');
+      }
+    } catch (err) {
+      console.error('Erro ao concluir venda:', err);
+      setError(err.message || 'Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <LinearGradient
-      colors={['#FFFFFF', '#F5F5F5', '#E0E0E0']}
-      style={styles.container}
-    >
+    <LinearGradient colors={['#FFFFFF', '#F5F5F5', '#E0E0E0']} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Finalizar Venda</Text>
@@ -38,22 +64,14 @@ const FinalizarVendaScreen = () => {
         </View>
 
         <View style={styles.infoContainer}>
-          <Text style={styles.description}>
-            Escolha uma opção para prosseguir com a venda
-          </Text>
+          <Text style={styles.description}>Escolha uma opção para prosseguir com a venda</Text>
         </View>
 
-        <TouchableOpacity
-          onPress={handleFinalizarVenda}
-          style={[styles.button, styles.finalizarButton]}
-        >
+        <TouchableOpacity onPress={handleFinalizarVenda} style={[styles.button, styles.finalizarButton]}>
           <Text style={styles.buttonText}>Finalizar Venda</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={handleCancelarVenda}
-          style={[styles.button, styles.cancelarButton]}
-        >
+        <TouchableOpacity onPress={handleCancelarVenda} style={[styles.button, styles.cancelarButton]}>
           <Text style={styles.buttonText}>Cancelar Venda</Text>
         </TouchableOpacity>
 
