@@ -290,7 +290,7 @@ const VendedorScreen = ({ route, navigation }) => {
             onPress={handleFinalizarCompra}
             disabled={Object.keys(carrinho).length === 0}
           >
-            <Text style={styles.finalizarButtonText}>Finalizar Venda</Text>
+            <Text style={styles.finalizarButtonText}>Finalizar Pedido</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 

@@ -249,7 +249,7 @@ const Autoatendimento = ({ route, navigation }) => {
             onPress={handleFinalizarCompra}
             disabled={Object.keys(carrinho).length === 0}
           >
-            <Text style={styles.finalizarButtonText}>Finalizar Compra</Text>
+            <Text style={styles.finalizarButtonText}>Finalizar Pedido</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
