@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../services/api';
+import { useRoute } from '@react-navigation/native';
 
 export default function VerPedidos({ navigation }) {
   const [pedidos, setPedidos] = useState([]);
@@ -23,9 +24,35 @@ export default function VerPedidos({ navigation }) {
   const [loadingDetalhes, setLoadingDetalhes] = useState(false);
   const [error, setError] = useState(null);
 
+  const route = useRoute();
+  const { saleId } = route.params || {};
+
   useEffect(() => {
-    fetchPedidos();
-  }, []);
+    if (saleId) {
+      fetchPedidosPorVenda(saleId);
+    } else {
+      fetchPedidos(); // Se não veio saleId, carrega todos
+    }
+  }, [saleId]);
+
+  const fetchPedidosPorVenda = async (saleId) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get(`/orders/sale-id/${saleId}`);
+      
+      if (response.data.status && response.data.content) {
+        setPedidos(response.data.content);
+      } else {
+        setError(response.data.message || 'Não foi possível carregar os pedidos da venda');
+      }
+    } catch (err) {
+      console.error('Erro ao buscar pedidos da venda:', err);
+      setError(err.message || 'Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Função para buscar pedidos da API
   const fetchPedidos = async () => {
