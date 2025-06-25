@@ -100,6 +100,36 @@ const VendedorScreen = ({ route, navigation }) => {
     ], { cancelable: true });
   };
 
+  const handleCancelarVenda = async () => {
+    try {
+      setLoading(true);
+      const response = await api.put(`/sales/cancelled/${saleId}`);
+      if (response.data.status && response.data.content) {
+        Alert.alert(
+          'Cancelar Venda',
+          'Tem certeza que deseja cancelar esta venda?',
+          [
+            { text: 'Não', style: 'cancel' },
+            { 
+              text: 'Sim', 
+              onPress: () => {
+                setCarrinho({});
+                navigation.goBack();
+              }
+            }
+          ]
+        );
+      } else {
+        setError(response.data.message || 'Não foi possível cancelar a venda');
+      }
+    } catch (err) {
+      console.error('Erro ao cancelar venda:', err);
+      setError(err.message || 'Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFinalizarVenda = async () => {
     try {
       setLoading(true);
