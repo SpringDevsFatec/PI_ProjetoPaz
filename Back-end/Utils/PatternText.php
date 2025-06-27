@@ -95,7 +95,7 @@ class PatternText {
         throw new DomainException("Campo obrigatório faltando: payment_method");
     }
 
-    if (!in_array($data['payment_method'], ['credito', 'debito', 'dinheiro', 'pix'])) {
+    if (!in_array($data['payment_method'], ['credito', 'debito', 'Dinheiro', 'Pix'])) {
         throw new DomainException("Método de pagamento inválido.");
     }
 

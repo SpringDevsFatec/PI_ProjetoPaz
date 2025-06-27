@@ -39,7 +39,7 @@ export default function VendasScreen({ navigation }) {
       setLoading(true);
       setError(null);
       let url = '/sales';
-      
+
       // Aplicar filtros se existirem
       if (filtroStatus) {
         url = `/sales/status/${filtroStatus}`;
@@ -50,7 +50,7 @@ export default function VendasScreen({ navigation }) {
       }
 
       const response = await api.get(url);
-      
+
       if (response.data.status && response.data.content) {
         setVendas(response.data.content);
       } else {
@@ -68,8 +68,8 @@ export default function VendasScreen({ navigation }) {
   const fetchDetalhesVenda = async (vendaId) => {
     try {
       setLoadingDetalhes(true);
-      const response = await api.get(`/sales/${vendaId}`);
-      
+      const response = await api.get(`/orders/sale-id/${vendaId}`);
+
       if (response.data.status && response.data.content) {
         setVendaDetalhes(response.data.content);
       } else {
@@ -171,6 +171,7 @@ export default function VendasScreen({ navigation }) {
     setFiltroDataInicio(null);
     setFiltroDataFim(null);
     setMostrarFiltros(false);
+    fetchVendas();
   };
 
   const aplicarFiltroData = () => {
@@ -214,10 +215,10 @@ export default function VendasScreen({ navigation }) {
             <Ionicons name="filter-outline" size={24} color="black" style={{ marginRight: 15 }} />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleProfilePress}>
-            <Ionicons 
-              name="person-outline" 
-              size={28} 
-              color="#333" 
+            <Ionicons
+              name="person-outline"
+              size={28}
+              color="#333"
               style={styles.profileIcon}
             />
           </TouchableOpacity>
@@ -228,23 +229,23 @@ export default function VendasScreen({ navigation }) {
       {mostrarFiltros && (
         <View style={styles.filtrosContainer}>
           <Text style={styles.filtrosTitulo}>Filtrar por:</Text>
-          
+
           <View style={styles.filtrosStatusContainer}>
             <Text style={styles.filtrosSubtitulo}>Status:</Text>
             <View style={styles.filtrosStatusBotoes}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.filtroStatusBtn, filtroStatus === 'pending' && styles.filtroStatusBtnAtivo]}
                 onPress={() => aplicarFiltroStatus('pending')}
               >
                 <Text style={[styles.filtroStatusBtnTexto, filtroStatus === 'pending' && styles.filtroStatusBtnTextoAtivo]}>Pendentes</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.filtroStatusBtn, filtroStatus === 'completed' && styles.filtroStatusBtnAtivo]}
                 onPress={() => aplicarFiltroStatus('completed')}
               >
                 <Text style={[styles.filtroStatusBtnTexto, filtroStatus === 'completed' && styles.filtroStatusBtnTextoAtivo]}>Concluídas</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.filtroStatusBtn, filtroStatus === 'cancelled' && styles.filtroStatusBtnAtivo]}
                 onPress={() => aplicarFiltroStatus('cancelled')}
               >
@@ -252,11 +253,11 @@ export default function VendasScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-          
+
           <View style={styles.filtrosDataContainer}>
             <Text style={styles.filtrosSubtitulo}>Período:</Text>
             <View style={styles.filtrosDataInputs}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.filtroDataBtn}
                 onPress={() => setMostrarCalendarioInicio(true)}
               >
@@ -264,10 +265,10 @@ export default function VendasScreen({ navigation }) {
                   {filtroDataInicio ? formatarData(filtroDataInicio) : 'Data inicial'}
                 </Text>
               </TouchableOpacity>
-              
+
               <Text style={styles.filtrosDataSeparador}>à</Text>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.filtroDataBtn}
                 onPress={() => setMostrarCalendarioFim(true)}
               >
@@ -276,16 +277,16 @@ export default function VendasScreen({ navigation }) {
                 </Text>
               </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.aplicarFiltroDataBtn}
               onPress={aplicarFiltroData}
             >
               <Text style={styles.aplicarFiltroDataBtnTexto}>Aplicar</Text>
             </TouchableOpacity>
           </View>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.limparFiltrosBtn}
             onPress={limparFiltros}
           >
@@ -324,7 +325,7 @@ export default function VendasScreen({ navigation }) {
       {(filtroStatus || (filtroDataInicio && filtroDataFim)) && (
         <View style={styles.filtroAtivoContainer}>
           <Text style={styles.filtroAtivoTexto}>
-            Filtro: {filtroStatus ? `Status - ${traduzirStatus(filtroStatus)}` : 
+            Filtro: {filtroStatus ? `Status - ${traduzirStatus(filtroStatus)}` :
               `Período - ${formatarData(filtroDataInicio)} a ${formatarData(filtroDataFim)}`}
           </Text>
           <TouchableOpacity onPress={limparFiltros} style={styles.limparFiltroBtn}>
@@ -347,9 +348,9 @@ export default function VendasScreen({ navigation }) {
           </View>
         ) : (
           vendas.map((venda) => (
-            <TouchableOpacity 
-              key={venda.id} 
-              style={styles.cardVenda} 
+            <TouchableOpacity
+              key={venda.id}
+              style={styles.cardVenda}
               onPress={() => handleVendaPress(venda)}
             >
               <View style={styles.cardContent}>
@@ -361,23 +362,20 @@ export default function VendasScreen({ navigation }) {
                     <Text style={styles.statusText}>{traduzirStatus(venda.status)}</Text>
                   </View>
                 </View>
-                
+
                 <View style={styles.cardInfo}>
                   <Text style={styles.cardData}>
                     Data: {formatarData(venda.created_at)}
                   </Text>
-                  <Text style={styles.cardPagamento}>
-                    Pagamento: {traduzirPagamento(venda.payment_method)}
+                  <Text style={styles.cardData}>
+                    Metodo: {(venda.method)}
                   </Text>
                   <Text style={styles.cardTotal}>
-                    Total: {formatarValor(venda.total_amount)}
-                  </Text>
-                  <Text style={styles.cardPedidos}>
-                    Pedidos: {venda.order_count || 'N/A'}
+                    Total: {formatarValor(venda.total_amount_sale)}
                   </Text>
                 </View>
               </View>
-              
+
               <Ionicons name="chevron-forward" size={24} color="#666" />
             </TouchableOpacity>
           ))
@@ -393,63 +391,23 @@ export default function VendasScreen({ navigation }) {
               <TouchableOpacity onPress={fecharDetalhes} style={styles.fecharBtn}>
                 <Ionicons name="close" size={28} color="#666" />
               </TouchableOpacity>
+
             </View>
-
-            {loadingDetalhes ? (
-              <View style={styles.modalLoading}>
-                <ActivityIndicator size="large" color="#4CAF50" />
-                <Text>Carregando detalhes...</Text>
-              </View>
-            ) : vendaDetalhes ? (
-              <ScrollView style={styles.modalScroll}>
-                <View style={styles.detalhesContainer}>
-                  <Text style={styles.detalhesTitulo}>Informações da Venda</Text>
-                  
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Código:</Text>
-                    <Text style={styles.infoValue}>{vendaDetalhes.code}</Text>
+            <ScrollView style={styles.modalScroll}>
+              <View style={styles.detalhesContainer}>
+                <Text style={styles.pedidosTitulo}>Pedidos Relacionados ({vendaDetalhes?.length})</Text>
+                {loadingDetalhes ? (
+                  <View style={styles.modalLoading}>
+                    <ActivityIndicator size="large" color="#4CAF50" />
+                    <Text>Carregando detalhes...</Text>
                   </View>
-                  
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Data:</Text>
-                    <Text style={styles.infoValue}>{formatarData(vendaDetalhes.created_at)}</Text>
-                  </View>
-                  
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Status:</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(vendaDetalhes.status) }]}>
-                      <Text style={styles.statusText}>{traduzirStatus(vendaDetalhes.status)}</Text>
-                    </View>
-                  </View>
-                  
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Pagamento:</Text>
-                    <Text style={styles.infoValue}>{traduzirPagamento(vendaDetalhes.payment_method)}</Text>
-                  </View>
-                  
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Total:</Text>
-                    <Text style={[styles.infoValue, styles.totalValue]}>
-                      {formatarValor(vendaDetalhes.total_amount)}
-                    </Text>
-                  </View>
-
-                  {/* Vendedor */}
-                  {vendaDetalhes.seller && (
-                    <View style={styles.infoRow}>
-                      <Text style={styles.infoLabel}>Vendedor:</Text>
-                      <Text style={styles.infoValue}>
-                        {vendaDetalhes.seller.name} (ID: {vendaDetalhes.seller.id})
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Lista de pedidos */}
-                  {vendaDetalhes.orders && vendaDetalhes.orders.content && (
+                ) : vendaDetalhes ? (
+                  vendaDetalhes.map((pedido) => (
                     <View style={styles.pedidosContainer}>
-                      <Text style={styles.pedidosTitulo}>Pedidos Relacionados ({vendaDetalhes.orders.content.length})</Text>
-                      
-                      {vendaDetalhes.orders.content.map((pedido) => (
+                      <TouchableOpacity
+                        key={pedido.id}
+                        onPress={() => navigation.navigate('VerPedidos', { saleId: pedido.sale_id })}
+                      >
                         <View key={pedido.id} style={styles.pedidoCard}>
                           <View style={styles.pedidoHeader}>
                             <Text style={styles.pedidoCodigo}>Pedido: {pedido.code}</Text>
@@ -457,29 +415,21 @@ export default function VendasScreen({ navigation }) {
                               <Text style={styles.statusText}>{traduzirStatus(pedido.status)}</Text>
                             </View>
                           </View>
-                          
+
                           <Text style={styles.pedidoData}>Data: {formatarData(pedido.created_at)}</Text>
                           <Text style={styles.pedidoTotal}>Total: {formatarValor(pedido.total_amount_order)}</Text>
-                          
-                          {/* Itens do pedido */}
-                          <Text style={styles.pedidoItensTitulo}>Itens:</Text>
-                          {pedido.items && pedido.items.content && pedido.items.content.map((item) => (
-                            <View key={item.id} style={styles.pedidoItem}>
-                              <Text style={styles.pedidoItemNome}>- {item.product_name} (x{item.quantity})</Text>
-                              <Text style={styles.pedidoItemPreco}>{formatarValor(item.unit_price)} cada</Text>
-                            </View>
-                          ))}
                         </View>
-                      ))}
+                      </TouchableOpacity>
                     </View>
-                  )}
-                </View>
-              </ScrollView>
-            ) : (
-              <View style={styles.modalError}>
-                <Text>Erro ao carregar detalhes da venda</Text>
+                  ))
+                ) : (
+                  <View style={styles.modalError}>
+                    <Text>Erro ao carregar pedidos</Text>
+                  </View>
+                )
+                }
               </View>
-            )}
+            </ScrollView>
           </View>
         </View>
       )}

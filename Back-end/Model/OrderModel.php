@@ -46,7 +46,7 @@ class OrderModel {
     }
 
     public function setPaymentMethod($payment_method) {
-        $allowedMethods = ['credito', 'debito', 'dinheiro', 'pix'];
+        $allowedMethods = ['credito', 'debito', 'Dinheiro', 'Pix'];
         if (in_array($payment_method, $allowedMethods)) {
             $this->payment_method = $payment_method;
         } else {

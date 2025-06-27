@@ -9,16 +9,17 @@ import {
   ScrollView,
   Modal,
   Alert,
-  FlatList
+  FlatList,
+  Platform
 } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
+import api from '../services/api';
 
 const VendedorScreen = ({ route, navigation }) => {
-  // Recebe os produtos selecionados da tela anterior
-  const { selectedProducts } = route.params || { selectedProducts: [] };
-  
-  // Estados
+  const { selectedProducts = [], saleId } = route.params || {};
+
   const [products, setProducts] = useState(selectedProducts);
   const [selectedItems, setSelectedItems] = useState([]);
   const [carrinho, setCarrinho] = useState({});
@@ -26,8 +27,79 @@ const VendedorScreen = ({ route, navigation }) => {
   const [carrinhoMinimizado, setCarrinhoMinimizado] = useState(false);
   const [formaPagamento, setFormaPagamento] = useState(null);
   const [termoPesquisa, setTermoPesquisa] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [currentSaleOrders, setCurrentSaleOrders] = useState([]);
+  const [imagem, setImagem] = useState(null);
+  const [imagemBase64, setImagemBase64] = useState('');
+  const [error, setError] = useState(null);
 
-  // Adiciona produto ao carrinho
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permissão necessária', 'Precisamos da permissão para acessar suas fotos!');
+        }
+      }
+    })();
+  }, []);
+
+  const pickImage = async () => {
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.5,
+        base64: true,
+      });
+
+      if (!result.canceled) {
+        setImagem(result.assets[0].uri);
+        setImagemBase64(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      }
+    } catch (error) {
+      console.error('Erro ao selecionar imagem:', error);
+      Alert.alert('Erro', 'Não foi possível selecionar a imagem');
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      let result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.5,
+        base64: true,
+      });
+
+      if (!result.canceled) {
+        setImagem(result.assets[0].uri);
+        setImagemBase64(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      }
+    } catch (error) {
+      console.error('Erro ao tirar foto:', error);
+      Alert.alert('Erro', 'Não foi possível tirar a foto');
+    }
+  };
+
+  const editarImagem = () => {
+    Alert.alert('Editar Imagem', 'Escolha uma opção:', [
+      { text: 'Tirar Foto', onPress: takePhoto },
+      { text: 'Escolher da Galeria', onPress: pickImage },
+      {
+        text: 'Remover Imagem',
+        onPress: () => {
+          setImagem(null);
+          setImagemBase64('');
+        },
+        style: 'destructive',
+      },
+      { text: 'Cancelar', style: 'cancel' },
+    ], { cancelable: true });
+  };
+
   const handleAdicionarItem = (nome) => {
     setCarrinho((prev) => ({
       ...prev,
@@ -37,7 +109,6 @@ const VendedorScreen = ({ route, navigation }) => {
     setCarrinhoMinimizado(false);
   };
 
-  // Remove produto do carrinho
   const handleRemoverItem = (nome) => {
     setCarrinho((prev) => {
       const novo = { ...prev };
@@ -47,7 +118,6 @@ const VendedorScreen = ({ route, navigation }) => {
     });
   };
 
-  // Calcula o total do carrinho
   const calcularTotal = () => {
     return Object.entries(carrinho).reduce((total, [item, quantidade]) => {
       const product = products.find(p => p.name === item);
@@ -56,44 +126,115 @@ const VendedorScreen = ({ route, navigation }) => {
     }, 0).toFixed(2);
   };
 
-  // Finaliza a compra
-  const handleFinalizarCompra = () => {
+  const handleFinalizarCompra = async () => {
     if (!formaPagamento) {
       Alert.alert('Atenção', 'Selecione uma forma de pagamento');
       return;
     }
-    Alert.alert(
-      'Venda Finalizada',
-      `Total: R$ ${calcularTotal()}\nForma de pagamento: ${formaPagamento}`,
-      [
-        { 
-          text: 'OK', 
-          onPress: () => {
-            setCarrinho({});
-            setCarrinhoVisivel(false);
-            navigation.goBack();
+
+    if (!Object.keys(carrinho).length) {
+      Alert.alert('Erro', 'O carrinho está vazio.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const orderItemsPayload = Object.entries(carrinho).map(([name, quantity]) => {
+        const product = products.find(p => p.name === name);
+        return {
+          product_id: product.id,
+          quantity,
+          unit_price: parseFloat(product.preco),
+        };
+      });
+
+      const orderPayload = {
+        payment_method: formaPagamento,
+        itens: orderItemsPayload,
+      };
+
+      const response = await api.post(`/orders/${saleId}`, orderPayload);
+      const newOrder = response.data;
+
+      setCurrentSaleOrders(prev => [...prev, newOrder]);
+      Alert.alert(
+        'Pedido Finalizado',
+        `Total: R$ ${calcularTotal()}\nForma de pagamento: ${formaPagamento}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setCarrinho({});
+              setCarrinhoVisivel(false);
+              //navigation.goBack();
+            }
           }
-        }
-      ]
-    );
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível finalizar o pedido. Tente novamente.');
+      console.error('Erro ao finalizar pedido:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Cancela a venda
-  const handleCancelarVenda = () => {
-    Alert.alert(
-      'Cancelar Venda',
-      'Tem certeza que deseja cancelar esta venda?',
-      [
-        { text: 'Não', style: 'cancel' },
-        { 
-          text: 'Sim', 
-          onPress: () => {
-            setCarrinho({});
-            navigation.goBack();
-          }
-        }
-      ]
-    );
+  const handleCancelarVenda = async () => {
+    try {
+      setLoading(true);
+      const response = await api.put(`/sales/cancelled/${saleId}`);
+      if (response.data.status && response.data.content) {
+        Alert.alert(
+          'Cancelar Venda',
+          'Tem certeza que deseja cancelar esta venda?',
+          [
+            { text: 'Não', style: 'cancel' },
+            { 
+              text: 'Sim', 
+              onPress: () => {
+                setCarrinho({});
+                navigation.goBack();
+              }
+            }
+          ]
+        );
+      } else {
+        setError(response.data.message || 'Não foi possível cancelar a venda');
+      }
+    } catch (err) {
+      console.error('Erro ao cancelar venda:', err);
+      setError(err.message || 'Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFinalizarVenda = async () => {
+    try {
+      setLoading(true);
+      const payload = { comprovante: imagemBase64 };
+      const response = await api.put(`/sales/completed/${saleId}`, payload);
+
+      if (response.data.status && response.data.content) {
+        Alert.alert('Concluir Venda', 'Tem certeza que deseja concluir esta venda?', [
+          { text: 'Não', style: 'cancel' },
+          {
+            text: 'Sim',
+            onPress: () => {
+              setCarrinho({});
+              navigation.navigate('Vendas');
+            },
+          },
+        ]);
+      } else {
+        setError(response.data.message || 'Não foi possível concluir a venda');
+      }
+    } catch (err) {
+      console.error('Erro ao concluir venda:', err);
+      setError(err.message || 'Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Alterna seleção do produto
@@ -176,7 +317,35 @@ const VendedorScreen = ({ route, navigation }) => {
           contentContainerStyle={styles.produtoGrid}
         />
 
+          {/* Imagem */}
+          <Text style={styles.label}>Imagem dos Comprovantes</Text>
+          <View style={styles.imageUploadContainer}>
+            {imagem ? (
+              <Image 
+                source={{ uri: imagem }} 
+                style={{ width: '100%', height: '100%', borderRadius: 8 }} 
+                resizeMode="cover"
+              />
+            ) : (
+              <>
+                <Ionicons name="cloud-upload-outline" size={40} color="#888" />
+                <Text style={styles.uploadText}>Clique para adicionar imagem</Text>
+              </>
+            )}
+            
+            {/* Ícone de editar */}
+            <TouchableOpacity style={styles.editIcon} onPress={editarImagem}>
+              <MaterialIcons name={imagem ? "edit" : "add-a-photo"} size={18} color="#555" />
+            </TouchableOpacity>
+          </View>
+
         <View style={styles.botoesAcaoContainer}>
+          <TouchableOpacity 
+            style={[styles.botaoAcao, styles.botaoCancelar]}
+            onPress={handleFinalizarVenda}
+          >
+            <Text style={styles.textoBotaoAcao}>Finalizar Venda</Text>
+          </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.botaoAcao, styles.botaoCancelar]}
             onPress={handleCancelarVenda}
@@ -522,6 +691,36 @@ produtoCard: {
   },
   paymentCheck: {
     marginLeft: 10,
+  },
+  imageUploadContainer: {
+  width: '100%',
+  height: 140,
+  borderWidth: 1,
+  borderColor: '#ddd',
+  borderRadius: 10,
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginBottom: 20,
+  position: 'relative',
+  backgroundColor: '#fafafa',
+  overflow: 'hidden',
+  },
+  uploadText: {
+    marginTop: 8,
+    color: '#888',
+    fontSize: 13,
+    fontStyle: 'italic',
+  },
+  editIcon: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: '#fff',
+    borderColor: '#ccc',
+    borderWidth: 1,
+    padding: 6,
+    borderRadius: 20,
+    elevation: 2,
   },
   finalizarButton: {
     backgroundColor: '#333',
