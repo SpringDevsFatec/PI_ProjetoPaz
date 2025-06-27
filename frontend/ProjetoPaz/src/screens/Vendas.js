@@ -51,6 +51,8 @@ export default function VendasScreen({ navigation }) {
 
       const response = await api.get(url);
 
+      console.log(response);
+
       if (response.data.status && response.data.content) {
         setVendas(response.data.content);
       } else {
@@ -69,6 +71,8 @@ export default function VendasScreen({ navigation }) {
     try {
       setLoadingDetalhes(true);
       const response = await api.get(`/orders/sale-id/${vendaId}`);
+
+      console.log(response.data);
 
       if (response.data.status && response.data.content) {
         setVendaDetalhes(response.data.content);
@@ -391,43 +395,86 @@ export default function VendasScreen({ navigation }) {
               <TouchableOpacity onPress={fecharDetalhes} style={styles.fecharBtn}>
                 <Ionicons name="close" size={28} color="#666" />
               </TouchableOpacity>
-
             </View>
+            
             <ScrollView style={styles.modalScroll}>
               <View style={styles.detalhesContainer}>
-                <Text style={styles.pedidosTitulo}>Pedidos Relacionados ({vendaDetalhes?.length})</Text>
-                {loadingDetalhes ? (
-                  <View style={styles.modalLoading}>
-                    <ActivityIndicator size="large" color="#4CAF50" />
-                    <Text>Carregando detalhes...</Text>
+                {/* Informações gerais da venda */}
+                <View style={styles.infoSection}>
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Código:</Text>
+                    <Text style={styles.infoValue}>{selectedVenda.code}</Text>
                   </View>
-                ) : vendaDetalhes ? (
-                  vendaDetalhes.map((pedido) => (
-                    <View style={styles.pedidosContainer}>
-                      <TouchableOpacity
-                        key={pedido.id}
-                        onPress={() => navigation.navigate('VerPedidos', { saleId: pedido.sale_id })}
-                      >
-                        <View key={pedido.id} style={styles.pedidoCard}>
-                          <View style={styles.pedidoHeader}>
-                            <Text style={styles.pedidoCodigo}>Pedido: {pedido.code}</Text>
-                            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(pedido.status) }]}>
-                              <Text style={styles.statusText}>{traduzirStatus(pedido.status)}</Text>
-                            </View>
-                          </View>
-
-                          <Text style={styles.pedidoData}>Data: {formatarData(pedido.created_at)}</Text>
-                          <Text style={styles.pedidoTotal}>Total: {formatarValor(pedido.total_amount_order)}</Text>
-                        </View>
-                      </TouchableOpacity>
+                  
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Data:</Text>
+                    <Text style={styles.infoValue}>{formatarData(selectedVenda.created_at)}</Text>
+                  </View>
+                  
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Status:</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(selectedVenda.status) }]}>
+                      <Text style={styles.statusText}>{traduzirStatus(selectedVenda.status)}</Text>
                     </View>
-                  ))
-                ) : (
-                  <View style={styles.modalError}>
-                    <Text>Erro ao carregar pedidos</Text>
                   </View>
-                )
-                }
+                  
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Metodo de Venda:</Text>
+                    <Text style={styles.infoValue}>{traduzirPagamento(selectedVenda.method)}</Text>
+                  </View>
+                  
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Valor Total:</Text>
+                    <Text style={[styles.infoValue, styles.totalValue]}>
+                      {formatarValor(selectedVenda.total_amount_sale)}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Vendedor:</Text>
+                    <Text style={styles.infoValue}>
+                      {selectedVenda.user?.name || 'Não informado'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Pedidos relacionados */}
+                <View style={styles.pedidosContainer}>
+                  <Text style={styles.pedidosTitulo}>Pedidos Relacionados ({vendaDetalhes?.length || 0})</Text>
+                  
+                  {loadingDetalhes ? (
+                    <View style={styles.modalLoading}>
+                      <ActivityIndicator size="large" color="#4CAF50" />
+                      <Text>Carregando pedidos...</Text>
+                    </View>
+                  ) : vendaDetalhes ? (
+                    vendaDetalhes.map((pedido) => (
+                      <View style={styles.pedidoCard} key={pedido.id}>
+                        <View style={styles.pedidoHeader}>
+                          <Text style={styles.pedidoCodigo}>Pedido: {pedido.code}</Text>
+                          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(pedido.status) }]}>
+                            <Text style={styles.statusText}>{traduzirStatus(pedido.status)}</Text>
+                          </View>
+                        </View>
+
+                        <Text style={styles.pedidoData}>Data: {formatarData(pedido.created_at)}</Text>
+                        <Text style={styles.pedidoTotal}>Total: {formatarValor(pedido.total_amount_order)}</Text>
+                        
+                        {/* Botão para ver detalhes do pedido */}
+                        <TouchableOpacity 
+                          style={styles.detalhesButton}
+                          onPress={() => navigation.navigate('VerPedidos', { saleId: pedido.sale_id })}
+                        >
+                          <Text style={styles.detalhesButtonText}>Ver Detalhes do Pedido</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))
+                  ) : (
+                    <View style={styles.modalError}>
+                      <Text>Nenhum pedido encontrado para esta venda</Text>
+                    </View>
+                  )}
+                </View>
               </View>
             </ScrollView>
           </View>
@@ -810,4 +857,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
   },
+  detalhesButton: {
+  backgroundColor: '#4CAF50',
+  padding: 10,
+  borderRadius: 5,
+  marginTop: 10,
+  alignItems: 'center'
+},
+detalhesButtonText: {
+  color: 'white',
+  fontWeight: 'bold'
+}
 });
