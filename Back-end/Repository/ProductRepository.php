@@ -115,7 +115,7 @@ class ProductRepository {
                     s.location
                 FROM {$this->table} p
                 JOIN projeto_paz.supplier s ON p.supplier_id = s.id
-                WHERE p.{$flagName} = :value
+                WHERE p.{$flagName} = :value AND p.status = 1
                 ORDER BY p.name";
 
         $stmt = $this->conn->prepare($query);
