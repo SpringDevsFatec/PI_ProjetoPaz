@@ -179,62 +179,65 @@ const VendedorScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleCancelarVenda = async () => {
-    try {
-      setLoading(true);
-      const response = await api.put(`/sales/cancelled/${saleId}`);
-      if (response.data.status && response.data.content) {
-        Alert.alert(
-          'Cancelar Venda',
-          'Tem certeza que deseja cancelar esta venda?',
-          [
-            { text: 'Não', style: 'cancel' },
-            { 
-              text: 'Sim', 
-              onPress: () => {
+  const handleCancelarVenda = () => {
+    Alert.alert(
+      'Cancelar Venda',
+      'Tem certeza que deseja cancelar esta venda?',
+      [
+        { text: 'Não', style: 'cancel' },
+        {
+          text: 'Sim',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const response = await api.put(`/sales/cancelled/${saleId}`);
+              if (response.data.status && response.data.content) {
                 setCarrinho({});
                 navigation.goBack();
+              } else {
+                setError(response.data.message || 'Não foi possível cancelar a venda');
               }
+            } catch (err) {
+              console.error('Erro ao cancelar venda:', err);
+              setError(err.message || 'Erro de conexão com o servidor');
+            } finally {
+              setLoading(false);
             }
-          ]
-        );
-      } else {
-        setError(response.data.message || 'Não foi possível cancelar a venda');
-      }
-    } catch (err) {
-      console.error('Erro ao cancelar venda:', err);
-      setError(err.message || 'Erro de conexão com o servidor');
-    } finally {
-      setLoading(false);
-    }
+          },
+        },
+      ]
+    );
   };
 
-  const handleFinalizarVenda = async () => {
-    try {
-      setLoading(true);
-      const payload = { comprovante: imagemBase64 };
-      const response = await api.put(`/sales/completed/${saleId}`, payload);
-
-      if (response.data.status && response.data.content) {
-        Alert.alert('Concluir Venda', 'Tem certeza que deseja concluir esta venda?', [
-          { text: 'Não', style: 'cancel' },
-          {
-            text: 'Sim',
-            onPress: () => {
-              setCarrinho({});
-              navigation.navigate('Vendas');
-            },
+  const handleFinalizarVenda = () => {
+    Alert.alert(
+      'Concluir Venda',
+      'Tem certeza que deseja concluir esta venda?',
+      [
+        { text: 'Não', style: 'cancel' },
+        {
+          text: 'Sim',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const payload = { image: imagemBase64 };
+              const response = await api.put(`/sales/completed/${saleId}`, payload);
+              if (response.data.status && response.data.content) {
+                setCarrinho({});
+                navigation.navigate('Vendas');
+              } else {
+                setError(response.data.message || 'Não foi possível concluir a venda');
+              }
+            } catch (err) {
+              console.error('Erro ao concluir venda:', err);
+              setError(err.message || 'Erro de conexão com o servidor');
+            } finally {
+              setLoading(false);
+            }
           },
-        ]);
-      } else {
-        setError(response.data.message || 'Não foi possível concluir a venda');
-      }
-    } catch (err) {
-      console.error('Erro ao concluir venda:', err);
-      setError(err.message || 'Erro de conexão com o servidor');
-    } finally {
-      setLoading(false);
-    }
+        },
+      ]
+    );
   };
 
   // Alterna seleção do produto
