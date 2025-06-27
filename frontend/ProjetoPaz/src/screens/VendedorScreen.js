@@ -100,12 +100,83 @@ const VendedorScreen = ({ route, navigation }) => {
     ], { cancelable: true });
   };
 
+  const handleAdicionarItem = (nome) => {
+    setCarrinho((prev) => ({
+      ...prev,
+      [nome]: (prev[nome] || 0) + 1,
+    }));
+    setCarrinhoVisivel(true);
+    setCarrinhoMinimizado(false);
+  };
+
+  const handleRemoverItem = (nome) => {
+    setCarrinho((prev) => {
+      const novo = { ...prev };
+      if (novo[nome] > 1) novo[nome]--;
+      else delete novo[nome];
+      return novo;
+    });
+  };
+
   const calcularTotal = () => {
     return Object.entries(carrinho).reduce((total, [item, quantidade]) => {
       const product = products.find(p => p.name === item);
       const precoItem = product?.preco || 0;
       return total + precoItem * quantidade;
     }, 0).toFixed(2);
+  };
+
+  const handleFinalizarCompra = async () => {
+    if (!formaPagamento) {
+      Alert.alert('Atenção', 'Selecione uma forma de pagamento');
+      return;
+    }
+
+    if (!Object.keys(carrinho).length) {
+      Alert.alert('Erro', 'O carrinho está vazio.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const orderItemsPayload = Object.entries(carrinho).map(([name, quantity]) => {
+        const product = products.find(p => p.name === name);
+        return {
+          product_id: product.id,
+          quantity,
+          unit_price: parseFloat(product.preco),
+        };
+      });
+
+      const orderPayload = {
+        payment_method: formaPagamento,
+        itens: orderItemsPayload,
+      };
+
+      const response = await api.post(`/orders/${saleId}`, orderPayload);
+      const newOrder = response.data;
+
+      setCurrentSaleOrders(prev => [...prev, newOrder]);
+      Alert.alert(
+        'Pedido Finalizado',
+        `Total: R$ ${calcularTotal()}\nForma de pagamento: ${formaPagamento}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setCarrinho({});
+              setCarrinhoVisivel(false);
+              //navigation.goBack();
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível finalizar o pedido. Tente novamente.');
+      console.error('Erro ao finalizar pedido:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancelarVenda = async () => {
