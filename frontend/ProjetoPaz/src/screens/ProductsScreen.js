@@ -114,7 +114,7 @@ const ProductsScreen = ({ navigation }) => {
           })),
           saleId
         });
-        Alert.alert('Venda Iniciada', `Venda #${saleId} iniciada.`);
+        Alert.alert('Venda Iniciada', `Venda #${newSale.content.code} iniciada.`);
       } else {
         Alert.alert('Erro', 'Não foi possível obter o ID da venda.');
         console.error('ID da venda não encontrado:', newSale);

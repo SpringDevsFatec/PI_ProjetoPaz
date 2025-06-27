@@ -158,7 +158,7 @@ const VendedorScreen = ({ route, navigation }) => {
 
       setCurrentSaleOrders(prev => [...prev, newOrder]);
       Alert.alert(
-        'Pedido Finalizado',
+        `Pedido #${newOrder.content.code} Finalizado`,
         `Total: R$ ${calcularTotal()}\nForma de pagamento: ${formaPagamento}`,
         [
           {
@@ -342,20 +342,7 @@ const VendedorScreen = ({ route, navigation }) => {
             </TouchableOpacity>
           </View>
 
-        <View style={styles.botoesAcaoContainer}>
-          <TouchableOpacity 
-            style={[styles.botaoAcao, styles.botaoCancelar]}
-            onPress={handleFinalizarVenda}
-          >
-            <Text style={styles.textoBotaoAcao}>Finalizar Venda</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.botaoAcao, styles.botaoCancelar]}
-            onPress={handleCancelarVenda}
-          >
-            <Text style={styles.textoBotaoAcao}>Cancelar Venda</Text>
-          </TouchableOpacity>
-          
+        <View style={styles.botaoAddCarrinhoContainer}>
           <TouchableOpacity 
             style={[styles.botaoAcao, styles.botaoAdicionar]}
             onPress={() => {
@@ -372,6 +359,20 @@ const VendedorScreen = ({ route, navigation }) => {
             disabled={selectedItems.length === 0}
           >
             <Text style={styles.textoBotaoAcao}>Adicionar ao Carrinho</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.botoesVendaContainer}>
+          <TouchableOpacity 
+            style={[styles.botaoAcao, styles.botaoFinalizar]}
+            onPress={handleFinalizarVenda}
+          >
+            <Text style={styles.textoBotaoAcao}>Finalizar Venda</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.botaoAcao, styles.botaoCancelar]}
+            onPress={handleCancelarVenda}
+          >
+            <Text style={styles.textoBotaoAcao}>Cancelar Venda</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -775,7 +776,15 @@ produtoCard: {
     fontSize: 12,
     fontWeight: 'bold',
   },
-  botoesAcaoContainer: {
+  botaoAddCarrinhoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 20,
+    marginBottom: 30,
+  },
+  botoesVendaContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
@@ -789,11 +798,14 @@ produtoCard: {
     alignItems: 'center',
     justifyContent: 'center',
   },
+  botaoFinalizar: {
+    backgroundColor: '#28a745',
+  },
   botaoCancelar: {
     backgroundColor: '#dc3545',
   },
   botaoAdicionar: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#333',
   },
   textoBotaoAcao: {
     color: 'white',
