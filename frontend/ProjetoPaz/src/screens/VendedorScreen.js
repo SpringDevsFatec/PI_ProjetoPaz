@@ -47,7 +47,7 @@ const VendedorScreen = ({ route, navigation }) => {
   const pickImage = async () => {
     try {
       let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.5,
@@ -67,7 +67,7 @@ const VendedorScreen = ({ route, navigation }) => {
   const takePhoto = async () => {
     try {
       let result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.5,
@@ -436,7 +436,7 @@ const VendedorScreen = ({ route, navigation }) => {
               ]} 
               onPress={() => setFormaPagamento('Pix')}
             >
-              <Feather name="pix" size={20} color="#333" />
+              <MaterialIcons name="pix" size={20} color="#333" />
               <Text style={styles.paymentText}>Pix</Text>
               {formaPagamento === 'Pix' && (
                 <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
@@ -450,8 +450,8 @@ const VendedorScreen = ({ route, navigation }) => {
               ]} 
               onPress={() => setFormaPagamento('Dinheiro')}
             >
-              {/* alternativa: dollar-sign */}
-              <Feather name="brazilian-real-sign" size={20} color="#333" />
+              
+              <Feather name="dollar-sign" size={20} color="#333" />
               <Text style={styles.paymentText}>Dinheiro</Text>
               {formaPagamento === 'Dinheiro' && (
                 <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />

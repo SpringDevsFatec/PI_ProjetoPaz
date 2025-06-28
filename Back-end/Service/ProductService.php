@@ -58,11 +58,6 @@ class ProductService {
 
     public function getProductsByCategory(string $category): array
     {
-        $validCategories = ['Alimento', 'Bebida', 'Cozinha', 'Livros', 'Outros'];
-        if (!in_array($category, $validCategories)) {
-            throw new InvalidArgumentException("Categoria inválida");
-        }
-
         try {
             $this->repository->beginTransaction();
             $response = $this->repository->findByCategory($category);

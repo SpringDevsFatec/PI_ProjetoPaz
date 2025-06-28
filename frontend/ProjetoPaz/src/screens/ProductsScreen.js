@@ -387,6 +387,7 @@ const styles = StyleSheet.create({
   },
   productCategory: {
     fontSize: 14,
+    marginBottom: 15,
     color: '#666',
   },
   favoriteIcon: {

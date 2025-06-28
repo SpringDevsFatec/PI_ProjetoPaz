@@ -26,6 +26,7 @@ const Autoatendimento = ({ route, navigation }) => {
   const [formaPagamento, setFormaPagamento] = useState(null);
   const [termoPesquisa, setTermoPesquisa] = useState('');
   const [loading, setLoading] = useState(false);
+  const [currentSaleOrders, setCurrentSaleOrders] = useState([]);
 
   // Adiciona produto ao carrinho
   const handleAdicionarItem = (nome) => {
@@ -161,7 +162,7 @@ const Autoatendimento = ({ route, navigation }) => {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Image source={require('../../assets/images/logopaz.png')} style={styles.logo} />
-          <TouchableOpacity onPress={() => navigation.navigate('FinalizarVenda', saleId)}>
+          <TouchableOpacity onPress={() => navigation.navigate('FinalizarVenda', { saleId })}>
             <Feather name="user" size={24} color="black" />
           </TouchableOpacity>
         </View>

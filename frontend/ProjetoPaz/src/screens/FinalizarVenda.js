@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
@@ -22,8 +22,7 @@ const FinalizarVendaScreen = ({ route }) => {
   const [pedidos, setPedidos] = useState([]);
   const [selectedPedido, setSelectedPedido] = useState(null);
   const [pedidoDetalhes, setPedidoDetalhes] = useState(null);
-  const [filtroData, setFiltroData] = useState(null);
-  const [mostrarCalendario, setMostrarCalendario] = useState(false);
+  const [carrinho, setCarrinho] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadingDetalhes, setLoadingDetalhes] = useState(false);
   const [imagem, setImagem] = useState(null);
@@ -83,6 +82,20 @@ const FinalizarVendaScreen = ({ route }) => {
     }
   };
 
+  // Função para formatar data
+  const formatarData = (dataString) => {
+    const data = new Date(dataString);
+    return data.toLocaleDateString('pt-BR');
+  };
+
+  // Função para formatar valor monetário
+  const formatarValor = (valor) => {
+    return parseFloat(valor).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+  };
+
   // Função para obter cor do status
   const getStatusColor = (status) => {
     switch (status) {
@@ -130,7 +143,7 @@ const FinalizarVendaScreen = ({ route }) => {
     const pickImage = async () => {
       try {
         let result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.All,
+          mediaTypes: ["images"],
           allowsEditing: true,
           aspect: [4, 3],
           quality: 0.5,
@@ -150,7 +163,7 @@ const FinalizarVendaScreen = ({ route }) => {
     const takePhoto = async () => {
       try {
         let result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ["images"],
           allowsEditing: true,
           aspect: [4, 3],
           quality: 0.5,
@@ -290,13 +303,13 @@ const FinalizarVendaScreen = ({ route }) => {
         </View>
 
         {/* Lista de pedidos */}
-        {pedidosFiltrados.length === 0 ? (
+        {pedidos.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="receipt-outline" size={64} color="#ccc" />
             <Text style={styles.emptyText}>Nenhum pedido encontrado</Text>
           </View>
         ) : (
-          pedidosFiltrados.map((pedido) => (
+          pedidos.map((pedido) => (
             <TouchableOpacity 
               key={pedido.id} 
               style={styles.cardPedido} 

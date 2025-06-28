@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     color: '#333',
     fontSize: 14,
     textAlign: 'center',
-    maxWidth: 120,
+    maxWidth: 160,
   },
   produtoPreco: {
     color: 'green',
