@@ -10,7 +10,7 @@ import {
   FlatList,
   Alert,
 } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import api from '../services/api';
 
@@ -268,7 +268,7 @@ const Autoatendimento = ({ route, navigation }) => {
               ]} 
               onPress={() => setFormaPagamento('Pix')}
             >
-              <Feather name="pix" size={20} color="#333" />
+              <MaterialIcons name="pix" size={20} color="#333" />
               <Text style={styles.paymentText}>Pix</Text>
               {formaPagamento === 'Pix' && (
                 <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
@@ -295,7 +295,7 @@ const Autoatendimento = ({ route, navigation }) => {
             onPress={handleFinalizarCompra}
             disabled={Object.keys(carrinho).length === 0}
           >
-            <Text style={styles.finalizarButtonText}>Finalizar Pedidosdsds</Text>
+            <Text style={styles.finalizarButtonText}>Finalizar Pedidos</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
