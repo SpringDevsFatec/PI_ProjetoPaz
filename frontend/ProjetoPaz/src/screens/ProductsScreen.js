@@ -92,13 +92,17 @@ const ProductsScreen = ({ navigation }) => {
   };
 
   const handleStartSale = async (isSelfService = false) => {
+
+    if (!selectedProducts.length) {
+      Alert.alert('Atenção', 'Selecione pelo menos um produto para iniciar a venda');
+      return;
+    }
+    setLoading(true);
+    
     try {
-      if (!selectedProducts.length) {
-        Alert.alert('Atenção', 'Selecione pelo menos um produto para iniciar a venda');
-        return;
-      }
-      setLoading(true);
-      const response = await api.post('/sales', { method: "manual" });
+      const response = await api.post('/sales', {
+        method: isSelfService ? "auto" : "manual",
+      });
       const newSale = response.data;
       if (newSale?.content?.id) {
         const saleId = newSale.content.id;

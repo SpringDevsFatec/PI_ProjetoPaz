@@ -7,13 +7,15 @@ import {
   StyleSheet,
   Image,
   ScrollView,
-  FlatList
+  FlatList,
+  Alert,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import api from '../services/api';
 
 const Autoatendimento = ({ route, navigation }) => {
-  const { selectedProducts } = route.params || { selectedProducts: [] };
+  const { selectedProducts = [], saleId } = route.params || {};
   
   // Estados
   const [products, setProducts] = useState(selectedProducts);
@@ -23,6 +25,7 @@ const Autoatendimento = ({ route, navigation }) => {
   const [carrinhoMinimizado, setCarrinhoMinimizado] = useState(false);
   const [formaPagamento, setFormaPagamento] = useState(null);
   const [termoPesquisa, setTermoPesquisa] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Adiciona produto ao carrinho
   const handleAdicionarItem = (nome) => {
@@ -54,15 +57,58 @@ const Autoatendimento = ({ route, navigation }) => {
   };
 
   // Finaliza a compra
-  const handleFinalizarCompra = () => {
+  const handleFinalizarCompra = async () => {
     if (!formaPagamento) {
       alert('Selecione uma forma de pagamento');
       return;
     }
-    alert(`Venda finalizada!\nTotal: R$ ${calcularTotal()}\nForma de pagamento: ${formaPagamento}`);
-    setCarrinho({});
-    setCarrinhoVisivel(false);
-    navigation.goBack();
+
+    if (!Object.keys(carrinho).length) {
+      Alert.alert('Erro', 'O carrinho está vazio.');
+      return;
+    }
+    setLoading(true);
+
+    try {
+      
+      const orderItemsPayload = Object.entries(carrinho).map(([name, quantity]) => {
+        const product = products.find(p => p.name === name);
+        return {
+          product_id: product.id,
+          quantity,
+          unit_price: parseFloat(product.preco),
+        };
+      });
+
+      const orderPayload = {
+        payment_method: formaPagamento,
+        itens: orderItemsPayload,
+      };
+
+      const response = await api.post(`/orders/${saleId}`, orderPayload);
+      const newOrder = response.data;
+
+      setCurrentSaleOrders(prev => [...prev, newOrder]);
+
+      Alert.alert(
+        `Pedido #${newOrder.content.code} Finalizado`,
+        `Total: R$ ${calcularTotal()}\nForma de pagamento: ${formaPagamento}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setCarrinho({});
+              setCarrinhoVisivel(false);
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível finalizar o pedido. Tente novamente.');
+      console.error('Erro ao finalizar pedido:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Alterna seleção do produto
@@ -115,7 +161,7 @@ const Autoatendimento = ({ route, navigation }) => {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Image source={require('../../assets/images/logopaz.png')} style={styles.logo} />
-          <TouchableOpacity onPress={() => navigation.navigate('FinalizarVenda')}>
+          <TouchableOpacity onPress={() => navigation.navigate('FinalizarVenda', saleId)}>
             <Feather name="user" size={24} color="black" />
           </TouchableOpacity>
         </View>
@@ -222,7 +268,7 @@ const Autoatendimento = ({ route, navigation }) => {
               ]} 
               onPress={() => setFormaPagamento('Pix')}
             >
-              <Feather name="dollar-sign" size={20} color="#333" />
+              <Feather name="pix" size={20} color="#333" />
               <Text style={styles.paymentText}>Pix</Text>
               {formaPagamento === 'Pix' && (
                 <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
@@ -236,7 +282,7 @@ const Autoatendimento = ({ route, navigation }) => {
               ]} 
               onPress={() => setFormaPagamento('Dinheiro')}
             >
-              <Feather name="money" size={20} color="#333" />
+              <Feather name="dollar-sign" size={20} color="#333" />
               <Text style={styles.paymentText}>Dinheiro</Text>
               {formaPagamento === 'Dinheiro' && (
                 <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
@@ -249,7 +295,7 @@ const Autoatendimento = ({ route, navigation }) => {
             onPress={handleFinalizarCompra}
             disabled={Object.keys(carrinho).length === 0}
           >
-            <Text style={styles.finalizarButtonText}>Finalizar Pedido</Text>
+            <Text style={styles.finalizarButtonText}>Finalizar Pedidosdsds</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 

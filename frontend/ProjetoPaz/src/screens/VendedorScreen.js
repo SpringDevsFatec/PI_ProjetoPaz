@@ -320,27 +320,27 @@ const VendedorScreen = ({ route, navigation }) => {
           contentContainerStyle={styles.produtoGrid}
         />
 
-          {/* Imagem */}
-          <Text style={styles.label}>Imagem dos Comprovantes</Text>
-          <View style={styles.imageUploadContainer}>
-            {imagem ? (
-              <Image 
-                source={{ uri: imagem }} 
-                style={{ width: '100%', height: '100%', borderRadius: 8 }} 
-                resizeMode="cover"
-              />
-            ) : (
-              <>
-                <Ionicons name="cloud-upload-outline" size={40} color="#888" />
-                <Text style={styles.uploadText}>Clique para adicionar imagem</Text>
-              </>
-            )}
-            
-            {/* Ícone de editar */}
-            <TouchableOpacity style={styles.editIcon} onPress={editarImagem}>
-              <MaterialIcons name={imagem ? "edit" : "add-a-photo"} size={18} color="#555" />
-            </TouchableOpacity>
-          </View>
+        {/* Imagem */}
+        <Text style={styles.label}>Imagem dos Comprovantes</Text>
+        <View style={styles.imageUploadContainer}>
+          {imagem ? (
+            <Image 
+              source={{ uri: imagem }} 
+              style={{ width: '100%', height: '100%', borderRadius: 8 }} 
+              resizeMode="cover"
+            />
+          ) : (
+            <>
+              <Ionicons name="cloud-upload-outline" size={40} color="#888" />
+              <Text style={styles.uploadText}>Clique para adicionar imagem</Text>
+            </>
+          )}
+          
+          {/* Ícone de editar */}
+          <TouchableOpacity style={styles.editIcon} onPress={editarImagem}>
+            <MaterialIcons name={imagem ? "edit" : "add-a-photo"} size={18} color="#555" />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.botaoAddCarrinhoContainer}>
           <TouchableOpacity 
@@ -436,7 +436,7 @@ const VendedorScreen = ({ route, navigation }) => {
               ]} 
               onPress={() => setFormaPagamento('Pix')}
             >
-              <Feather name="dollar-sign" size={20} color="#333" />
+              <Feather name="pix" size={20} color="#333" />
               <Text style={styles.paymentText}>Pix</Text>
               {formaPagamento === 'Pix' && (
                 <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
@@ -450,7 +450,8 @@ const VendedorScreen = ({ route, navigation }) => {
               ]} 
               onPress={() => setFormaPagamento('Dinheiro')}
             >
-              <Feather name="money" size={20} color="#333" />
+              {/* alternativa: dollar-sign */}
+              <Feather name="brazilian-real-sign" size={20} color="#333" />
               <Text style={styles.paymentText}>Dinheiro</Text>
               {formaPagamento === 'Dinheiro' && (
                 <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
@@ -541,7 +542,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap', 
     justifyContent: 'space-between',
   },
-produtoCard: {
+  produtoCard: {
   width: '48%', // Mantém a largura para 2 colunas
   minWidth: 160, // Define uma largura mínima para evitar que fique muito estreito
   backgroundColor: '#fff',
@@ -556,7 +557,7 @@ produtoCard: {
   borderWidth: 1,
   borderColor: '#ccc',
   position: 'relative',
-},
+  },
   selectedProduct: {
     borderColor: '#4CAF50',
     borderWidth: 2,
