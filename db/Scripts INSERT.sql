@@ -1,23 +1,39 @@
 -- Inserindo fornecedores
 INSERT INTO `supplier` (`name`, `location`) VALUES
-('Fornecedor A', 'São Paulo'),
-('Fornecedor B', 'Rio de Janeiro'),
-('Fornecedor C', 'Minas Gerais');
+('Pausa para o Café', 'São Paulo, SP'),
+('Farinha & Cia', 'São Paulo, SP'),
+('Paróquia de Santo Agostinho', 'São Paulo, SP');
 
 -- Inserindo produtos
 INSERT INTO `product` (`name`, `cost_price`, `sale_price`, `description`, `is_favorite`, `category`, `donation`,`img_product`,`status`, `supplier_id`) VALUES
-('Camiseta Paz', 15.00, 29.90, 'Camiseta branca com estampa de pomba da paz', 1, 'Vestuário', 0, 'https://i.pinimg.com/736x/74/17/61/7417614ac80974280a70b3a5555563d4.jpg', 1 , 1),
-('Caneca Amor', 8.50, 24.90, 'Caneca cerâmica com mensagens positivas', 1, 'Cozinha', 1, 'https://i.pinimg.com/736x/74/17/61/7417614ac80974280a70b3a5555563d4.jpg', 1, 2),
-('Livro Harmonia', 25.00, 49.90, 'Livro sobre convivência pacífica', 0, 'Livros', 0, 'https://i.pinimg.com/736x/74/17/61/7417614ac80974280a70b3a5555563d4.jpg', 1, 3), 
-('Adesivo Solidariedade', 0.80, 3.90, 'Pacote com 10 adesivos temáticos', 0, 'Papelaria', 1, 'https://i.pinimg.com/736x/74/17/61/7417614ac80974280a70b3a5555563d4.jpg', 1, 1),
-('Velas Aromáticas', 12.00, 34.90, 'Kit com 3 velas relaxantes', 1, 'Decoração', 0, 'https://i.pinimg.com/736x/74/17/61/7417614ac80974280a70b3a5555563d4.jpg', 1, 2);
+('Achocolatado', 2.00, 4.00, 'Copo de achocolatado', 1, 'Bebida', 0, 'https://project-paz-product.s3.us-east-1.amazonaws.com/Achocolatado.png', 1, 1),
+('Água', 1.00, 2.99, 'Uma garrafa de agua', 1, 'Bebida', 0, 'https://project-paz-product.s3.us-east-1.amazonaws.com/Agua1.png', 1, 1),
+('Bíblia', 12.00, 20.00, 'Um Livro sobre Deus', 0, 'Livros', 0, 'https://project-paz-product.s3.us-east-1.amazonaws.com/Biblia.png', 1, 3),
+('Bolo de Padaria', 1.50, 5.00, 'Um delicioso bolo de padaria', 1, 'Alimento', 0, 'https://project-paz-product.s3.us-east-1.amazonaws.com/BoloDePadaria.png', 1, 2),
+('Bolo Doado', 00.00, 5.00, 'Um bolo adquirido via doação', 1, 'Alimento', 1, 'https://project-paz-product.s3.us-east-1.amazonaws.com/BoloDoado.png', 1, 2),
+('Brioche', 1.50, 4.00, 'Um brioche', 0, 'Alimento', 0, 'https://project-paz-product.s3.us-east-1.amazonaws.com/Brioche.png', 1, 2),
+('Café', 1.00, 3.00, 'Um copinho de café', 1, 'Bebida', 0, 'https://project-paz-product.s3.us-east-1.amazonaws.com/Cafe1.png', 1, 1),
+('Café com Leite', 1.00, 3.00, 'Um copo com café com leite', 1, 'Bebida', 0, 'https://project-paz-product.s3.us-east-1.amazonaws.com/CafeComLeite.png', 1, 1),
+('Pão de Mel', 3.00, 4.00, 'Deliciosos pães de mel', 1, 'Alimento', 0, 'https://project-paz-product.s3.us-east-1.amazonaws.com/PaoDeMel.png', 1, 2),
+('Pão de Mel grande', 4.00, 8.00, 'Deliciosos pães de mel', 1, 'Alimento', 0, 'https://project-paz-product.s3.us-east-1.amazonaws.com/PaoDeMelGrande.png', 1, 2),
+('Terço', 8.00, 15.00, 'Um terço', 0, 'Objeto religioso', 0, 'https://project-paz-product.s3.us-east-1.amazonaws.com/Ter%C3%A7o.png', 1, 3);
 
 -- Inserindo usuários
 INSERT INTO `user` (`name`, `email`, `password`) VALUES
-('João Silva', 'joao@email.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Maria Souza', 'maria@email.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Carlos Oliveira', 'carlos@email.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Dev', 'dev@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W');
+('Admin', 'admin@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
+('Daniel', 'aumenteavoz@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
+('Diego', 'diego.rsilva14@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
+('Gabriel Defendi', 'bielsdef@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
+('Graziely', 'grazymoreirasilva04@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
+('Pedro Almeida', 'pedroooalmeida09@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
+('Bruno', 'brunogon.080409@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
+('Eduardo', 'dumaranidesousa@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
+('Felipe', 'af9785102@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
+('Giuliano', 'comodorolih@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
+('Lauro', 'lauromoura25@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
+('Mariana', 'mari.maia0302@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
+('Monique', 'monique-colucci@hotmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
+('Mauricio Sobral', 'sobralmauricio12@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p');
 
 -- Inserindo vendas
 INSERT INTO `sale` (`user_id`, `total_amount_sale`, `status`, `method`, `code`, `img_sale`) VALUES
