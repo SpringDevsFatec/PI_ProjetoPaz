@@ -416,18 +416,32 @@ const VendedorScreen = ({ route, navigation }) => {
             <Text style={styles.paymentTitle}>Forma de pagamento:</Text>
             
             <TouchableOpacity 
-              style={[
-                styles.paymentOption,
-                formaPagamento === 'Cartão' && styles.selectedPayment
-              ]} 
-              onPress={() => setFormaPagamento('Cartão')}
-            >
-              <Feather name="credit-card" size={20} color="#333" />
-              <Text style={styles.paymentText}>Cartão</Text>
-              {formaPagamento === 'Cartão' && (
-                <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
-              )}
-            </TouchableOpacity>
+                          style={[
+                            styles.paymentOption,
+                            formaPagamento === 'credito' && styles.selectedPayment
+                          ]} 
+                          onPress={() => setFormaPagamento('credito')}
+                        >
+                          <Feather name="credit-card" size={20} color="#333" />
+                          <Text style={styles.paymentText}>Cartão de Crédito</Text>
+                          {formaPagamento === 'credito' && (
+                            <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
+                          )}
+                        </TouchableOpacity>
+            
+                        <TouchableOpacity 
+                          style={[
+                            styles.paymentOption,
+                            formaPagamento === 'debito' && styles.selectedPayment
+                          ]} 
+                          onPress={() => setFormaPagamento('debito')}
+                        >
+                          <Feather name="credit-card" size={20} color="#333" />
+                          <Text style={styles.paymentText}>Cartão de Débito</Text>
+                          {formaPagamento === 'debito' && (
+                            <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
+                          )}
+                        </TouchableOpacity>
             
             <TouchableOpacity 
               style={[

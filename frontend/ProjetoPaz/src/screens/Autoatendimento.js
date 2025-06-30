@@ -167,7 +167,7 @@ const Autoatendimento = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.title}>Autoatendimento</Text>
+        <Text style={styles.title}>Selecione seus Produtos:</Text>
 
         <View style={styles.searchContainer}>
           <Feather name="search" size={18} color="#999" />
@@ -180,7 +180,7 @@ const Autoatendimento = ({ route, navigation }) => {
           />
         </View>
 
-        <Text style={styles.sectionTitle}>Produtos Selecionados</Text>
+        <Text style={styles.sectionTitle}>Produtos Disponíveis </Text>
         
         <FlatList
           data={products}
@@ -251,13 +251,27 @@ const Autoatendimento = ({ route, navigation }) => {
             <TouchableOpacity 
               style={[
                 styles.paymentOption,
-                formaPagamento === 'Cartão' && styles.selectedPayment
+                formaPagamento === 'credito' && styles.selectedPayment
               ]} 
-              onPress={() => setFormaPagamento('Cartão')}
+              onPress={() => setFormaPagamento('credito')}
             >
               <Feather name="credit-card" size={20} color="#333" />
-              <Text style={styles.paymentText}>Cartão</Text>
-              {formaPagamento === 'Cartão' && (
+              <Text style={styles.paymentText}>Cartão de Crédito</Text>
+              {formaPagamento === 'credito' && (
+                <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[
+                styles.paymentOption,
+                formaPagamento === 'debito' && styles.selectedPayment
+              ]} 
+              onPress={() => setFormaPagamento('debito')}
+            >
+              <Feather name="credit-card" size={20} color="#333" />
+              <Text style={styles.paymentText}>Cartão de Débito</Text>
+              {formaPagamento === 'debito' && (
                 <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
               )}
             </TouchableOpacity>

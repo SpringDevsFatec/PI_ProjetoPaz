@@ -110,6 +110,8 @@ export default function AppNavigator() {
           title: 'Auto Atendimento',
           headerStyle: { backgroundColor: '#333' },
           headerTintColor: '#fff',
+          gestureEnabled: false,
+          headerLeft: () => null
         }}
       />
       <Stack.Screen 

@@ -20,20 +20,20 @@ INSERT INTO `product` (`name`, `cost_price`, `sale_price`, `description`, `is_fa
 
 -- Inserindo usuários
 INSERT INTO `user` (`name`, `email`, `password`) VALUES
-('Dev', 'dev@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Daniel', 'aumenteavoz@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Diego', 'diego.rsilva14@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Gabriel Defendi', 'bielsdef@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Graziely', 'grazymoreirasilva04@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Pedro Almeida', 'pedroooalmeida09@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Bruno', 'brunogon.080409@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Eduardo', 'dumaranidesousa@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Felipe', 'af9785102@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Giuliano', 'comodorolih@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Lauro', 'lauromoura25@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Mariana', 'mari.maia0302@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Monique', 'monique-colucci@hotmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p'),
-('Mauricio Sobral', 'sobralmauricio12@gmail.com', '$2y$10$N7h3m8uVr6z9kQ1wLpB4E.9mZJvXyRcT2nS3dF4gH5jK6lM7nO8p');
+('Dev', 'dev@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W'),
+('Daniel', 'aumenteavoz@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W'),
+('Diego', 'diego.rsilva14@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W'),
+('Gabriel Defendi', 'bielsdef@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W'),
+('Graziely', 'grazymoreirasilva04@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W'),
+('Pedro Almeida', 'pedroooalmeida09@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W'),
+('Bruno', 'brunogon.080409@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W'),
+('Eduardo', 'dumaranidesousa@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W'),
+('Felipe', 'af9785102@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W'),
+('Giuliano', 'comodorolih@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W'),
+('Lauro', 'lauromoura25@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W'),
+('Mariana', 'mari.maia0302@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W'),
+('Monique', 'monique-colucci@hotmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W'),
+('Mauricio Sobral', 'sobralmauricio12@gmail.com', '$2y$10$IjQ9yeLeIjqw7csno9KK.uWdRofGZjRmQg2A93GrHtuHgave/BB2W');
 
 -- Inserindo vendas
 INSERT INTO `sale` (`user_id`, `total_amount_sale`, `status`, `method`, `code`, `img_sale`) VALUES
