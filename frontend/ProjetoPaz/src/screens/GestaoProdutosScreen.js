@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
@@ -6,6 +7,47 @@ import { LinearGradient } from 'expo-linear-gradient';
 const GestaoProdutosScreen = ({ navigation }) => {
   const produtos = []; 
   const favoritos = [];
+=======
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { Ionicons, Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import api from '../services/api';
+
+const GestaoProdutosScreen = ({ navigation }) => {
+  const [produtos, setProdutos] = useState([]);
+  const [favoritos, setFavoritos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Estados para controlar os índices dos carrosseis
+  const [currentProdutoIndex, setCurrentProdutoIndex] = useState(0);
+  const [currentFavoritoIndex, setCurrentFavoritoIndex] = useState(0);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/products/active');
+      
+      if (response.data.status) {
+        setProdutos(response.data.content);
+        // Filtra os produtos favoritos
+        const favs = response.data.content.filter(prod => prod.is_favorite === "1");
+        setFavoritos(favs);
+      } else {
+        setError(response.data.message || 'Erro ao buscar produtos');
+      }
+    } catch (err) {
+      setError(err.message || 'Erro na conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+>>>>>>> d9092e3e84143ccf21f64e577d25bc57f0d17430
 
   const handleProfilePress = () => {
     navigation.navigate('ProfileScreen');
@@ -23,6 +65,7 @@ const GestaoProdutosScreen = ({ navigation }) => {
     navigation.navigate('Pedido');
   };
 
+<<<<<<< HEAD
   const renderImagem = (item) => {
     if (item?.imagem) {
       return <Image source={item.imagem} style={styles.produtoImagem} resizeMode="contain" />;
@@ -30,6 +73,104 @@ const GestaoProdutosScreen = ({ navigation }) => {
     return <Text style={styles.semImagemTexto}>Nenhum produto disponível</Text>;
   };
 
+=======
+const handleEditProdutoPress = (produto) => {
+  navigation.navigate('EditarProduto', { 
+    produtoId: produto.id,  // Certifique-se que está passando o ID correto
+    produto: produto       // Passa o objeto completo se necessário
+  });
+};
+
+  // Funções para navegação do carrossel de produtos
+  const nextProduto = () => {
+    if (produtos.length > 0) {
+      setCurrentProdutoIndex((prevIndex) => 
+        prevIndex === produtos.length - 1 ? 0 : prevIndex + 1
+      );
+    }
+  };
+
+  const prevProduto = () => {
+    if (produtos.length > 0) {
+      setCurrentProdutoIndex((prevIndex) => 
+        prevIndex === 0 ? produtos.length - 1 : prevIndex - 1
+      );
+    }
+  };
+
+  // Funções para navegação do carrossel de favoritos
+  const nextFavorito = () => {
+    if (favoritos.length > 0) {
+      setCurrentFavoritoIndex((prevIndex) => 
+        prevIndex === favoritos.length - 1 ? 0 : prevIndex + 1
+      );
+    }
+  };
+
+  const prevFavorito = () => {
+    if (favoritos.length > 0) {
+      setCurrentFavoritoIndex((prevIndex) => 
+        prevIndex === 0 ? favoritos.length - 1 : prevIndex - 1
+      );
+    }
+  };
+
+  const renderImagem = (item) => {
+    if (item?.img_product) {
+      return (
+        <Image 
+          source={{ uri: item.img_product }} 
+          style={styles.produtoImagem} 
+          resizeMode="cover"
+          onError={() => console.log('Erro ao carregar imagem')}
+        />
+      );
+    }
+    return (
+      <View style={styles.placeholderContainer}>
+        <Ionicons name="image-outline" size={30} color="#ccc" />
+        <Text style={styles.semImagemTexto}>Sem imagem</Text>
+      </View>
+    );
+  };
+
+      const renderProdutoInfo = (item) => {
+        if (!item) return null;
+        
+        return (
+          <View style={styles.produtoContainer}>
+            <TouchableOpacity 
+              onPress={() => handleEditProdutoPress(item)}
+              style={styles.imagemWrapper}
+            >
+              {renderImagem(item)}
+            </TouchableOpacity>
+            <Text style={styles.produtoNome} numberOfLines={2}>{item.name}</Text>
+            <Text style={styles.produtoPreco}>R$ {item.sale_price}</Text>
+          </View>
+        );
+      };
+
+  if (loading) {
+    return (
+      <LinearGradient colors={['#FFFFFF', '#F5F5F5', '#E0E0E0']} style={[styles.gradient, styles.loadingContainer]}>
+        <Text>Carregando produtos...</Text>
+      </LinearGradient>
+    );
+  }
+
+  if (error) {
+    return (
+      <LinearGradient colors={['#FFFFFF', '#F5F5F5', '#E0E0E0']} style={[styles.gradient, styles.errorContainer]}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity onPress={fetchProducts} style={styles.retryButton}>
+          <Text style={styles.retryButtonText}>Tentar novamente</Text>
+        </TouchableOpacity>
+      </LinearGradient>
+    );
+  }
+
+>>>>>>> d9092e3e84143ccf21f64e577d25bc57f0d17430
   return (
     <LinearGradient colors={['#FFFFFF', '#F5F5F5', '#E0E0E0']} style={styles.gradient}>
       <ScrollView 
@@ -63,6 +204,7 @@ const GestaoProdutosScreen = ({ navigation }) => {
               <Text style={styles.semImagemTexto}>Nenhum pedido recente</Text>
             </View>
           </View>
+<<<<<<< HEAD
         <TouchableOpacity 
           style={styles.pedidosBtn}
           onPress={() => navigation.navigate('VerPedidos')}
@@ -83,6 +225,57 @@ const GestaoProdutosScreen = ({ navigation }) => {
               {renderImagem(produtos[0])}
             </View>
             <TouchableOpacity>
+=======
+          <TouchableOpacity 
+            style={styles.pedidosBtn}
+            onPress={() => navigation.navigate('VerPedidos')}
+          >
+            <Text style={styles.pedidosBtnText}>Ver Todos os Pedidos</Text>
+            <Feather name="chevron-right" size={18} color="white" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Seção de Produtos com Carrossel Funcional */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Seus Produtos</Text>
+          <View style={styles.card}>
+            <TouchableOpacity 
+              onPress={prevProduto}
+              style={[styles.arrowButton, { opacity: produtos.length > 1 ? 1 : 0.3 }]}
+              disabled={produtos.length <= 1}
+            >
+              <Ionicons name="chevron-back" size={24} color="#333" />
+            </TouchableOpacity>
+            
+            <View style={styles.imageContainer}>
+              {produtos.length > 0 ? (
+                <>
+                  {renderProdutoInfo(produtos[currentProdutoIndex])}
+                  {produtos.length > 1 && (
+                    <View style={styles.indicatorContainer}>
+                      {produtos.map((_, index) => (
+                        <View
+                          key={index}
+                          style={[
+                            styles.indicator,
+                            index === currentProdutoIndex && styles.activeIndicator
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  )}
+                </>
+              ) : (
+                <Text style={styles.semImagemTexto}>Nenhum produto cadastrado</Text>
+              )}
+            </View>
+            
+            <TouchableOpacity 
+              onPress={nextProduto}
+              style={[styles.arrowButton, { opacity: produtos.length > 1 ? 1 : 0.3 }]}
+              disabled={produtos.length <= 1}
+            >
+>>>>>>> d9092e3e84143ccf21f64e577d25bc57f0d17430
               <Ionicons name="chevron-forward" size={24} color="#333" />
             </TouchableOpacity>
           </View>
@@ -106,6 +299,7 @@ const GestaoProdutosScreen = ({ navigation }) => {
           <Feather name="chevron-right" size={18} color="white" />
         </TouchableOpacity>
 
+<<<<<<< HEAD
         {/* Seção de Favoritos */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Favoritos</Text>
@@ -117,6 +311,48 @@ const GestaoProdutosScreen = ({ navigation }) => {
               {renderImagem(favoritos[0])}
             </View>
             <TouchableOpacity>
+=======
+        {/* Seção de Favoritos com Carrossel Funcional */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Favoritos</Text>
+          <View style={styles.card}>
+            <TouchableOpacity 
+              onPress={prevFavorito}
+              style={[styles.arrowButton, { opacity: favoritos.length > 1 ? 1 : 0.3 }]}
+              disabled={favoritos.length <= 1}
+            >
+              <Ionicons name="chevron-back" size={24} color="#333" />
+            </TouchableOpacity>
+            
+            <View style={styles.imageContainer}>
+              {favoritos.length > 0 ? (
+                <>
+                  {renderProdutoInfo(favoritos[currentFavoritoIndex])}
+                  {favoritos.length > 1 && (
+                    <View style={styles.indicatorContainer}>
+                      {favoritos.map((_, index) => (
+                        <View
+                          key={index}
+                          style={[
+                            styles.indicator,
+                            index === currentFavoritoIndex && styles.activeIndicator
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  )}
+                </>
+              ) : (
+                <Text style={styles.semImagemTexto}>Nenhum favorito</Text>
+              )}
+            </View>
+            
+            <TouchableOpacity 
+              onPress={nextFavorito}
+              style={[styles.arrowButton, { opacity: favoritos.length > 1 ? 1 : 0.3 }]}
+              disabled={favoritos.length <= 1}
+            >
+>>>>>>> d9092e3e84143ccf21f64e577d25bc57f0d17430
               <Ionicons name="chevron-forward" size={24} color="#333" />
             </TouchableOpacity>
           </View>
@@ -181,7 +417,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+<<<<<<< HEAD
     height: 150,
+=======
+    minHeight: 200, // Mudei de height para minHeight
+>>>>>>> d9092e3e84143ccf21f64e577d25bc57f0d17430
     backgroundColor: 'rgba(255,255,255,0.8)',
   },
   uploadCard: {
@@ -192,15 +432,47 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+<<<<<<< HEAD
   },
   produtoImagem: {
     width: 100,
     height: 100,
+=======
+    maxHeight: 140, // Adicionei limite máximo
+  },
+  // Novo estilo para wrapper da imagem com ajuste automático e responsivo
+  imagemWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    overflow: 'hidden', // Isso é essencial para cortar o que ultrapassar
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    marginBottom: 8, // Espaço para o texto
+  },
+  produtoImagem: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'transparent',
+  },
+  placeholderContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+>>>>>>> d9092e3e84143ccf21f64e577d25bc57f0d17430
   },
   semImagemTexto: {
     color: '#888',
     fontStyle: 'italic',
     textAlign: 'center',
+<<<<<<< HEAD
+=======
+    fontSize: 12,
+>>>>>>> d9092e3e84143ccf21f64e577d25bc57f0d17430
   },
   uploadText: {
     marginTop: 10,
@@ -247,6 +519,73 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 15,
     borderTopRightRadius: 15,
   },
+<<<<<<< HEAD
+=======
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#333',
+    padding: 10,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: 'white',
+  },
+  produtoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  produtoNome: {
+    marginTop: 8,
+    fontWeight: 'bold',
+    color: '#333',
+    fontSize: 14,
+    textAlign: 'center',
+    maxWidth: 160,
+  },
+  produtoPreco: {
+    color: 'green',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginTop: 4,
+  },
+  // Novos estilos para o carrossel
+  arrowButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+  },
+  indicatorContainer: {
+    flexDirection: 'row',
+    marginTop: 8,
+    justifyContent: 'center',
+  },
+  indicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#ccc',
+    marginHorizontal: 2,
+  },
+  activeIndicator: {
+    backgroundColor: '#333',
+  },
+>>>>>>> d9092e3e84143ccf21f64e577d25bc57f0d17430
 });
 
 export default GestaoProdutosScreen;

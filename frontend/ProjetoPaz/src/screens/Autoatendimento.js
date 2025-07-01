@@ -7,32 +7,28 @@ import {
   StyleSheet,
   Image,
   ScrollView,
-  Modal,
+  FlatList,
+  Alert,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import api from '../services/api';
 
-// Dados simulados do backend
-const produtosExemplo = {
-  'Garrafa de Água': { preco: 5.5, categoria: 'Bebida', destaque: true },
-  'Brigadeiro': { preco: 3.2, categoria: 'Doce', destaque: false },
-  'Coxinha': { preco: 7.8, categoria: 'Salgado', destaque: true },
-  'Pão de Queijo': { preco: 2.5, categoria: 'Outro', destaque: false },
-  'Refrigerante': { preco: 6.0, categoria: 'Bebida', destaque: true },
-  'Bolo': { preco: 8.5, categoria: 'Doce', destaque: false },
-};
-
-const Autoatendimento = ({ navigation }) => {
-  const [carrinhoVisivel, setCarrinhoVisivel] = useState(false);
+const Autoatendimento = ({ route, navigation }) => {
+  const { selectedProducts = [], saleId } = route.params || {};
+  
+  // Estados
+  const [products, setProducts] = useState(selectedProducts)
+  const [selectedItems, setSelectedItems] = useState([]);
   const [carrinho, setCarrinho] = useState({});
-  const [filtroVisivel, setFiltroVisivel] = useState(false);
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState('');
-  const [verDestaques, setVerDestaques] = useState(false);
-  const [ordenarPorPreco, setOrdenarPorPreco] = useState(false);
+  const [carrinhoVisivel, setCarrinhoVisivel] = useState(false);
   const [carrinhoMinimizado, setCarrinhoMinimizado] = useState(false);
-  const [termoPesquisa, setTermoPesquisa] = useState('');
   const [formaPagamento, setFormaPagamento] = useState(null);
+  const [termoPesquisa, setTermoPesquisa] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [currentSaleOrders, setCurrentSaleOrders] = useState([]);
 
+  // Adiciona produto ao carrinho
   const handleAdicionarItem = (nome) => {
     setCarrinho((prev) => ({
       ...prev,
@@ -42,6 +38,7 @@ const Autoatendimento = ({ navigation }) => {
     setCarrinhoMinimizado(false);
   };
 
+  // Remove produto do carrinho
   const handleRemoverItem = (nome) => {
     setCarrinho((prev) => {
       const novo = { ...prev };
@@ -51,58 +48,126 @@ const Autoatendimento = ({ navigation }) => {
     });
   };
 
+  // Calcula o total do carrinho
   const calcularTotal = () => {
     return Object.entries(carrinho).reduce((total, [item, quantidade]) => {
-      const precoItem = produtosExemplo[item]?.preco || 0;
+      const product = products.find(p => p.name === item);
+      const precoItem = product?.preco || 0;
       return total + precoItem * quantidade;
     }, 0).toFixed(2);
   };
 
-  const handleFinalizarCompra = () => {
+  // Finaliza a compra
+  const handleFinalizarCompra = async () => {
     if (!formaPagamento) {
       alert('Selecione uma forma de pagamento');
       return;
     }
-    alert(`Venda finalizada!\nTotal: R$ ${calcularTotal()}\nForma de pagamento: ${formaPagamento}`);
-    setCarrinho({});
-    setCarrinhoVisivel(false);
+
+    if (!Object.keys(carrinho).length) {
+      Alert.alert('Erro', 'O carrinho está vazio.');
+      return;
+    }
+    setLoading(true);
+
+    try {
+      
+      const orderItemsPayload = Object.entries(carrinho).map(([name, quantity]) => {
+        const product = products.find(p => p.name === name);
+        return {
+          product_id: product.id,
+          quantity,
+          unit_price: parseFloat(product.preco),
+        };
+      });
+
+      const orderPayload = {
+        payment_method: formaPagamento,
+        itens: orderItemsPayload,
+      };
+
+      const response = await api.post(`/orders/${saleId}`, orderPayload);
+      const newOrder = response.data;
+
+      setCurrentSaleOrders(prev => [...prev, newOrder]);
+
+      Alert.alert(
+        `Pedido #${newOrder.content.code} Finalizado`,
+        `Total: R$ ${calcularTotal()}\nForma de pagamento: ${formaPagamento}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setCarrinho({});
+              setCarrinhoVisivel(false);
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível finalizar o pedido. Tente novamente.');
+      console.error('Erro ao finalizar pedido:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filtrarEOrdenarProdutos = () => {
-    let produtos = Object.entries(produtosExemplo);
-    
-    if (termoPesquisa) {
-      produtos = produtos.filter(([nome]) => 
-        nome.toLowerCase().includes(termoPesquisa.toLowerCase())
-      );
-    }
-    
-    if (verDestaques) {
-      produtos = produtos.filter(([, data]) => data.destaque);
-    }
-    
-    if (categoriaSelecionada) {
-      produtos = produtos.filter(([, data]) => data.categoria === categoriaSelecionada);
-    }
-    
-    if (ordenarPorPreco) {
-      produtos.sort(([, a], [, b]) => a.preco - b.preco);
-    }
-    
-    return produtos;
+  // Alterna seleção do produto
+  const toggleProductSelection = (productId) => {
+    setSelectedItems(prev => {
+      if (prev.includes(productId)) {
+        return prev.filter(id => id !== productId);
+      } else {
+        return [...prev, productId];
+      }
+    });
   };
+
+  // Renderiza cada item da lista de produtos
+  const renderProductItem = ({ item }) => (
+    <TouchableOpacity
+      style={[
+        styles.produtoCard,
+        selectedItems.includes(item.id) && styles.selectedProduct
+      ]}
+      onPress={() => toggleProductSelection(item.id)}
+    >
+      {item.img_product ? (
+        <Image
+          source={{ uri: item.img_product }}
+          style={styles.productImage}
+          resizeMode="contain"
+        />
+      ) : (
+        <Text style={styles.noImageText}>Sem imagem</Text>
+      )}
+
+      <Text style={styles.produtoNome}>{item.name}</Text>
+      <Text style={styles.precoTexto}>R$ {item.preco.toFixed(2)}</Text>
+      <Text style={styles.produtoCategoria}>{item.categoria}</Text>
+      
+      {selectedItems.includes(item.id) && (
+        <Ionicons 
+          name="checkmark-circle" 
+          size={24} 
+          color="#4CAF50" 
+          style={styles.checkIcon} 
+        />
+      )}
+    </TouchableOpacity>
+  );
 
   return (
     <LinearGradient colors={['#FFFFFF', '#F5F5F5', '#E0E0E0']} style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Image source={require('../../assets/images/logopaz.png')} style={styles.logo} />
-          <TouchableOpacity onPress={() => navigation.navigate('ProfileScreen')}>
+          <TouchableOpacity onPress={() => navigation.navigate('FinalizarVenda', { saleId })}>
             <Feather name="user" size={24} color="black" />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.title}>Sua Loja</Text>
+        <Text style={styles.title}>Selecione seus Produtos:</Text>
 
         <View style={styles.searchContainer}>
           <Feather name="search" size={18} color="#999" />
@@ -112,37 +177,47 @@ const Autoatendimento = ({ navigation }) => {
             placeholderTextColor="#aaa"
             value={termoPesquisa}
             onChangeText={setTermoPesquisa}
-            returnKeyType="search"
           />
-          <TouchableOpacity onPress={() => setFiltroVisivel(true)}>
-            <Feather name="filter" size={18} color="#999" />
-          </TouchableOpacity>
         </View>
 
-        <View style={styles.produtoGrid}>
-          {filtrarEOrdenarProdutos().map(([nome, { preco }], index) => (
-            <View key={index} style={styles.produtoCard}>
-              <Text style={styles.produtoImagemTexto}>Imagem</Text>
-              <Text style={styles.produtoNome}>{nome}</Text>
-              <Text style={styles.precoTexto}>R$ {preco.toFixed(2)}</Text>
-              <TouchableOpacity 
-                style={styles.botaoAdd} 
-                onPress={() => handleAdicionarItem(nome)}
-              >
-                <Text style={styles.botaoAddTexto}>+</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
+        <Text style={styles.sectionTitle}>Produtos Disponíveis </Text>
+        
+        <FlatList
+          data={products}
+          renderItem={renderProductItem}
+          keyExtractor={item => item.id.toString()}
+          numColumns={2}
+          scrollEnabled={false}
+          contentContainerStyle={styles.produtoGrid}
+        />
+
+        <TouchableOpacity 
+          style={styles.adicionarButton}
+          onPress={() => {
+            // Adiciona apenas os produtos selecionados ao carrinho
+            const newCart = {...carrinho};
+            products
+              .filter(product => selectedItems.includes(product.id))
+              .forEach(product => {
+                newCart[product.name] = (newCart[product.name] || 0) + 1;
+              });
+            setCarrinho(newCart);
+            setCarrinhoVisivel(true);
+          }}
+          disabled={selectedItems.length === 0}
+        >
+          <Text style={styles.adicionarButtonText}>Adicionar ao Carrinho</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Carrinho flutuante */}
       {carrinhoVisivel && !carrinhoMinimizado && (
         <View style={styles.carrinhoFlutuante}>
-          <Text style={styles.carrinhoTitulo}>Carrinho</Text>
+            <Text style={styles.carrinhoTitulo}>Carrinho</Text>
           
           {Object.entries(carrinho).map(([nome, quantidade]) => {
-            const precoItem = produtosExemplo[nome]?.preco || 0;
+            const product = selectedProducts.find(p => p.name === nome);
+            const precoItem = product?.preco || 0;
             const totalItem = (precoItem * quantidade).toFixed(2);
             
             return (
@@ -176,13 +251,27 @@ const Autoatendimento = ({ navigation }) => {
             <TouchableOpacity 
               style={[
                 styles.paymentOption,
-                formaPagamento === 'Cartão' && styles.selectedPayment
+                formaPagamento === 'credito' && styles.selectedPayment
               ]} 
-              onPress={() => setFormaPagamento('Cartão')}
+              onPress={() => setFormaPagamento('credito')}
             >
               <Feather name="credit-card" size={20} color="#333" />
-              <Text style={styles.paymentText}>Cartão</Text>
-              {formaPagamento === 'Cartão' && (
+              <Text style={styles.paymentText}>Cartão de Crédito</Text>
+              {formaPagamento === 'credito' && (
+                <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[
+                styles.paymentOption,
+                formaPagamento === 'debito' && styles.selectedPayment
+              ]} 
+              onPress={() => setFormaPagamento('debito')}
+            >
+              <Feather name="credit-card" size={20} color="#333" />
+              <Text style={styles.paymentText}>Cartão de Débito</Text>
+              {formaPagamento === 'debito' && (
                 <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
               )}
             </TouchableOpacity>
@@ -194,7 +283,7 @@ const Autoatendimento = ({ navigation }) => {
               ]} 
               onPress={() => setFormaPagamento('Pix')}
             >
-              <Feather name="dollar-sign" size={20} color="#333" />
+              <MaterialIcons name="pix" size={20} color="#333" />
               <Text style={styles.paymentText}>Pix</Text>
               {formaPagamento === 'Pix' && (
                 <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
@@ -208,7 +297,7 @@ const Autoatendimento = ({ navigation }) => {
               ]} 
               onPress={() => setFormaPagamento('Dinheiro')}
             >
-              <Feather name="money" size={20} color="#333" />
+              <Feather name="dollar-sign" size={20} color="#333" />
               <Text style={styles.paymentText}>Dinheiro</Text>
               {formaPagamento === 'Dinheiro' && (
                 <Feather name="check" size={20} color="#333" style={styles.paymentCheck} />
@@ -216,12 +305,12 @@ const Autoatendimento = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Botão Finalizar Compra */}
           <TouchableOpacity 
             style={styles.finalizarButton}
             onPress={handleFinalizarCompra}
+            disabled={Object.keys(carrinho).length === 0}
           >
-            <Text style={styles.finalizarButtonText}>Finalizar venda</Text>
+            <Text style={styles.finalizarButtonText}>Finalizar Pedidos</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -246,52 +335,6 @@ const Autoatendimento = ({ navigation }) => {
           )}
         </TouchableOpacity>
       )}
-
-      {/* Modal de Filtros */}
-      <Modal visible={filtroVisivel} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitulo}>Filtros</Text>
-
-            <Text style={styles.modalLabel}>Categoria</Text>
-            {['', 'Doce', 'Bebida', 'Salgado', 'Outro'].map((cat) => (
-              <TouchableOpacity 
-                key={cat || 'todos'} 
-                style={styles.categoriaItem}
-                onPress={() => setCategoriaSelecionada(cat === categoriaSelecionada ? '' : cat)}
-              >
-                <Feather 
-                  name={cat === categoriaSelecionada ? 'check-circle' : 'circle'} 
-                  size={20} 
-                  color="#333" 
-                />
-                <Text style={styles.categoriaTexto}>{cat || 'Todas'}</Text>
-              </TouchableOpacity>
-            ))}
-
-            <View style={styles.switchRow}>
-              <Text style={styles.switchLabel}>Ver apenas destaques</Text>
-              <TouchableOpacity onPress={() => setVerDestaques((v) => !v)}>
-                <Feather name={verDestaques ? 'check-square' : 'square'} size={24} color="#333" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.switchRow}>
-              <Text style={styles.switchLabel}>Ordenar por preço</Text>
-              <TouchableOpacity onPress={() => setOrdenarPorPreco((v) => !v)}>
-                <Feather name={ordenarPorPreco ? 'check-square' : 'square'} size={24} color="#333" />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity 
-              style={styles.botaoFechar} 
-              onPress={() => setFiltroVisivel(false)}
-            >
-              <Text style={styles.botaoFecharTexto}>Aplicar Filtros</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </LinearGradient>
   );
 };
@@ -345,20 +388,22 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap', 
     justifyContent: 'space-between',
   },
-  produtoCard: {
-    width: '48%',
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
+produtoCard: {
+  width: '48%', // Mantém a largura para 2 colunas
+  minWidth: 160, // Define uma largura mínima para evitar que fique muito estreito
+  backgroundColor: '#fff',
+  padding: 15,
+  borderRadius: 12,
+  alignItems: 'center',
+  shadowColor: '#000',
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 2,
+  marginBottom: 16,
+  borderWidth: 1,
+  borderColor: '#ccc',
+  position: 'relative',
+},
   produtoImagemTexto: { 
     marginBottom: 10, 
     color: '#888',
@@ -376,18 +421,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-  },
-  botaoAdd: {
-    backgroundColor: '#333',
-    width: '100%',
-    padding: 8,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  botaoAddTexto: { 
-    color: '#fff', 
-    fontWeight: 'bold',
-    fontSize: 16,
   },
   carrinhoFlutuante: {
     position: 'absolute',
@@ -502,9 +535,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   minimizarBotao: { 
-    alignSelf: 'center', 
-    marginTop: 10,
+    position: 'absolute',
+    top: 10,
+    right: 10,
     padding: 8,
+    zIndex: 1,
   },
   botaoAbrirCarrinho: {
     position: 'absolute',
@@ -595,6 +630,39 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+    adicionarButton: {
+    backgroundColor: '#28a745',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  adicionarButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  productImage: {
+  width: 60,
+  height: 60,
+  alignSelf: 'center',
+  marginBottom: 10,
+},
+noImageText: {
+  fontSize: 12,
+  color: '#999',
+  textAlign: 'center',
+  marginBottom: 10,
+},
+selectedProduct: {
+  borderColor: '#4CAF50',
+  borderWidth: 2,
+},
+checkIcon: {
+  position: 'absolute',
+  top: 5,
+  right: 5,
+},
 });
 
-export default Autoatendimento;
+export default Autoatendimento

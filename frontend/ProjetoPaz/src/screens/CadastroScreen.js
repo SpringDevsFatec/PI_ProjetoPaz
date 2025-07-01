@@ -48,7 +48,7 @@ const CadastroScreen = ({ navigation }) => {
 
     console.log('Resposta do servidor:', response.data);
 
-    if (response.data.status === 'success') {
+    if (response.data.status === 'true') {
       Alert.alert('Sucesso', 'Cadastro realizado com sucesso!', [
         { text: 'OK', onPress: () => navigation.navigate('Login') }
       ]);

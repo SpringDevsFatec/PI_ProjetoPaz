@@ -22,6 +22,12 @@ export default function AppNavigator() {
         headerBackTitleVisible: false
       }}
     >
+    <Stack.Navigator 
+      initialRouteName="Login"
+      screenOptions={{
+        headerBackTitleVisible: false
+      }}
+    >
       <Stack.Screen 
         name="Login" 
         component={LoginScreen} 
@@ -119,5 +125,6 @@ export default function AppNavigator() {
         }}
       />
     </Stack.Navigator>
+  );
   );
 }
